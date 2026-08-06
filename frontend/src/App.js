@@ -319,51 +319,110 @@ export default function App() {
     return processDataset(data);
   }, [data]);
 
-  // Extract unique sorted Row values
-  const uniqueRows = useMemo(() => {
-    const rowsSet = processedData.map(d => d.Row).filter(Boolean);
-    const sorted = Array.from(new Set(rowsSet)).sort();
-    return sorted;
+  // Parse Row string as numeric (e.g. "07" -> 7). Returns null if not numeric.
+  const parseRowNumeric = (r) => {
+    if (r === null || r === undefined) return null;
+    const n = parseInt(r, 10);
+    return Number.isNaN(n) ? null : n;
+  };
+
+  // Build map: Transfer Order Number -> Set of numeric Rows it contains
+  // Also track raw row strings for display.
+  const toRowInfo = useMemo(() => {
+    const map = new Map(); // TO -> { numericRows: Set<number>, rawRows: Set<string> }
+    processedData.forEach(item => {
+      const to = item["Transfer Order Number"];
+      if (!to) return;
+      if (!map.has(to)) map.set(to, { numericRows: new Set(), rawRows: new Set() });
+      const rec = map.get(to);
+      const numeric = parseRowNumeric(item.Row);
+      if (numeric !== null) rec.numericRows.add(numeric);
+      if (item.Row) rec.rawRows.add(item.Row);
+    });
+    return map;
   }, [processedData]);
 
-  // Group unique rows into batch cards (e.g. 1-5, 6-10, etc.)
+  // Max numeric Row present in the dataset (used to cap card ranges)
+  const maxRow = useMemo(() => {
+    let max = 0;
+    toRowInfo.forEach(({ numericRows }) => {
+      numericRows.forEach(n => { if (n > max) max = n; });
+    });
+    return max;
+  }, [toRowInfo]);
+
+  // Generate numeric range card batches from 1 .. maxRow (inclusive) with step = batchSize.
+  // Example maxRow=36, batchSize=5 -> [1-5, 6-10, 11-15, 16-20, 21-25, 26-30, 31-35, 36-40]
   const cardBatches = useMemo(() => {
     const batches = [];
-    for (let i = 0; i < uniqueRows.length; i += batchSize) {
-      const chunk = uniqueRows.slice(i, i + batchSize);
+    if (maxRow === 0) return batches;
+    for (let start = 1; start <= maxRow; start += batchSize) {
+      const end = start + batchSize - 1;
       batches.push({
+        type: "range",
         batchIndex: batches.length + 1,
-        startIndex: i + 1,
-        endIndex: Math.min(i + batchSize, uniqueRows.length),
-        rows: chunk,
+        start,
+        end,
       });
     }
     return batches;
-  }, [uniqueRows, batchSize]);
+  }, [maxRow, batchSize]);
 
-  // Filtered rows for the selected card range or search query (raw records)
-  const filteredRawData = useMemo(() => {
-    let result = processedData;
+  // Assign each Transfer Order to a card:
+  //  - If ALL its numeric rows fall within a SINGLE card's [start, end] range, it belongs to that card.
+  //  - Otherwise (rows span multiple cards, or has no numeric rows, or falls outside all cards), it goes to Mixed.
+  const batchAssignments = useMemo(() => {
+    const perBatch = new Map(); // batchIndex -> string[] of TO
+    cardBatches.forEach(b => perBatch.set(b.batchIndex, []));
+    const mixed = [];
+
+    toRowInfo.forEach((info, to) => {
+      const rows = Array.from(info.numericRows);
+      if (rows.length === 0) {
+        mixed.push(to);
+        return;
+      }
+      const matchedBatches = new Set();
+      let hasOutOfRange = false;
+      rows.forEach(r => {
+        const b = cardBatches.find(cb => r >= cb.start && r <= cb.end);
+        if (b) matchedBatches.add(b.batchIndex);
+        else hasOutOfRange = true;
+      });
+      if (!hasOutOfRange && matchedBatches.size === 1) {
+        const [idx] = matchedBatches;
+        perBatch.get(idx).push(to);
+      } else {
+        mixed.push(to);
+      }
+    });
+    return { perBatch, mixed };
+  }, [toRowInfo, cardBatches]);
+
+  // Unique TOs to display in the table based on selection + search
+  const uniqueTransferOrders = useMemo(() => {
+    let list;
+    if (!selectedCardRange) {
+      list = Array.from(toRowInfo.keys());
+    } else if (selectedCardRange.type === "mixed") {
+      list = batchAssignments.mixed;
+    } else {
+      list = batchAssignments.perBatch.get(selectedCardRange.batchIndex) || [];
+    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(item => 
-        Object.values(item).some(val => String(val).toLowerCase().includes(q))
-      );
-    } else if (selectedCardRange) {
-      result = result.filter(item => selectedCardRange.rows.includes(item.Row));
+      list = list.filter(to => String(to).toLowerCase().includes(q));
     }
+    return [...list].sort();
+  }, [selectedCardRange, toRowInfo, batchAssignments, searchQuery]);
 
-    return result;
-  }, [processedData, selectedCardRange, searchQuery]);
-
-  // Unique Transfer Order Numbers derived from filtered data (single column display)
-  const uniqueTransferOrders = useMemo(() => {
-    const tos = filteredRawData
-      .map(item => item["Transfer Order Number"])
-      .filter(Boolean);
-    return Array.from(new Set(tos));
-  }, [filteredRawData]);
+  // Helper: get sorted numeric rows for a TO (used in Mixed table)
+  const getRowsForTO = (to) => {
+    const info = toRowInfo.get(to);
+    if (!info) return [];
+    return Array.from(info.numericRows).sort((a, b) => a - b);
+  };
 
   // Handle file upload simulation / CSV parsing
   const handleFileUpload = (e) => {
@@ -639,9 +698,8 @@ export default function App() {
           {/* Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {cardBatches.map((batch) => {
-              const isSelected = selectedCardRange && selectedCardRange.startIndex === batch.startIndex;
-              const batchRowsData = processedData.filter(d => batch.rows.includes(d.Row));
-              const uniqueTOsInBatch = Array.from(new Set(batchRowsData.map(d => d["Transfer Order Number"])));
+              const isSelected = selectedCardRange && selectedCardRange.type === "range" && selectedCardRange.batchIndex === batch.batchIndex;
+              const tosInBatch = batchAssignments.perBatch.get(batch.batchIndex) || [];
 
               return (
                 <div
@@ -666,18 +724,20 @@ export default function App() {
                         Card {batch.batchIndex}
                       </span>
                       <span className="text-[11px] font-medium text-slate-400">
-                        Row {batch.rows[0]} - {batch.rows[batch.rows.length - 1]}
+                        Row {String(batch.start).padStart(2, "0")} - {String(batch.end).padStart(2, "0")}
                       </span>
                     </div>
 
                     <div className="space-y-1 mb-4">
-                      <div className="text-xs font-semibold text-slate-700">Daftar Row:</div>
-                      <div className="flex flex-wrap gap-1">
-                        {batch.rows.map(r => (
-                          <span key={r} className="text-[11px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 border border-slate-200">
-                            {r}
-                          </span>
-                        ))}
+                      <div className="text-xs font-semibold text-slate-700">Range Row:</div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-2xl font-bold font-mono text-teal-700">
+                          {String(batch.start).padStart(2, "0")}
+                        </span>
+                        <span className="text-slate-400 text-sm">→</span>
+                        <span className="text-2xl font-bold font-mono text-teal-700">
+                          {String(batch.end).padStart(2, "0")}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -685,7 +745,7 @@ export default function App() {
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                     <div>
                       <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Transfer Orders</div>
-                      <div className="text-xs font-bold text-slate-800">{uniqueTOsInBatch.length} TO Unik ({batchRowsData.length} item)</div>
+                      <div className="text-xs font-bold text-slate-800">{tosInBatch.length} TO Unik</div>
                     </div>
                     <div className={`p-2 rounded-full transition-all ${isSelected ? "bg-teal-600 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-teal-50 group-hover:text-teal-600"}`}>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -694,6 +754,56 @@ export default function App() {
                 </div>
               );
             })}
+
+            {/* Mixed Row Card — TOs whose rows span across multiple card ranges */}
+            {cardBatches.length > 0 && (() => {
+              const isSelected = selectedCardRange && selectedCardRange.type === "mixed";
+              const mixedTOs = batchAssignments.mixed;
+              return (
+                <div
+                  key="mixed-card"
+                  onClick={() => {
+                    if (isSelected) setSelectedCardRange(null);
+                    else setSelectedCardRange({ type: "mixed", batchIndex: "mixed" });
+                  }}
+                  data-testid="card-batch-mixed"
+                  className={`relative p-5 rounded-2xl transition-all cursor-pointer border shadow-xs flex flex-col justify-between group ${
+                    isSelected
+                      ? "bg-amber-50/90 border-amber-500 ring-2 ring-amber-400/30 shadow-md"
+                      : "bg-white border-amber-200/80 hover:border-amber-400 hover:shadow-md hover:-translate-y-0.5"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${isSelected ? "bg-amber-600 text-white" : "bg-amber-100 text-amber-800 group-hover:bg-amber-200 transition-colors"}`}>
+                        Mixed Row
+                      </span>
+                      <span className="text-[11px] font-medium text-amber-500 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        Nyebar
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 mb-4">
+                      <div className="text-xs font-semibold text-slate-700">TO Lintas Range:</div>
+                      <div className="text-xs text-slate-500 leading-relaxed">
+                        TO yang punya item di lebih dari 1 range card.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-amber-100 flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] text-amber-500 uppercase tracking-wider font-semibold">Transfer Orders</div>
+                      <div className="text-xs font-bold text-slate-800">{mixedTOs.length} TO Unik</div>
+                    </div>
+                    <div className={`p-2 rounded-full transition-all ${isSelected ? "bg-amber-600 text-white" : "bg-amber-50 text-amber-500 group-hover:bg-amber-100 group-hover:text-amber-700"}`}>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -707,11 +817,13 @@ export default function App() {
                   Daftar Transfer Order Number Unik ({uniqueTransferOrders.length} TO)
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  {selectedCardRange 
-                    ? `Menampilkan TO unik untuk Card ${selectedCardRange.batchIndex} (Row Range: ${selectedCardRange.rows[0]} - ${selectedCardRange.rows[selectedCardRange.rows.length - 1]})`
+                  {selectedCardRange && selectedCardRange.type === "range"
+                    ? `Menampilkan TO yang SEMUA item Row-nya ada di Card ${selectedCardRange.batchIndex} (Range ${String(selectedCardRange.start).padStart(2,"0")} - ${String(selectedCardRange.end).padStart(2,"0")})`
+                    : selectedCardRange && selectedCardRange.type === "mixed"
+                    ? "Menampilkan TO Mixed Row — TO yang item Row-nya nyebar di lebih dari 1 range card"
                     : searchQuery 
                     ? `Hasil pencarian untuk "${searchQuery}"`
-                    : "Menampilkan semua Transfer Order Number unik (Pilih card di atas untuk memfilter rentang Row)"}
+                    : "Menampilkan semua Transfer Order Number unik (Pilih card di atas untuk memfilter)"}
                 </CardDescription>
               </div>
 
@@ -734,19 +846,37 @@ export default function App() {
                   <tr>
                     <th className="py-3 px-4 w-20">No</th>
                     <th className="py-3 px-4 text-teal-800 font-bold bg-teal-50">Transfer Order Number</th>
+                    {selectedCardRange && selectedCardRange.type === "mixed" && (
+                      <th className="py-3 px-4 text-amber-800 font-bold bg-amber-50">Row Spread</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {uniqueTransferOrders.length > 0 ? (
-                    uniqueTransferOrders.map((to, idx) => (
-                      <tr key={to} data-testid={`to-row-${idx}`} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2.5 px-4 text-slate-400 font-mono">{idx + 1}</td>
-                        <td className="py-2.5 px-4 font-bold font-mono text-teal-800 text-sm">{to}</td>
-                      </tr>
-                    ))
+                    uniqueTransferOrders.map((to, idx) => {
+                      const isMixedView = selectedCardRange && selectedCardRange.type === "mixed";
+                      const rows = isMixedView ? getRowsForTO(to) : [];
+                      return (
+                        <tr key={to} data-testid={`to-row-${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-2.5 px-4 text-slate-400 font-mono">{idx + 1}</td>
+                          <td className="py-2.5 px-4 font-bold font-mono text-teal-800 text-sm">{to}</td>
+                          {isMixedView && (
+                            <td className="py-2.5 px-4 bg-amber-50/40">
+                              <div className="flex flex-wrap gap-1">
+                                {rows.map(r => (
+                                  <span key={r} className="text-[11px] font-mono bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">
+                                    {String(r).padStart(2, "0")}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
-                      <td colSpan="2" className="py-12 text-center text-slate-400">
+                      <td colSpan={selectedCardRange && selectedCardRange.type === "mixed" ? "3" : "2"} className="py-12 text-center text-slate-400">
                         Tidak ada Transfer Order Number yang sesuai dengan filter saat ini.
                       </td>
                     </tr>
