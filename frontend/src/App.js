@@ -988,17 +988,24 @@ export default function App() {
           {/* Mixed Row Sub-Filter chips — visible only when Mixed card is selected */}
           {selectedCardRange && selectedCardRange.type === "mixed" && (() => {
             const mixed = batchAssignments.mixed;
-            const bucketCount = (predicate) => mixed.reduce((acc, to) => {
+            const bucketAgg = (predicate) => mixed.reduce((acc, to) => {
               const info = toRowInfo.get(to);
-              return acc + (info && predicate(info.numericRows.size) ? 1 : 0);
-            }, 0);
+              if (!info) return acc;
+              const match = predicate === null ? true : predicate(info.numericRows.size);
+              if (match) {
+                acc.count += 1;
+                acc.qty += info.qty;
+              }
+              return acc;
+            }, { count: 0, qty: 0 });
+            const all = bucketAgg(null);
             const buckets = [
-              { key: "all", label: "Semua Mixed", count: mixed.length },
-              { key: "2", label: "2 Row", count: bucketCount(n => n === 2) },
-              { key: "3", label: "3 Row", count: bucketCount(n => n === 3) },
-              { key: "4", label: "4 Row", count: bucketCount(n => n === 4) },
-              { key: "5", label: "5 Row", count: bucketCount(n => n === 5) },
-              { key: ">5", label: "> 5 Row", count: bucketCount(n => n > 5) },
+              { key: "all", label: "Semua Mixed", ...all },
+              { key: "2", label: "2 Row", ...bucketAgg(n => n === 2) },
+              { key: "3", label: "3 Row", ...bucketAgg(n => n === 3) },
+              { key: "4", label: "4 Row", ...bucketAgg(n => n === 4) },
+              { key: "5", label: "5 Row", ...bucketAgg(n => n === 5) },
+              { key: ">5", label: "> 5 Row", ...bucketAgg(n => n > 5) },
             ];
             return (
               <div
@@ -1023,16 +1030,29 @@ export default function App() {
                         type="button"
                         onClick={() => setMixedSubFilter(b.key)}
                         data-testid={`mixed-subfilter-${b.key === ">5" ? "gt5" : b.key}`}
-                        className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${
+                        className={`text-left rounded-xl border transition-all px-3 py-2 min-w-[112px] ${
                           active
                             ? "bg-amber-600 border-amber-600 text-white shadow-sm"
-                            : "bg-white border-amber-200 text-amber-800 hover:bg-amber-100 hover:border-amber-400"
+                            : "bg-white border-amber-200 text-amber-900 hover:bg-amber-100 hover:border-amber-400"
                         }`}
                       >
-                        <span>{b.label}</span>
-                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${active ? "bg-white/25" : "bg-amber-50 border border-amber-200"}`}>
-                          {b.count.toLocaleString("id-ID")}
-                        </span>
+                        <div className={`text-xs font-bold ${active ? "text-white" : "text-amber-900"}`}>
+                          {b.label}
+                        </div>
+                        <div className={`mt-1 flex items-center gap-1.5 text-[10px] font-mono ${active ? "text-white/95" : "text-amber-800"}`}>
+                          <span
+                            className={`px-1.5 py-0.5 rounded ${active ? "bg-white/20" : "bg-amber-50 border border-amber-200"}`}
+                            data-testid={`mixed-subfilter-${b.key === ">5" ? "gt5" : b.key}-count`}
+                          >
+                            {b.count.toLocaleString("id-ID")} TO
+                          </span>
+                          <span
+                            className={`px-1.5 py-0.5 rounded ${active ? "bg-white/20" : "bg-emerald-50 border border-emerald-200 text-emerald-800"}`}
+                            data-testid={`mixed-subfilter-${b.key === ">5" ? "gt5" : b.key}-qty`}
+                          >
+                            Qty {b.qty.toLocaleString("id-ID")}
+                          </span>
+                        </div>
                       </button>
                     );
                   })}
