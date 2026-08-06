@@ -290,30 +290,30 @@ const INITIAL_RAW_DATA = [
   }
 ];
 
+// Process a raw dataset row: extract 2 middle chars from Source Storage Bin starting at char 4
+// e.g., "M1-07-36A2" -> Row "07"
+const processDataset = (rawData) => {
+  return rawData.map(item => {
+    const bin = item["Source Storage Bin"] || "";
+    let extractedRow = "XX";
+    if (bin.length >= 5) {
+      extractedRow = bin.substring(3, 5);
+    } else if (bin.length >= 4) {
+      extractedRow = bin.substring(3, bin.length);
+    }
+    return {
+      ...item,
+      "Row": extractedRow
+    };
+  });
+};
+
 export default function App() {
   const [data, setData] = useState(INITIAL_RAW_DATA);
   const [isGenerated, setIsGenerated] = useState(true);
   const [batchSize, setBatchSize] = useState(5);
   const [selectedCardRange, setSelectedCardRange] = useState(null); // e.g. { start: 1, end: 5 }
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Function to process data: Add 1 column "Row"
-  // Logic: "mengambil 2 karakter tengah dari kolom Source Storage Bin mulai dari karakter ke 4"
-  const processDataset = (rawData) => {
-    return rawData.map(item => {
-      const bin = item["Source Storage Bin"] || "";
-      let extractedRow = "XX";
-      if (bin.length >= 5) {
-        extractedRow = bin.substring(3, 5);
-      } else if (bin.length >= 4) {
-        extractedRow = bin.substring(3, bin.length);
-      }
-      return {
-        ...item,
-        "Row": extractedRow
-      };
-    });
-  };
 
   const processedData = useMemo(() => {
     return processDataset(data);
@@ -816,14 +816,19 @@ export default function App() {
                   <TableIcon className="w-4 h-4 mr-2 text-teal-600" />
                   Daftar Transfer Order Number Unik ({uniqueTransferOrders.length} TO)
                 </CardTitle>
-                <CardDescription className="text-xs">
-                  {selectedCardRange && selectedCardRange.type === "range"
-                    ? `Menampilkan TO yang SEMUA item Row-nya ada di Card ${selectedCardRange.batchIndex} (Range ${String(selectedCardRange.start).padStart(2,"0")} - ${String(selectedCardRange.end).padStart(2,"0")})`
-                    : selectedCardRange && selectedCardRange.type === "mixed"
-                    ? "Menampilkan TO Mixed Row — TO yang item Row-nya nyebar di lebih dari 1 range card"
-                    : searchQuery 
-                    ? `Hasil pencarian untuk "${searchQuery}"`
-                    : "Menampilkan semua Transfer Order Number unik (Pilih card di atas untuk memfilter)"}
+                <CardDescription className="text-xs" data-testid="table-caption">
+                  {(() => {
+                    if (selectedCardRange && selectedCardRange.type === "range") {
+                      return `Menampilkan TO yang SEMUA item Row-nya ada di Card ${selectedCardRange.batchIndex} (Range ${String(selectedCardRange.start).padStart(2, "0")} - ${String(selectedCardRange.end).padStart(2, "0")})`;
+                    }
+                    if (selectedCardRange && selectedCardRange.type === "mixed") {
+                      return "Menampilkan TO Mixed Row — TO yang item Row-nya nyebar di lebih dari 1 range card";
+                    }
+                    if (searchQuery) {
+                      return `Hasil pencarian untuk "${searchQuery}"`;
+                    }
+                    return "Menampilkan semua Transfer Order Number unik (Pilih card di atas untuk memfilter)";
+                  })()}
                 </CardDescription>
               </div>
 
