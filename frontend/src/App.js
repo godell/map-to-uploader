@@ -341,8 +341,8 @@ export default function App() {
     return batches;
   }, [uniqueRows, batchSize]);
 
-  // Filtered rows for the selected card range or search query
-  const displayedTableData = useMemo(() => {
+  // Filtered rows for the selected card range or search query (raw records)
+  const filteredRawData = useMemo(() => {
     let result = processedData;
 
     if (searchQuery.trim()) {
@@ -356,6 +356,14 @@ export default function App() {
 
     return result;
   }, [processedData, selectedCardRange, searchQuery]);
+
+  // Unique Transfer Order Numbers derived from filtered data (single column display)
+  const uniqueTransferOrders = useMemo(() => {
+    const tos = filteredRawData
+      .map(item => item["Transfer Order Number"])
+      .filter(Boolean);
+    return Array.from(new Set(tos));
+  }, [filteredRawData]);
 
   // Handle file upload simulation / CSV parsing
   const handleFileUpload = (e) => {
@@ -401,23 +409,18 @@ export default function App() {
     reader.readAsText(file);
   };
 
-  // SAP TSV Copy helper
+  // SAP TSV Copy helper — copies ONLY unique Transfer Order Numbers (1 column)
   const handleCopyToSAP = () => {
-    if (displayedTableData.length === 0) {
-      toast.error("Tidak ada data untuk disalin.");
+    if (uniqueTransferOrders.length === 0) {
+      toast.error("Tidak ada Transfer Order Number untuk disalin.");
       return;
     }
 
-    const headers = ["Storage Location", "Warehouse Number", "Transfer Order Number", "Transfer order item", "Movement Type (WM)", "Article", "Article Description", "Source target qty", "Source Storage Type", "Source Storage Bin", "Row", "Act.qty (dest)", "Dest. Storage Type", "Dest.Storage Bin"];
-    
-    let tsvContent = headers.join("\t") + "\n";
-    displayedTableData.forEach(row => {
-      const line = headers.map(h => row[h] || "").join("\t");
-      tsvContent += line + "\n";
-    });
+    // Single column, newline-separated — siap paste ke kolom SAP GUI
+    const tsvContent = uniqueTransferOrders.join("\n");
 
     navigator.clipboard.writeText(tsvContent).then(() => {
-      toast.success("Data berhasil disalin! Format sudah disesuaikan untuk Paste langsung ke SAP GUI (Ctrl+V).");
+      toast.success(`${uniqueTransferOrders.length} Transfer Order Number unik disalin! Paste langsung (Ctrl+V) ke kolom SAP GUI.`);
     }).catch(() => {
       toast.error("Gagal menyalin ke clipboard.");
     });
@@ -701,14 +704,14 @@ export default function App() {
               <div>
                 <CardTitle className="text-base font-bold text-slate-800 flex items-center">
                   <TableIcon className="w-4 h-4 mr-2 text-teal-600" />
-                  Detail Data Transfer Order ({displayedTableData.length} baris ditampilkan)
+                  Daftar Transfer Order Number Unik ({uniqueTransferOrders.length} TO)
                 </CardTitle>
                 <CardDescription className="text-xs">
                   {selectedCardRange 
-                    ? `Menampilkan data untuk Card ${selectedCardRange.batchIndex} (Row Range: ${selectedCardRange.rows[0]} - ${selectedCardRange.rows[selectedCardRange.rows.length - 1]})`
+                    ? `Menampilkan TO unik untuk Card ${selectedCardRange.batchIndex} (Row Range: ${selectedCardRange.rows[0]} - ${selectedCardRange.rows[selectedCardRange.rows.length - 1]})`
                     : searchQuery 
                     ? `Hasil pencarian untuk "${searchQuery}"`
-                    : "Menampilkan semua data (Pilih card di atas untuk memfilter rentang Row)"}
+                    : "Menampilkan semua Transfer Order Number unik (Pilih card di atas untuk memfilter rentang Row)"}
                 </CardDescription>
               </div>
 
@@ -719,52 +722,32 @@ export default function App() {
                   className="bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs flex items-center"
                 >
                   <Copy className="w-3.5 h-3.5 mr-1.5" />
-                  Copy untuk Paste ke SAP (TSV)
+                  Copy TO Unik ke SAP
                 </Button>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto max-h-[500px]">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full text-left border-collapse text-xs" data-testid="unique-to-table">
                 <thead className="bg-slate-100/80 sticky top-0 z-10 text-slate-700 font-semibold border-b border-slate-200">
                   <tr>
-                    <th className="py-3 px-4">No</th>
-                    <th className="py-3 px-4">Transfer Order #</th>
-                    <th className="py-3 px-4">Item</th>
-                    <th className="py-3 px-4 text-emerald-700 font-bold bg-emerald-50">Row (Extracted)</th>
-                    <th className="py-3 px-4">Source Bin</th>
-                    <th className="py-3 px-4">Article</th>
-                    <th className="py-3 px-4">Article Description</th>
-                    <th className="py-3 px-4">Qty</th>
-                    <th className="py-3 px-4">Dest. Bin</th>
+                    <th className="py-3 px-4 w-20">No</th>
+                    <th className="py-3 px-4 text-teal-800 font-bold bg-teal-50">Transfer Order Number</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {displayedTableData.length > 0 ? (
-                    displayedTableData.map((row, idx) => (
-                      <tr key={row.id || idx} className="hover:bg-slate-50/80 transition-colors">
+                  {uniqueTransferOrders.length > 0 ? (
+                    uniqueTransferOrders.map((to, idx) => (
+                      <tr key={to} data-testid={`to-row-${idx}`} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-2.5 px-4 text-slate-400 font-mono">{idx + 1}</td>
-                        <td className="py-2.5 px-4 font-bold font-mono text-teal-800">{row["Transfer Order Number"]}</td>
-                        <td className="py-2.5 px-4 font-mono">{row["Transfer order item"]}</td>
-                        <td className="py-2.5 px-4 font-bold font-mono text-emerald-800 bg-emerald-50/60">
-                          <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                            {row["Row"]}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-4 font-mono text-slate-600">{row["Source Storage Bin"]}</td>
-                        <td className="py-2.5 px-4 font-mono text-slate-600">{row["Article"]}</td>
-                        <td className="py-2.5 px-4 text-slate-700 max-w-xs truncate" title={row["Article Description"]}>
-                          {row["Article Description"]}
-                        </td>
-                        <td className="py-2.5 px-4 font-semibold">{row["Source target qty"]}</td>
-                        <td className="py-2.5 px-4 font-mono text-slate-600">{row["Dest.Storage Bin"]}</td>
+                        <td className="py-2.5 px-4 font-bold font-mono text-teal-800 text-sm">{to}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="9" className="py-12 text-center text-slate-400">
-                        Tidak ada data yang sesuai dengan filter atau pencarian saat ini.
+                      <td colSpan="2" className="py-12 text-center text-slate-400">
+                        Tidak ada Transfer Order Number yang sesuai dengan filter saat ini.
                       </td>
                     </tr>
                   )}
@@ -776,10 +759,10 @@ export default function App() {
             <div className="bg-slate-50 border-t border-slate-200 py-3 px-6 flex items-center justify-between text-xs text-slate-500">
               <div className="flex items-center space-x-2">
                 <Check className="w-4 h-4 text-emerald-600" />
-                <span>Tips SAP: Klik tombol <strong>Copy</strong> di atas, lalu tekan <kbd className="bg-white px-1.5 py-0.5 rounded border border-slate-300 font-mono text-slate-700">Ctrl + V</kbd> pada grid SAP GUI Anda.</span>
+                <span>Tips SAP: Klik tombol <strong>Copy TO Unik</strong> di atas, lalu tekan <kbd className="bg-white px-1.5 py-0.5 rounded border border-slate-300 font-mono text-slate-700">Ctrl + V</kbd> pada kolom Transfer Order Number di SAP GUI.</span>
               </div>
               <div className="font-semibold text-slate-700">
-                Total Baris: {displayedTableData.length}
+                Total TO Unik: {uniqueTransferOrders.length}
               </div>
             </div>
           </CardContent>
