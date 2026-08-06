@@ -32,3 +32,18 @@
         transform: rotate(360deg);
     }
 }
+
+
+/* Indeterminate progress bar animation used by upload loading overlay */
+@keyframes upload-bar {
+    0% {
+        transform: translateX(-120%);
+    }
+    100% {
+        transform: translateX(400%);
+    }
+}
+
+.animate-upload-bar {
+    animation: upload-bar 1.2s linear infinite;
+}

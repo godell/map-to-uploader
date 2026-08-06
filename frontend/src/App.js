@@ -4,8 +4,9 @@ import {
   FileSpreadsheet, Upload, Download, Copy, Check, Filter, 
   Layers, RefreshCw, Eye, ArrowRight, CheckCircle2, AlertCircle,
   Database, HelpCircle, Sparkles, SlidersHorizontal, Table as TableIcon,
-  Search
+  Search, Loader2
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Button } from "./components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
@@ -314,6 +315,7 @@ export default function App() {
   const [batchSize, setBatchSize] = useState(5);
   const [selectedCardRange, setSelectedCardRange] = useState(null); // e.g. { start: 1, end: 5 }
   const [searchQuery, setSearchQuery] = useState("");
+  const [uploadStatus, setUploadStatus] = useState({ active: false, phase: "", fileName: "", rowsParsed: 0 });
 
   const processedData = useMemo(() => {
     return processDataset(data);
@@ -424,48 +426,98 @@ export default function App() {
     return Array.from(info.numericRows).sort((a, b) => a - b);
   };
 
-  // Handle file upload simulation / CSV parsing
+  // Handle file upload — supports both CSV and XLSX/XLS via SheetJS
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    setUploadStatus({ active: true, phase: "reading", fileName: file.name, rowsParsed: 0 });
+
+    const isExcel = /\.(xlsx|xls)$/i.test(file.name);
     const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const text = event.target.result;
-        const lines = text.split("\n").filter(l => l.trim() !== "");
-        if (lines.length < 2) {
-          toast.error("File CSV tidak memiliki data yang cukup.");
-          return;
-        }
-        const headers = lines[0].split(",").map(h => h.trim().replace(/^["']|["']$/g, ""));
-        const parsedRows = [];
 
-        for (let i = 1; i < lines.length; i++) {
-          const currentLine = lines[i].split(",").map(val => val.trim().replace(/^["']|["']$/g, ""));
-          if (currentLine.length >= headers.length) {
-            const rowObj = { id: i };
-            headers.forEach((hdr, idx) => {
-              rowObj[hdr] = currentLine[idx] || "";
-            });
-            parsedRows.push(rowObj);
-          }
-        }
-
-        if (parsedRows.length > 0) {
-          setData(parsedRows);
-          setIsGenerated(true);
-          setSelectedCardRange(null);
-          toast.success(`Berhasil memuat ${parsedRows.length} baris data dari file!`);
-        } else {
-          toast.error("Gagal memparsing baris CSV. Pastikan format benar.");
-        }
-      } catch (err) {
-        console.error(err);
-        toast.error("Terjadi kesalahan saat membaca file.");
-      }
+    reader.onerror = () => {
+      setUploadStatus({ active: false, phase: "", fileName: "", rowsParsed: 0 });
+      toast.error("Gagal membaca file. Coba ulangi upload.");
     };
-    reader.readAsText(file);
+
+    reader.onload = (event) => {
+      // Yield to the browser so the loading UI can paint before heavy parsing
+      setTimeout(() => {
+        try {
+          setUploadStatus(s => ({ ...s, phase: "parsing" }));
+
+          let parsedRows = [];
+
+          if (isExcel) {
+            const buffer = event.target.result;
+            const workbook = XLSX.read(buffer, { type: "array" });
+            const firstSheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[firstSheetName];
+            const json = XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
+            parsedRows = json.map((row, i) => ({ id: i + 1, ...row }));
+          } else {
+            const text = event.target.result;
+            const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+            if (lines.length < 2) {
+              setUploadStatus({ active: false, phase: "", fileName: "", rowsParsed: 0 });
+              toast.error("File CSV tidak memiliki data yang cukup.");
+              return;
+            }
+            const headers = lines[0].split(",").map(h => h.trim().replace(/^["']|["']$/g, ""));
+            for (let i = 1; i < lines.length; i++) {
+              const currentLine = lines[i].split(",").map(val => val.trim().replace(/^["']|["']$/g, ""));
+              if (currentLine.length >= headers.length) {
+                const rowObj = { id: i };
+                headers.forEach((hdr, idx) => {
+                  rowObj[hdr] = currentLine[idx] || "";
+                });
+                parsedRows.push(rowObj);
+              }
+            }
+          }
+
+          if (parsedRows.length === 0) {
+            setUploadStatus({ active: false, phase: "", fileName: "", rowsParsed: 0 });
+            toast.error("Gagal memparsing file. Pastikan sheet pertama berisi data dengan header di baris pertama.");
+            return;
+          }
+
+          // Sanity check that mandatory columns exist
+          const sample = parsedRows[0];
+          if (!("Source Storage Bin" in sample) || !("Transfer Order Number" in sample)) {
+            setUploadStatus({ active: false, phase: "", fileName: "", rowsParsed: 0 });
+            toast.error("Kolom wajib tidak ditemukan: 'Source Storage Bin' dan/atau 'Transfer Order Number'. Cek nama kolom di file.");
+            return;
+          }
+
+          setUploadStatus(s => ({ ...s, phase: "generating", rowsParsed: parsedRows.length }));
+
+          // Give the loading UI another tick before committing state (heavy re-render)
+          setTimeout(() => {
+            setData(parsedRows);
+            setIsGenerated(true);
+            setSelectedCardRange(null);
+            setSearchQuery("");
+            setUploadStatus({ active: false, phase: "", fileName: "", rowsParsed: 0 });
+            toast.success(`Berhasil memuat ${parsedRows.length.toLocaleString("id-ID")} baris data dari "${file.name}"!`);
+          }, 50);
+        } catch (err) {
+          console.error(err);
+          setUploadStatus({ active: false, phase: "", fileName: "", rowsParsed: 0 });
+          toast.error(`Terjadi kesalahan saat memproses file: ${err.message || err}`);
+        }
+      }, 30);
+    };
+
+    if (isExcel) {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsText(file);
+    }
+
+    // Reset input so re-selecting the same file still triggers onChange
+    e.target.value = "";
   };
 
   // SAP TSV Copy helper — copies ONLY unique Transfer Order Numbers (1 column)
@@ -904,6 +956,47 @@ export default function App() {
         </Card>
 
       </main>
+
+      {/* Global Upload Loading Overlay */}
+      {uploadStatus.active && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+          data-testid="upload-loading-overlay"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 px-8 py-7 w-full max-w-md mx-4">
+            <div className="flex items-center space-x-4">
+              <div className="relative flex items-center justify-center h-14 w-14 rounded-full bg-teal-50 border border-teal-200 shrink-0">
+                <Loader2 className="w-7 h-7 text-teal-600 animate-spin" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold text-slate-800 truncate">
+                  {uploadStatus.phase === "reading" && "Membaca file..."}
+                  {uploadStatus.phase === "parsing" && "Memparsing sheet..."}
+                  {uploadStatus.phase === "generating" && "Generate kolom Row & Card..."}
+                </div>
+                <div className="text-xs text-slate-500 truncate mt-0.5" title={uploadStatus.fileName}>
+                  {uploadStatus.fileName}
+                </div>
+                {uploadStatus.rowsParsed > 0 && (
+                  <div className="text-[11px] text-teal-700 font-semibold mt-1">
+                    {uploadStatus.rowsParsed.toLocaleString("id-ID")} baris terdeteksi
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Indeterminate progress bar */}
+            <div className="mt-5 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+              <div className="h-full w-1/3 bg-gradient-to-r from-teal-500 via-teal-400 to-indigo-500 rounded-full animate-upload-bar" />
+            </div>
+            <p className="mt-3 text-[11px] text-slate-400 text-center">
+              Jangan tutup tab ini sampai selesai ya, bro.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
