@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import "./App.css";
 import { 
   FileSpreadsheet, Upload, Download, Copy, Check, Filter, 
@@ -316,6 +316,8 @@ export default function App() {
   const [selectedCardRange, setSelectedCardRange] = useState(null); // e.g. { start: 1, end: 5 }
   const [searchQuery, setSearchQuery] = useState("");
   const [uploadStatus, setUploadStatus] = useState({ active: false, phase: "", fileName: "", rowsParsed: 0 });
+  const [mixedSubFilter, setMixedSubFilter] = useState("all"); // "all" | "2" | "3" | "4" | "5" | ">5"
+  const [copyPulse, setCopyPulse] = useState(false); // ephemeral flag for enhanced copy feedback
 
   const processedData = useMemo(() => {
     return processDataset(data);
@@ -328,21 +330,52 @@ export default function App() {
     return Number.isNaN(n) ? null : n;
   };
 
-  // Build map: Transfer Order Number -> Set of numeric Rows it contains
-  // Also track raw row strings for display.
+  // Parse numeric qty helper (Source target qty could be number or string from XLSX)
+  const parseQty = (q) => {
+    if (q === null || q === undefined || q === "") return 0;
+    const n = typeof q === "number" ? q : parseFloat(String(q).replace(/,/g, ""));
+    return Number.isNaN(n) ? 0 : n;
+  };
+
+  // Build map: Transfer Order Number -> { numericRows, rawRows, bins, qty }
   const toRowInfo = useMemo(() => {
-    const map = new Map(); // TO -> { numericRows: Set<number>, rawRows: Set<string> }
+    const map = new Map();
     processedData.forEach(item => {
       const to = item["Transfer Order Number"];
       if (!to) return;
-      if (!map.has(to)) map.set(to, { numericRows: new Set(), rawRows: new Set() });
+      if (!map.has(to)) {
+        map.set(to, { numericRows: new Set(), rawRows: new Set(), bins: new Set(), qty: 0 });
+      }
       const rec = map.get(to);
       const numeric = parseRowNumeric(item.Row);
       if (numeric !== null) rec.numericRows.add(numeric);
       if (item.Row) rec.rawRows.add(item.Row);
+      if (item["Source Storage Bin"]) rec.bins.add(item["Source Storage Bin"]);
+      rec.qty += parseQty(item["Source target qty"]);
     });
     return map;
   }, [processedData]);
+
+  // Dataset-level summary used by the Legend box
+  const datasetSummary = useMemo(() => {
+    const articles = new Set();
+    const rows = new Set();
+    const bins = new Set();
+    let totalQty = 0;
+    processedData.forEach(item => {
+      if (item["Article"]) articles.add(item["Article"]);
+      if (item["Row"]) rows.add(item["Row"]);
+      if (item["Source Storage Bin"]) bins.add(item["Source Storage Bin"]);
+      totalQty += parseQty(item["Source target qty"]);
+    });
+    return {
+      totalTO: toRowInfo.size,
+      totalArticle: articles.size,
+      totalRow: rows.size,
+      totalBin: bins.size,
+      totalQty,
+    };
+  }, [processedData, toRowInfo]);
 
   // Max numeric Row present in the dataset (used to cap card ranges)
   const maxRow = useMemo(() => {
@@ -401,13 +434,52 @@ export default function App() {
     return { perBatch, mixed };
   }, [toRowInfo, cardBatches]);
 
-  // Unique TOs to display in the table based on selection + search
+  // Per-card computed stats: total qty & average bins per TO
+  const batchStats = useMemo(() => {
+    const stats = new Map();
+    const compute = (tos) => {
+      let totalQty = 0;
+      let totalBins = 0;
+      tos.forEach(to => {
+        const info = toRowInfo.get(to);
+        if (!info) return;
+        totalQty += info.qty;
+        totalBins += info.bins.size;
+      });
+      return {
+        toCount: tos.length,
+        totalQty,
+        avgBins: tos.length > 0 ? Math.round(totalBins / tos.length) : 0,
+      };
+    };
+    cardBatches.forEach(b => {
+      stats.set(b.batchIndex, compute(batchAssignments.perBatch.get(b.batchIndex) || []));
+    });
+    stats.set("mixed", compute(batchAssignments.mixed));
+    return stats;
+  }, [cardBatches, batchAssignments, toRowInfo]);
+
+  // Unique TOs to display in the table based on selection + search + mixed sub-filter
   const uniqueTransferOrders = useMemo(() => {
     let list;
     if (!selectedCardRange) {
       list = Array.from(toRowInfo.keys());
     } else if (selectedCardRange.type === "mixed") {
-      list = batchAssignments.mixed;
+      const base = batchAssignments.mixed;
+      if (mixedSubFilter === "all") {
+        list = base;
+      } else if (mixedSubFilter === ">5") {
+        list = base.filter(to => {
+          const info = toRowInfo.get(to);
+          return info && info.numericRows.size > 5;
+        });
+      } else {
+        const target = parseInt(mixedSubFilter, 10);
+        list = base.filter(to => {
+          const info = toRowInfo.get(to);
+          return info && info.numericRows.size === target;
+        });
+      }
     } else {
       list = batchAssignments.perBatch.get(selectedCardRange.batchIndex) || [];
     }
@@ -417,7 +489,7 @@ export default function App() {
       list = list.filter(to => String(to).toLowerCase().includes(q));
     }
     return [...list].sort();
-  }, [selectedCardRange, toRowInfo, batchAssignments, searchQuery]);
+  }, [selectedCardRange, toRowInfo, batchAssignments, searchQuery, mixedSubFilter]);
 
   // Helper: get sorted numeric rows for a TO (used in Mixed table)
   const getRowsForTO = (to) => {
@@ -425,6 +497,11 @@ export default function App() {
     if (!info) return [];
     return Array.from(info.numericRows).sort((a, b) => a - b);
   };
+
+  // Reset the mixed sub-filter whenever the top-level card selection changes
+  useEffect(() => {
+    setMixedSubFilter("all");
+  }, [selectedCardRange]);
 
   // Handle file upload — supports both CSV and XLSX/XLS via SheetJS
   const handleFileUpload = (e) => {
@@ -527,11 +604,20 @@ export default function App() {
       return;
     }
 
-    // Single column, newline-separated — siap paste ke kolom SAP GUI
     const tsvContent = uniqueTransferOrders.join("\n");
 
     navigator.clipboard.writeText(tsvContent).then(() => {
-      toast.success(`${uniqueTransferOrders.length} Transfer Order Number unik disalin! Paste langsung (Ctrl+V) ke kolom SAP GUI.`);
+      // Enhanced feedback: pulse the button + rich toast with checkmark badge
+      setCopyPulse(true);
+      setTimeout(() => setCopyPulse(false), 1400);
+      toast.success(
+        `${uniqueTransferOrders.length.toLocaleString("id-ID")} Transfer Order Number disalin!`,
+        {
+          description: "Langsung tekan Ctrl + V di kolom Transfer Order Number pada SAP GUI.",
+          duration: 3500,
+          icon: <Check className="w-4 h-4 text-emerald-600" />,
+        }
+      );
     }).catch(() => {
       toast.error("Gagal menyalin ke clipboard.");
     });
@@ -656,16 +742,33 @@ export default function App() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
-                {/* Rule explanation box */}
-                <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3.5 space-y-2">
+                {/* Dataset Legend / Summary */}
+                <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3.5 space-y-2.5" data-testid="dataset-summary">
                   <div className="text-xs font-semibold text-indigo-900 flex items-center">
-                    <HelpCircle className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
-                    Contoh Ekstraksi Bin:
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
+                    Ringkasan Dataset
                   </div>
-                  <div className="text-xs text-indigo-700 space-y-1 font-mono bg-white/80 p-2 rounded-lg border border-indigo-100">
-                    <div>Source Bin: <span className="text-rose-600 font-bold">M1-07-36A2</span></div>
-                    <div>Karakter ke-4 & 2 berikutnya: <span className="text-emerald-600 font-bold">07</span></div>
-                    <div>Hasil Kolom Row: <span className="text-indigo-600 font-bold">07</span></div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div className="bg-white/85 border border-indigo-100 rounded-lg px-2 py-1.5" data-testid="summary-total-to">
+                      <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total TO</div>
+                      <div className="text-sm font-bold text-indigo-700 font-mono">{datasetSummary.totalTO.toLocaleString("id-ID")}</div>
+                    </div>
+                    <div className="bg-white/85 border border-indigo-100 rounded-lg px-2 py-1.5" data-testid="summary-total-article">
+                      <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total Article</div>
+                      <div className="text-sm font-bold text-indigo-700 font-mono">{datasetSummary.totalArticle.toLocaleString("id-ID")}</div>
+                    </div>
+                    <div className="bg-white/85 border border-indigo-100 rounded-lg px-2 py-1.5" data-testid="summary-total-row">
+                      <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total Row</div>
+                      <div className="text-sm font-bold text-indigo-700 font-mono">{datasetSummary.totalRow.toLocaleString("id-ID")}</div>
+                    </div>
+                    <div className="bg-white/85 border border-indigo-100 rounded-lg px-2 py-1.5" data-testid="summary-total-bin">
+                      <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total Bin</div>
+                      <div className="text-sm font-bold text-indigo-700 font-mono">{datasetSummary.totalBin.toLocaleString("id-ID")}</div>
+                    </div>
+                    <div className="col-span-2 bg-white/85 border border-emerald-100 rounded-lg px-2 py-1.5" data-testid="summary-total-qty">
+                      <div className="text-[10px] text-emerald-700 uppercase tracking-wider font-semibold">Total Source Target Qty</div>
+                      <div className="text-sm font-bold text-emerald-700 font-mono">{datasetSummary.totalQty.toLocaleString("id-ID")}</div>
+                    </div>
                   </div>
                 </div>
 
@@ -680,8 +783,8 @@ export default function App() {
                       {batchSize} Row / Card
                     </span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {[3, 5, 10, 15].map((size) => (
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {[3, 4, 5, 6, 10, 15].map((size) => (
                       <Button
                         key={size}
                         size="sm"
@@ -691,14 +794,14 @@ export default function App() {
                           setSelectedCardRange(null);
                         }}
                         data-testid={`batch-size-${size}-btn`}
-                        className={`flex-1 text-xs h-8 ${batchSize === size ? "bg-teal-600 hover:bg-teal-700 text-white" : "border-slate-200 hover:bg-slate-100 text-slate-700"}`}
+                        className={`text-xs h-8 px-1 ${batchSize === size ? "bg-teal-600 hover:bg-teal-700 text-white" : "border-slate-200 hover:bg-slate-100 text-slate-700"}`}
                       >
-                        {size} Row
+                        {size}
                       </Button>
                     ))}
                   </div>
                   <p className="text-[11px] text-slate-400">
-                    Membagi daftar Row unik menjadi card interaktif (Card 1, Card 2, dst).
+                    Angka = jumlah Row per card (Card 1, Card 2, dst).
                   </p>
                 </div>
 
@@ -751,7 +854,7 @@ export default function App() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {cardBatches.map((batch) => {
               const isSelected = selectedCardRange && selectedCardRange.type === "range" && selectedCardRange.batchIndex === batch.batchIndex;
-              const tosInBatch = batchAssignments.perBatch.get(batch.batchIndex) || [];
+              const stats = batchStats.get(batch.batchIndex) || { toCount: 0, totalQty: 0, avgBins: 0 };
 
               return (
                 <div
@@ -780,7 +883,7 @@ export default function App() {
                       </span>
                     </div>
 
-                    <div className="space-y-1 mb-4">
+                    <div className="space-y-1 mb-3">
                       <div className="text-xs font-semibold text-slate-700">Range Row:</div>
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-2xl font-bold font-mono text-teal-700">
@@ -792,12 +895,24 @@ export default function App() {
                         </span>
                       </div>
                     </div>
+
+                    {/* Card metric chips: Qty + Avg Bin/TO */}
+                    <div className="grid grid-cols-2 gap-1.5 mb-1" data-testid={`card-metrics-${batch.batchIndex}`}>
+                      <div className="bg-emerald-50/70 border border-emerald-100 rounded-md px-2 py-1">
+                        <div className="text-[9px] uppercase font-semibold tracking-wider text-emerald-700">Total Qty</div>
+                        <div className="text-xs font-bold font-mono text-emerald-800">{stats.totalQty.toLocaleString("id-ID")}</div>
+                      </div>
+                      <div className="bg-indigo-50/70 border border-indigo-100 rounded-md px-2 py-1">
+                        <div className="text-[9px] uppercase font-semibold tracking-wider text-indigo-700">Avg Bin/TO</div>
+                        <div className="text-xs font-bold font-mono text-indigo-800">{stats.avgBins} Loc</div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                     <div>
                       <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Transfer Orders</div>
-                      <div className="text-xs font-bold text-slate-800">{tosInBatch.length} TO Unik</div>
+                      <div className="text-xs font-bold text-slate-800">{stats.toCount.toLocaleString("id-ID")} TO Unik</div>
                     </div>
                     <div className={`p-2 rounded-full transition-all ${isSelected ? "bg-teal-600 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-teal-50 group-hover:text-teal-600"}`}>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -836,10 +951,22 @@ export default function App() {
                       </span>
                     </div>
 
-                    <div className="space-y-1 mb-4">
+                    <div className="space-y-1 mb-3">
                       <div className="text-xs font-semibold text-slate-700">TO Lintas Range:</div>
                       <div className="text-xs text-slate-500 leading-relaxed">
                         TO yang punya item di lebih dari 1 range card.
+                      </div>
+                    </div>
+
+                    {/* Mixed card metric chips */}
+                    <div className="grid grid-cols-2 gap-1.5 mb-1" data-testid="card-metrics-mixed">
+                      <div className="bg-emerald-50/70 border border-emerald-100 rounded-md px-2 py-1">
+                        <div className="text-[9px] uppercase font-semibold tracking-wider text-emerald-700">Total Qty</div>
+                        <div className="text-xs font-bold font-mono text-emerald-800">{(batchStats.get("mixed")?.totalQty || 0).toLocaleString("id-ID")}</div>
+                      </div>
+                      <div className="bg-indigo-50/70 border border-indigo-100 rounded-md px-2 py-1">
+                        <div className="text-[9px] uppercase font-semibold tracking-wider text-indigo-700">Avg Bin/TO</div>
+                        <div className="text-xs font-bold font-mono text-indigo-800">{(batchStats.get("mixed")?.avgBins || 0)} Loc</div>
                       </div>
                     </div>
                   </div>
@@ -847,7 +974,7 @@ export default function App() {
                   <div className="pt-3 border-t border-amber-100 flex items-center justify-between">
                     <div>
                       <div className="text-[10px] text-amber-500 uppercase tracking-wider font-semibold">Transfer Orders</div>
-                      <div className="text-xs font-bold text-slate-800">{mixedTOs.length} TO Unik</div>
+                      <div className="text-xs font-bold text-slate-800">{mixedTOs.length.toLocaleString("id-ID")} TO Unik</div>
                     </div>
                     <div className={`p-2 rounded-full transition-all ${isSelected ? "bg-amber-600 text-white" : "bg-amber-50 text-amber-500 group-hover:bg-amber-100 group-hover:text-amber-700"}`}>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -857,6 +984,62 @@ export default function App() {
               );
             })()}
           </div>
+
+          {/* Mixed Row Sub-Filter chips — visible only when Mixed card is selected */}
+          {selectedCardRange && selectedCardRange.type === "mixed" && (() => {
+            const mixed = batchAssignments.mixed;
+            const bucketCount = (predicate) => mixed.reduce((acc, to) => {
+              const info = toRowInfo.get(to);
+              return acc + (info && predicate(info.numericRows.size) ? 1 : 0);
+            }, 0);
+            const buckets = [
+              { key: "all", label: "Semua Mixed", count: mixed.length },
+              { key: "2", label: "2 Row", count: bucketCount(n => n === 2) },
+              { key: "3", label: "3 Row", count: bucketCount(n => n === 3) },
+              { key: "4", label: "4 Row", count: bucketCount(n => n === 4) },
+              { key: "5", label: "5 Row", count: bucketCount(n => n === 5) },
+              { key: ">5", label: "> 5 Row", count: bucketCount(n => n > 5) },
+            ];
+            return (
+              <div
+                className="mt-4 bg-amber-50/60 border border-amber-200 rounded-2xl px-4 py-3"
+                data-testid="mixed-subfilter-bar"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2.5">
+                  <div className="flex items-center text-xs font-semibold text-amber-900">
+                    <Filter className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
+                    Sub-filter Mixed Row — kelompokkan berdasarkan jumlah Row per TO:
+                  </div>
+                  <span className="text-[11px] text-amber-700 font-medium">
+                    Aktif: <span className="font-bold">{buckets.find(b => b.key === mixedSubFilter)?.label}</span>
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {buckets.map(b => {
+                    const active = mixedSubFilter === b.key;
+                    return (
+                      <button
+                        key={b.key}
+                        type="button"
+                        onClick={() => setMixedSubFilter(b.key)}
+                        data-testid={`mixed-subfilter-${b.key === ">5" ? "gt5" : b.key}`}
+                        className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${
+                          active
+                            ? "bg-amber-600 border-amber-600 text-white shadow-sm"
+                            : "bg-white border-amber-200 text-amber-800 hover:bg-amber-100 hover:border-amber-400"
+                        }`}
+                      >
+                        <span>{b.label}</span>
+                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${active ? "bg-white/25" : "bg-amber-50 border border-amber-200"}`}>
+                          {b.count.toLocaleString("id-ID")}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Step 4: SAP Transfer Order Table & Copy-Paste Section */}
@@ -874,7 +1057,12 @@ export default function App() {
                       return `Menampilkan TO yang SEMUA item Row-nya ada di Card ${selectedCardRange.batchIndex} (Range ${String(selectedCardRange.start).padStart(2, "0")} - ${String(selectedCardRange.end).padStart(2, "0")})`;
                     }
                     if (selectedCardRange && selectedCardRange.type === "mixed") {
-                      return "Menampilkan TO Mixed Row — TO yang item Row-nya nyebar di lebih dari 1 range card";
+                      const bucketLabel = mixedSubFilter === "all"
+                        ? "semua"
+                        : mixedSubFilter === ">5"
+                          ? "lebih dari 5 Row"
+                          : `tepat ${mixedSubFilter} Row`;
+                      return `Menampilkan TO Mixed Row (${bucketLabel}) — TO yang item Row-nya nyebar di lebih dari 1 range card`;
                     }
                     if (searchQuery) {
                       return `Hasil pencarian untuk "${searchQuery}"`;
@@ -888,10 +1076,19 @@ export default function App() {
                 <Button
                   onClick={handleCopyToSAP}
                   data-testid="copy-to-sap-btn"
-                  className="bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs flex items-center"
+                  className={`bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs flex items-center transition-all ${copyPulse ? "ring-4 ring-emerald-300/60 scale-105 bg-emerald-600 hover:bg-emerald-600" : ""}`}
                 >
-                  <Copy className="w-3.5 h-3.5 mr-1.5" />
-                  Copy TO Unik ke SAP
+                  {copyPulse ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 mr-1.5" />
+                      Tersalin!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 mr-1.5" />
+                      Copy TO Unik ke SAP
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
@@ -901,39 +1098,49 @@ export default function App() {
               <table className="w-full text-left border-collapse text-xs" data-testid="unique-to-table">
                 <thead className="bg-slate-100/80 sticky top-0 z-10 text-slate-700 font-semibold border-b border-slate-200">
                   <tr>
-                    <th className="py-3 px-4 w-20">No</th>
+                    <th className="py-3 px-4 w-16">No</th>
                     <th className="py-3 px-4 text-teal-800 font-bold bg-teal-50">Transfer Order Number</th>
-                    {selectedCardRange && selectedCardRange.type === "mixed" && (
-                      <th className="py-3 px-4 text-amber-800 font-bold bg-amber-50">Row Spread</th>
+                    {selectedCardRange && (
+                      <>
+                        <th className="py-3 px-4 text-indigo-800 font-bold bg-indigo-50 w-28">Total Bin</th>
+                        <th className="py-3 px-4 text-emerald-800 font-bold bg-emerald-50 w-28">Total Qty</th>
+                        <th className="py-3 px-4 text-amber-800 font-bold bg-amber-50">Row Spread</th>
+                      </>
                     )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {uniqueTransferOrders.length > 0 ? (
                     uniqueTransferOrders.map((to, idx) => {
-                      const isMixedView = selectedCardRange && selectedCardRange.type === "mixed";
-                      const rows = isMixedView ? getRowsForTO(to) : [];
+                      const info = toRowInfo.get(to);
+                      const rows = info ? Array.from(info.numericRows).sort((a, b) => a - b) : [];
+                      const totalBin = info ? info.bins.size : 0;
+                      const totalQty = info ? info.qty : 0;
                       return (
                         <tr key={to} data-testid={`to-row-${idx}`} className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-2.5 px-4 text-slate-400 font-mono">{idx + 1}</td>
                           <td className="py-2.5 px-4 font-bold font-mono text-teal-800 text-sm">{to}</td>
-                          {isMixedView && (
-                            <td className="py-2.5 px-4 bg-amber-50/40">
-                              <div className="flex flex-wrap gap-1">
-                                {rows.map(r => (
-                                  <span key={r} className="text-[11px] font-mono bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">
-                                    {String(r).padStart(2, "0")}
-                                  </span>
-                                ))}
-                              </div>
-                            </td>
+                          {selectedCardRange && (
+                            <>
+                              <td className="py-2.5 px-4 bg-indigo-50/40 font-mono font-semibold text-indigo-800" data-testid={`total-bin-${idx}`}>{totalBin.toLocaleString("id-ID")}</td>
+                              <td className="py-2.5 px-4 bg-emerald-50/40 font-mono font-semibold text-emerald-800" data-testid={`total-qty-${idx}`}>{totalQty.toLocaleString("id-ID")}</td>
+                              <td className="py-2.5 px-4 bg-amber-50/40" data-testid={`row-spread-${idx}`}>
+                                <div className="flex flex-wrap gap-1">
+                                  {rows.map(r => (
+                                    <span key={r} className="text-[11px] font-mono bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">
+                                      {String(r).padStart(2, "0")}
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+                            </>
                           )}
                         </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={selectedCardRange && selectedCardRange.type === "mixed" ? "3" : "2"} className="py-12 text-center text-slate-400">
+                      <td colSpan={selectedCardRange ? "5" : "2"} className="py-12 text-center text-slate-400">
                         Tidak ada Transfer Order Number yang sesuai dengan filter saat ini.
                       </td>
                     </tr>
