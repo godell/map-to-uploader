@@ -337,20 +337,21 @@ export default function App() {
     return Number.isNaN(n) ? 0 : n;
   };
 
-  // Build map: Transfer Order Number -> { numericRows, rawRows, bins, qty }
+  // Build map: Transfer Order Number -> { numericRows, rawRows, bins, articles, qty }
   const toRowInfo = useMemo(() => {
     const map = new Map();
     processedData.forEach(item => {
       const to = item["Transfer Order Number"];
       if (!to) return;
       if (!map.has(to)) {
-        map.set(to, { numericRows: new Set(), rawRows: new Set(), bins: new Set(), qty: 0 });
+        map.set(to, { numericRows: new Set(), rawRows: new Set(), bins: new Set(), articles: new Set(), qty: 0 });
       }
       const rec = map.get(to);
       const numeric = parseRowNumeric(item.Row);
       if (numeric !== null) rec.numericRows.add(numeric);
       if (item.Row) rec.rawRows.add(item.Row);
       if (item["Source Storage Bin"]) rec.bins.add(item["Source Storage Bin"]);
+      if (item["Article"]) rec.articles.add(item["Article"]);
       rec.qty += parseQty(item["Source target qty"]);
     });
     return map;
@@ -1123,6 +1124,7 @@ export default function App() {
                     {selectedCardRange && (
                       <>
                         <th className="py-3 px-4 text-indigo-800 font-bold bg-indigo-50 w-28">Total Bin</th>
+                        <th className="py-3 px-4 text-rose-800 font-bold bg-rose-50 w-28">Total Article</th>
                         <th className="py-3 px-4 text-emerald-800 font-bold bg-emerald-50 w-28">Total Qty</th>
                         <th className="py-3 px-4 text-amber-800 font-bold bg-amber-50">Row Spread</th>
                       </>
@@ -1135,6 +1137,7 @@ export default function App() {
                       const info = toRowInfo.get(to);
                       const rows = info ? Array.from(info.numericRows).sort((a, b) => a - b) : [];
                       const totalBin = info ? info.bins.size : 0;
+                      const totalArticle = info ? info.articles.size : 0;
                       const totalQty = info ? info.qty : 0;
                       return (
                         <tr key={to} data-testid={`to-row-${idx}`} className="hover:bg-slate-50/80 transition-colors">
@@ -1143,6 +1146,7 @@ export default function App() {
                           {selectedCardRange && (
                             <>
                               <td className="py-2.5 px-4 bg-indigo-50/40 font-mono font-semibold text-indigo-800" data-testid={`total-bin-${idx}`}>{totalBin.toLocaleString("id-ID")}</td>
+                              <td className="py-2.5 px-4 bg-rose-50/40 font-mono font-semibold text-rose-800" data-testid={`total-article-${idx}`}>{totalArticle.toLocaleString("id-ID")}</td>
                               <td className="py-2.5 px-4 bg-emerald-50/40 font-mono font-semibold text-emerald-800" data-testid={`total-qty-${idx}`}>{totalQty.toLocaleString("id-ID")}</td>
                               <td className="py-2.5 px-4 bg-amber-50/40" data-testid={`row-spread-${idx}`}>
                                 <div className="flex flex-wrap gap-1">
@@ -1160,7 +1164,7 @@ export default function App() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={selectedCardRange ? "5" : "2"} className="py-12 text-center text-slate-400">
+                      <td colSpan={selectedCardRange ? "6" : "2"} className="py-12 text-center text-slate-400">
                         Tidak ada Transfer Order Number yang sesuai dengan filter saat ini.
                       </td>
                     </tr>
