@@ -1,0 +1,66 @@
+{
+  "app_name": "SAP WM Transfer Order Data Processor",
+  "app_type": "saas_app",
+  "theme": "vibrant_and_minimalist_pastel",
+  "description": "A specialized landing app for uploading warehouse logistics data, automatically generating computed columns (extracting 2 chars from 4th char of Source Storage Bin), and organizing Transfer Order data into interactive range cards with SAP copy-paste optimization.",
+  "typography": {
+    "headings": {
+      "family": "Outfit, sans-serif",
+      "weights": ["600", "700", "800"],
+      "classes": "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900"
+    },
+    "body": {
+      "family": "Inter, sans-serif",
+      "weights": ["400", "500", "600"],
+      "classes": "text-base text-slate-600"
+    },
+    "mono": {
+      "family": "JetBrains Mono, monospace",
+      "weights": ["400", "500", "700"],
+      "classes": "font-mono text-sm text-slate-800"
+    }
+  },
+  "colors": {
+    "primary": "#4F46E5",
+    "primary_hover": "#4338CA",
+    "accent": "#06B6D4",
+    "background": "#F8FAFC",
+    "surface": "#FFFFFF",
+    "surface_card": "#FFFFFF",
+    "border": "#E2E8F0",
+    "text_main": "#0F172A",
+    "text_muted": "#64748B",
+    "success": "#10B981",
+    "warning": "#F59E0B"
+  },
+  "visual_enhancers": {
+    "border_radius": "rounded-xl",
+    "shadow": "shadow-[0_4px_20px_rgba(79,70,229,0.06)]",
+    "glassmorphism": "backdrop-blur-xl bg-white/80 border border-white/40 shadow-lg",
+    "transitions": "transition-all duration-200 ease-in-out"
+  },
+  "layouts": {
+    "dashboard_grid": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 p-6",
+    "hero_section": "flex flex-col items-center justify-center py-12 px-4 text-center"
+  },
+  "key_features": [
+    "File Upload (CSV/Excel/Paste raw tabular data with Source Storage Bin & Transfer Order Number)",
+    "Automatic Data Processing & Dynamic Row Generation (Extracts 2 chars from 4th char of Source Storage Bin)",
+    "Transfer Order Card Grid with Custom Range Selector (e.g. Batches of 5: Row 1-5, Row 5-10, etc.)",
+    "SAP Grid Copy-Paste Optimized Table Viewer with TSV / Tab-separated copy support for direct pasting into SAP GUI/Fiori",
+    "Interactive filtering & Search across Transfer Orders and Storage Bins",
+    "Sample Dataset Loader for instant demo testing"
+  ],
+  "image_urls": [
+    {
+      "category": "warehouse_hero",
+      "url": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "description": "Warehouse inventory racks and boxes for logistic background"
+    }
+  ],
+  "accessibility": {
+    "contrast_ratio": "WCAG AA compliant (minimum 4.5:1 for body text)",
+    "focus_states": "focus:ring-2 focus:ring-indigo-500 focus:outline-none",
+    "aria_attributes": "Included on all interactive buttons, modal dialogs, cards, and file upload dropzones."
+  }
+}
