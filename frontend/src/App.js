@@ -312,8 +312,8 @@ const processDataset = (rawData) => {
 export default function App() {
   const [data, setData] = useState(INITIAL_RAW_DATA);
   const [isGenerated, setIsGenerated] = useState(true);
-  const [batchSize, setBatchSize] = useState(5);
-  const [selectedCardRange, setSelectedCardRange] = useState(null); // e.g. { start: 1, end: 5 }
+  const [selectedWing, setSelectedWing] = useState(null); // "left" | "right" | "cross" | null
+  const [selectedSubCard, setSelectedSubCard] = useState(null); // {type:"range"|"mixed", wing, key} | null
   const [searchQuery, setSearchQuery] = useState("");
   const [uploadStatus, setUploadStatus] = useState({ active: false, phase: "", fileName: "", rowsParsed: 0 });
   const [mixedSubFilter, setMixedSubFilter] = useState("all"); // "all" | "2" | "3" | "4" | "5" | ">5"
@@ -378,131 +378,180 @@ export default function App() {
     };
   }, [processedData, toRowInfo]);
 
-  // Max numeric Row present in the dataset (used to cap card ranges)
-  const maxRow = useMemo(() => {
-    let max = 0;
-    toRowInfo.forEach(({ numericRows }) => {
-      numericRows.forEach(n => { if (n > max) max = n; });
-    });
-    return max;
-  }, [toRowInfo]);
+  // ── Wing structure (fixed by user's business rule) ──
+  // Wing Kiri: Row 1..18 → sub-ranges [1-6, 7-12, 13-18]
+  // Wing Kanan: Row 19..36 → sub-ranges [19-24, 25-30, 31-36]
+  // Cross Wing: TOs whose numeric Rows span BOTH wings (or contain out-of-range rows)
+  const WING_STRUCTURE = useMemo(() => ({
+    left: {
+      key: "left",
+      label: "Wing Kiri",
+      shortLabel: "Kiri",
+      range: [1, 18],
+      subRanges: [
+        { key: "1-6", start: 1, end: 6 },
+        { key: "7-12", start: 7, end: 12 },
+        { key: "13-18", start: 13, end: 18 },
+      ],
+    },
+    right: {
+      key: "right",
+      label: "Wing Kanan",
+      shortLabel: "Kanan",
+      range: [19, 36],
+      subRanges: [
+        { key: "19-24", start: 19, end: 24 },
+        { key: "25-30", start: 25, end: 30 },
+        { key: "31-36", start: 31, end: 36 },
+      ],
+    },
+  }), []);
 
-  // Generate numeric range card batches from 1 .. maxRow (inclusive) with step = batchSize.
-  // Example maxRow=36, batchSize=5 -> [1-5, 6-10, 11-15, 16-20, 21-25, 26-30, 31-35, 36-40]
-  const cardBatches = useMemo(() => {
-    const batches = [];
-    if (maxRow === 0) return batches;
-    for (let start = 1; start <= maxRow; start += batchSize) {
-      const end = start + batchSize - 1;
-      batches.push({
-        type: "range",
-        batchIndex: batches.length + 1,
-        start,
-        end,
-      });
-    }
-    return batches;
-  }, [maxRow, batchSize]);
-
-  // Assign each Transfer Order to a card:
-  //  - If ALL its numeric rows fall within a SINGLE card's [start, end] range, it belongs to that card.
-  //  - Otherwise (rows span multiple cards, or has no numeric rows, or falls outside all cards), it goes to Mixed.
-  const batchAssignments = useMemo(() => {
-    const perBatch = new Map(); // batchIndex -> string[] of TO
-    cardBatches.forEach(b => perBatch.set(b.batchIndex, []));
-    const mixed = [];
+  // Assign every unique TO into the wing/sub-range/mixed/cross buckets.
+  const wingAssignments = useMemo(() => {
+    const emptyRanges = (subs) => {
+      const o = {};
+      subs.forEach(sr => { o[sr.key] = []; });
+      return o;
+    };
+    const result = {
+      left: { ranges: emptyRanges(WING_STRUCTURE.left.subRanges), mixed: [] },
+      right: { ranges: emptyRanges(WING_STRUCTURE.right.subRanges), mixed: [] },
+      cross: [],
+    };
 
     toRowInfo.forEach((info, to) => {
       const rows = Array.from(info.numericRows);
       if (rows.length === 0) {
-        mixed.push(to);
+        // No numeric row info — treat as Cross so the TO is not lost
+        result.cross.push(to);
         return;
       }
-      const matchedBatches = new Set();
-      let hasOutOfRange = false;
+
+      const inLeft = rows.some(r => r >= 1 && r <= 18);
+      const inRight = rows.some(r => r >= 19 && r <= 36);
+      const outOfBounds = rows.some(r => r < 1 || r > 36);
+
+      if ((inLeft && inRight) || outOfBounds) {
+        result.cross.push(to);
+        return;
+      }
+
+      const wing = inLeft ? "left" : "right";
+      const subs = WING_STRUCTURE[wing].subRanges;
+      const matched = new Set();
       rows.forEach(r => {
-        const b = cardBatches.find(cb => r >= cb.start && r <= cb.end);
-        if (b) matchedBatches.add(b.batchIndex);
-        else hasOutOfRange = true;
+        const s = subs.find(sr => r >= sr.start && r <= sr.end);
+        if (s) matched.add(s.key);
       });
-      if (!hasOutOfRange && matchedBatches.size === 1) {
-        const [idx] = matchedBatches;
-        perBatch.get(idx).push(to);
+
+      if (matched.size === 1) {
+        const [key] = matched;
+        result[wing].ranges[key].push(to);
       } else {
-        mixed.push(to);
+        // Spans multiple sub-ranges within the same wing
+        result[wing].mixed.push(to);
       }
     });
-    return { perBatch, mixed };
-  }, [toRowInfo, cardBatches]);
 
-  // Per-card computed stats: total qty & average bins per TO
-  const batchStats = useMemo(() => {
-    const stats = new Map();
-    const compute = (tos) => {
-      let totalQty = 0;
-      let totalBins = 0;
-      tos.forEach(to => {
-        const info = toRowInfo.get(to);
-        if (!info) return;
-        totalQty += info.qty;
-        totalBins += info.bins.size;
-      });
-      return {
-        toCount: tos.length,
-        totalQty,
-        avgBins: tos.length > 0 ? Math.round(totalBins / tos.length) : 0,
-      };
-    };
-    cardBatches.forEach(b => {
-      stats.set(b.batchIndex, compute(batchAssignments.perBatch.get(b.batchIndex) || []));
+    return result;
+  }, [toRowInfo, WING_STRUCTURE]);
+
+  // Compute aggregate stats for any TO list. Returns:
+  //   toCount, totalQty, totalUniqueBins (across all TOs), avgBinPerTO (rounded),
+  //   avgQtyPerBin (Total Qty / total unique-bins-per-TO summed — matches user's rule)
+  const computeBucketStats = (toList) => {
+    let totalQty = 0;
+    let totalBinCount = 0; // sum of unique bins per TO
+    toList.forEach(to => {
+      const info = toRowInfo.get(to);
+      if (!info) return;
+      totalQty += info.qty;
+      totalBinCount += info.bins.size;
     });
-    stats.set("mixed", compute(batchAssignments.mixed));
-    return stats;
-  }, [cardBatches, batchAssignments, toRowInfo]);
+    const toCount = toList.length;
+    return {
+      toCount,
+      totalQty,
+      totalBinCount,
+      avgBinPerTO: toCount > 0 ? Math.round(totalBinCount / toCount) : 0,
+      avgQtyPerBin: totalBinCount > 0 ? (totalQty / totalBinCount) : 0,
+    };
+  };
 
-  // Unique TOs to display in the table based on selection + search + mixed sub-filter
-  const uniqueTransferOrders = useMemo(() => {
-    let list;
-    if (!selectedCardRange) {
-      list = Array.from(toRowInfo.keys());
-    } else if (selectedCardRange.type === "mixed") {
-      const base = batchAssignments.mixed;
-      if (mixedSubFilter === "all") {
-        list = base;
-      } else if (mixedSubFilter === ">5") {
-        list = base.filter(to => {
+  // Pre-computed stats for each wing top-level card (used to display Total TO, Qty, avg on the card)
+  const wingLevelStats = useMemo(() => {
+    const leftTOs = [
+      ...Object.values(wingAssignments.left.ranges).flat(),
+      ...wingAssignments.left.mixed,
+    ];
+    const rightTOs = [
+      ...Object.values(wingAssignments.right.ranges).flat(),
+      ...wingAssignments.right.mixed,
+    ];
+    return {
+      left: computeBucketStats(leftTOs),
+      right: computeBucketStats(rightTOs),
+      cross: computeBucketStats(wingAssignments.cross),
+    };
+  }, [wingAssignments, toRowInfo]);
+
+  // Resolve which list of TOs corresponds to the current wing + subcard selection.
+  const currentTOList = useMemo(() => {
+    if (!selectedWing) return Array.from(toRowInfo.keys());
+    if (selectedWing === "cross") return wingAssignments.cross;
+
+    const wingBucket = wingAssignments[selectedWing];
+    if (!selectedSubCard) {
+      // Wing selected without subcard → all TOs in this wing
+      return [
+        ...Object.values(wingBucket.ranges).flat(),
+        ...wingBucket.mixed,
+      ];
+    }
+    if (selectedSubCard.type === "range") {
+      return wingBucket.ranges[selectedSubCard.key] || [];
+    }
+    if (selectedSubCard.type === "mixed") {
+      const base = wingBucket.mixed;
+      if (mixedSubFilter === "all") return base;
+      if (mixedSubFilter === ">5") {
+        return base.filter(to => {
           const info = toRowInfo.get(to);
           return info && info.numericRows.size > 5;
         });
-      } else {
-        const target = parseInt(mixedSubFilter, 10);
-        list = base.filter(to => {
-          const info = toRowInfo.get(to);
-          return info && info.numericRows.size === target;
-        });
       }
-    } else {
-      list = batchAssignments.perBatch.get(selectedCardRange.batchIndex) || [];
+      const target = parseInt(mixedSubFilter, 10);
+      return base.filter(to => {
+        const info = toRowInfo.get(to);
+        return info && info.numericRows.size === target;
+      });
     }
+    return [];
+  }, [selectedWing, selectedSubCard, wingAssignments, mixedSubFilter, toRowInfo]);
 
+  // Unique TOs (sorted) applied with search filter — used by the table & copy.
+  const uniqueTransferOrders = useMemo(() => {
+    let list = currentTOList;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(to => String(to).toLowerCase().includes(q));
     }
     return [...list].sort();
-  }, [selectedCardRange, toRowInfo, batchAssignments, searchQuery, mixedSubFilter]);
+  }, [currentTOList, searchQuery]);
 
-  // Helper: get sorted numeric rows for a TO (used in Mixed table)
-  const getRowsForTO = (to) => {
-    const info = toRowInfo.get(to);
-    if (!info) return [];
-    return Array.from(info.numericRows).sort((a, b) => a - b);
-  };
+  // Convenience flag: is any card-level selection active? (turns on the extra columns)
+  const isFiltered = selectedWing !== null;
 
-  // Reset the mixed sub-filter whenever the top-level card selection changes
+  // Reset the mixed sub-filter whenever the sub-card or wing changes
   useEffect(() => {
     setMixedSubFilter("all");
-  }, [selectedCardRange]);
+  }, [selectedWing, selectedSubCard]);
+
+  // When switching wings, clear any sub-card selection
+  useEffect(() => {
+    setSelectedSubCard(null);
+  }, [selectedWing]);
 
   // Handle file upload — supports both CSV and XLSX/XLS via SheetJS
   const handleFileUpload = (e) => {
@@ -575,7 +624,8 @@ export default function App() {
           setTimeout(() => {
             setData(parsedRows);
             setIsGenerated(true);
-            setSelectedCardRange(null);
+            setSelectedWing(null);
+            setSelectedSubCard(null);
             setSearchQuery("");
             setUploadStatus({ active: false, phase: "", fileName: "", rowsParsed: 0 });
             toast.success(`Berhasil memuat ${parsedRows.length.toLocaleString("id-ID")} baris data dari "${file.name}"!`);
@@ -624,12 +674,14 @@ export default function App() {
     });
   };
 
-  const handleResetToDefault = () => {
-    setData(INITIAL_RAW_DATA);
-    setIsGenerated(true);
-    setSelectedCardRange(null);
+  // Reset Data — clear all loaded data (empty state, no records)
+  const handleResetData = () => {
+    setData([]);
+    setIsGenerated(false);
+    setSelectedWing(null);
+    setSelectedSubCard(null);
     setSearchQuery("");
-    toast.info("Data dikembalikan ke sampel bawaan Sourcedb.xlsx");
+    toast.info("Data upload berhasil dihapus. Silakan upload file baru.");
   };
 
   return (
@@ -655,12 +707,12 @@ export default function App() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleResetToDefault}
+              onClick={handleResetData}
               data-testid="reset-data-btn"
               className="text-xs font-medium border-slate-200 hover:bg-slate-50"
             >
               <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-teal-600" />
-              Reset Data Sampel
+              Reset Data
             </Button>
             <div className="hidden sm:flex items-center bg-teal-50 text-teal-800 text-xs px-3 py-1.5 rounded-full font-semibold border border-teal-200">
               <Sparkles className="w-3.5 h-3.5 mr-1.5 text-teal-600" />
@@ -741,71 +793,55 @@ export default function App() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                {/* Dataset Legend / Summary */}
-                <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3.5 space-y-2.5" data-testid="dataset-summary">
+              {/* Dataset Legend / Summary (full width) */}
+              <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4 space-y-3" data-testid="dataset-summary">
+                <div className="flex items-center justify-between">
                   <div className="text-xs font-semibold text-indigo-900 flex items-center">
                     <Sparkles className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
                     Ringkasan Dataset
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <div className="bg-white/85 border border-indigo-100 rounded-lg px-2 py-1.5" data-testid="summary-total-to">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total TO</div>
-                      <div className="text-sm font-bold text-indigo-700 font-mono">{datasetSummary.totalTO.toLocaleString("id-ID")}</div>
-                    </div>
-                    <div className="bg-white/85 border border-indigo-100 rounded-lg px-2 py-1.5" data-testid="summary-total-article">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total Article</div>
-                      <div className="text-sm font-bold text-indigo-700 font-mono">{datasetSummary.totalArticle.toLocaleString("id-ID")}</div>
-                    </div>
-                    <div className="bg-white/85 border border-indigo-100 rounded-lg px-2 py-1.5" data-testid="summary-total-row">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total Row</div>
-                      <div className="text-sm font-bold text-indigo-700 font-mono">{datasetSummary.totalRow.toLocaleString("id-ID")}</div>
-                    </div>
-                    <div className="bg-white/85 border border-indigo-100 rounded-lg px-2 py-1.5" data-testid="summary-total-bin">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total Bin</div>
-                      <div className="text-sm font-bold text-indigo-700 font-mono">{datasetSummary.totalBin.toLocaleString("id-ID")}</div>
-                    </div>
-                    <div className="col-span-2 bg-white/85 border border-emerald-100 rounded-lg px-2 py-1.5" data-testid="summary-total-qty">
-                      <div className="text-[10px] text-emerald-700 uppercase tracking-wider font-semibold">Total Source Target Qty</div>
-                      <div className="text-sm font-bold text-emerald-700 font-mono">{datasetSummary.totalQty.toLocaleString("id-ID")}</div>
-                    </div>
+                  <Badge variant="outline" className="text-[10px] border-indigo-200 text-indigo-700 bg-indigo-50">
+                    5 Metrik Global
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  <div className="bg-white/85 border border-indigo-100 rounded-lg px-3 py-2" data-testid="summary-total-to">
+                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total TO</div>
+                    <div className="text-sm font-bold text-indigo-700 font-mono">{datasetSummary.totalTO.toLocaleString("id-ID")}</div>
+                  </div>
+                  <div className="bg-white/85 border border-indigo-100 rounded-lg px-3 py-2" data-testid="summary-total-article">
+                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total Article</div>
+                    <div className="text-sm font-bold text-indigo-700 font-mono">{datasetSummary.totalArticle.toLocaleString("id-ID")}</div>
+                  </div>
+                  <div className="bg-white/85 border border-indigo-100 rounded-lg px-3 py-2" data-testid="summary-total-row">
+                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total Row</div>
+                    <div className="text-sm font-bold text-indigo-700 font-mono">{datasetSummary.totalRow.toLocaleString("id-ID")}</div>
+                  </div>
+                  <div className="bg-white/85 border border-indigo-100 rounded-lg px-3 py-2" data-testid="summary-total-bin">
+                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total Bin</div>
+                    <div className="text-sm font-bold text-indigo-700 font-mono">{datasetSummary.totalBin.toLocaleString("id-ID")}</div>
+                  </div>
+                  <div className="bg-white/85 border border-emerald-100 rounded-lg px-3 py-2" data-testid="summary-total-qty">
+                    <div className="text-[10px] text-emerald-700 uppercase tracking-wider font-semibold">Total Qty</div>
+                    <div className="text-sm font-bold text-emerald-700 font-mono">{datasetSummary.totalQty.toLocaleString("id-ID")}</div>
                   </div>
                 </div>
+              </div>
 
-                {/* Batch Size Selector */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col justify-between space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="batch-select" className="text-xs font-semibold text-slate-700 flex items-center">
-                      <Layers className="w-3.5 h-3.5 mr-1.5 text-teal-600" />
-                      Ukuran Card Range per Grup:
-                    </Label>
-                    <span className="text-xs font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded-md">
-                      {batchSize} Row / Card
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-6 gap-1.5">
-                    {[3, 4, 5, 6, 10, 15].map((size) => (
-                      <Button
-                        key={size}
-                        size="sm"
-                        variant={batchSize === size ? "default" : "outline"}
-                        onClick={() => {
-                          setBatchSize(size);
-                          setSelectedCardRange(null);
-                        }}
-                        data-testid={`batch-size-${size}-btn`}
-                        className={`text-xs h-8 px-1 ${batchSize === size ? "bg-teal-600 hover:bg-teal-700 text-white" : "border-slate-200 hover:bg-slate-100 text-slate-700"}`}
-                      >
-                        {size}
-                      </Button>
-                    ))}
-                  </div>
-                  <p className="text-[11px] text-slate-400">
-                    Angka = jumlah Row per card (Card 1, Card 2, dst).
-                  </p>
+              {/* Wing structure info */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px]" data-testid="wing-structure-info">
+                <div className="bg-teal-50/70 border border-teal-100 rounded-lg px-3 py-2">
+                  <div className="text-teal-800 font-semibold">Wing Kiri</div>
+                  <div className="text-teal-600 font-mono">Row 01 - 18 · sub 1-6 / 7-12 / 13-18</div>
                 </div>
-
+                <div className="bg-indigo-50/70 border border-indigo-100 rounded-lg px-3 py-2">
+                  <div className="text-indigo-800 font-semibold">Wing Kanan</div>
+                  <div className="text-indigo-600 font-mono">Row 19 - 36 · sub 19-24 / 25-30 / 31-36</div>
+                </div>
+                <div className="bg-rose-50/70 border border-rose-100 rounded-lg px-3 py-2">
+                  <div className="text-rose-800 font-semibold">Cross Wing</div>
+                  <div className="text-rose-600 font-mono">TO dengan Row di 2 wing</div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -837,11 +873,11 @@ export default function App() {
                   data-testid="search-input"
                 />
               </div>
-              {selectedCardRange && (
+              {selectedWing && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setSelectedCardRange(null)}
+                  onClick={() => { setSelectedWing(null); setSelectedSubCard(null); }}
                   className="text-xs h-9 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
                   data-testid="clear-filter-btn"
                 >
@@ -851,144 +887,226 @@ export default function App() {
             </div>
           </div>
 
-          {/* Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {cardBatches.map((batch) => {
-              const isSelected = selectedCardRange && selectedCardRange.type === "range" && selectedCardRange.batchIndex === batch.batchIndex;
-              const stats = batchStats.get(batch.batchIndex) || { toCount: 0, totalQty: 0, avgBins: 0 };
-
+          {/* Top-level Wing Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="wing-cards-grid">
+            {[
+              { key: "left", label: "Wing Kiri", range: "Row 01 - 18", color: "teal", stats: wingLevelStats.left },
+              { key: "right", label: "Wing Kanan", range: "Row 19 - 36", color: "indigo", stats: wingLevelStats.right },
+              { key: "cross", label: "Cross Wing", range: "TO Lintas Wing", color: "rose", stats: wingLevelStats.cross },
+            ].map(wing => {
+              const active = selectedWing === wing.key;
+              const c = wing.color;
+              const colorMap = {
+                teal: {
+                  activeBg: "bg-teal-50/90 border-teal-500 ring-2 ring-teal-400/30",
+                  idleBg: "bg-white border-teal-200/80 hover:border-teal-400",
+                  chipActive: "bg-teal-600 text-white",
+                  chipIdle: "bg-teal-100 text-teal-800",
+                  numColor: "text-teal-700",
+                  metaColor: "text-teal-400",
+                  arrowActive: "bg-teal-600 text-white",
+                  arrowIdle: "bg-teal-50 text-teal-500",
+                },
+                indigo: {
+                  activeBg: "bg-indigo-50/90 border-indigo-500 ring-2 ring-indigo-400/30",
+                  idleBg: "bg-white border-indigo-200/80 hover:border-indigo-400",
+                  chipActive: "bg-indigo-600 text-white",
+                  chipIdle: "bg-indigo-100 text-indigo-800",
+                  numColor: "text-indigo-700",
+                  metaColor: "text-indigo-400",
+                  arrowActive: "bg-indigo-600 text-white",
+                  arrowIdle: "bg-indigo-50 text-indigo-500",
+                },
+                rose: {
+                  activeBg: "bg-rose-50/90 border-rose-500 ring-2 ring-rose-400/30",
+                  idleBg: "bg-white border-rose-200/80 hover:border-rose-400",
+                  chipActive: "bg-rose-600 text-white",
+                  chipIdle: "bg-rose-100 text-rose-800",
+                  numColor: "text-rose-700",
+                  metaColor: "text-rose-400",
+                  arrowActive: "bg-rose-600 text-white",
+                  arrowIdle: "bg-rose-50 text-rose-500",
+                },
+              }[c];
               return (
                 <div
-                  key={batch.batchIndex}
+                  key={wing.key}
                   onClick={() => {
-                    if (isSelected) {
-                      setSelectedCardRange(null);
-                    } else {
-                      setSelectedCardRange(batch);
-                    }
+                    if (active) { setSelectedWing(null); setSelectedSubCard(null); }
+                    else setSelectedWing(wing.key);
                   }}
-                  data-testid={`card-batch-${batch.batchIndex}`}
+                  data-testid={`wing-card-${wing.key}`}
                   className={`relative p-5 rounded-2xl transition-all cursor-pointer border shadow-xs flex flex-col justify-between group ${
-                    isSelected
-                      ? "bg-teal-50/90 border-teal-500 ring-2 ring-teal-400/30 shadow-md"
-                      : "bg-white border-slate-200/80 hover:border-teal-300 hover:shadow-md hover:-translate-y-0.5"
+                    active ? colorMap.activeBg + " shadow-md" : colorMap.idleBg + " hover:shadow-md hover:-translate-y-0.5"
                   }`}
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${isSelected ? "bg-teal-600 text-white" : "bg-slate-100 text-slate-700 group-hover:bg-teal-100 group-hover:text-teal-800 transition-colors"}`}>
-                        Card {batch.batchIndex}
+                      <span className={`text-sm font-bold px-3 py-1 rounded-lg ${active ? colorMap.chipActive : colorMap.chipIdle}`}>
+                        {wing.label}
                       </span>
-                      <span className="text-[11px] font-medium text-slate-400">
-                        Row {String(batch.start).padStart(2, "0")} - {String(batch.end).padStart(2, "0")}
-                      </span>
+                      <span className={`text-[11px] font-medium ${colorMap.metaColor}`}>{wing.range}</span>
                     </div>
 
                     <div className="space-y-1 mb-3">
-                      <div className="text-xs font-semibold text-slate-700">Range Row:</div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-2xl font-bold font-mono text-teal-700">
-                          {String(batch.start).padStart(2, "0")}
-                        </span>
-                        <span className="text-slate-400 text-sm">→</span>
-                        <span className="text-2xl font-bold font-mono text-teal-700">
-                          {String(batch.end).padStart(2, "0")}
-                        </span>
+                      <div className="text-xs font-semibold text-slate-700">Total TO:</div>
+                      <div className={`text-3xl font-bold font-mono ${colorMap.numColor}`}>
+                        {wing.stats.toCount.toLocaleString("id-ID")}
                       </div>
                     </div>
 
-                    {/* Card metric chips: Qty + Avg Bin/TO */}
-                    <div className="grid grid-cols-2 gap-1.5 mb-1" data-testid={`card-metrics-${batch.batchIndex}`}>
+                    {/* Wing metric chips: Total Qty, Avg Bin/TO, Avg Qty/Bin */}
+                    <div className="grid grid-cols-3 gap-1.5 mb-1" data-testid={`wing-metrics-${wing.key}`}>
                       <div className="bg-emerald-50/70 border border-emerald-100 rounded-md px-2 py-1">
                         <div className="text-[9px] uppercase font-semibold tracking-wider text-emerald-700">Total Qty</div>
-                        <div className="text-xs font-bold font-mono text-emerald-800">{stats.totalQty.toLocaleString("id-ID")}</div>
+                        <div className="text-xs font-bold font-mono text-emerald-800">{wing.stats.totalQty.toLocaleString("id-ID")}</div>
                       </div>
                       <div className="bg-indigo-50/70 border border-indigo-100 rounded-md px-2 py-1">
                         <div className="text-[9px] uppercase font-semibold tracking-wider text-indigo-700">Avg Bin/TO</div>
-                        <div className="text-xs font-bold font-mono text-indigo-800">{stats.avgBins} Loc</div>
+                        <div className="text-xs font-bold font-mono text-indigo-800">{wing.stats.avgBinPerTO}</div>
+                      </div>
+                      <div className="bg-amber-50/70 border border-amber-100 rounded-md px-2 py-1">
+                        <div className="text-[9px] uppercase font-semibold tracking-wider text-amber-700">Avg Qty/Bin</div>
+                        <div className="text-xs font-bold font-mono text-amber-800">{wing.stats.avgQtyPerBin.toFixed(1)}</div>
                       </div>
                     </div>
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Transfer Orders</div>
-                      <div className="text-xs font-bold text-slate-800">{stats.toCount.toLocaleString("id-ID")} TO Unik</div>
+                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                      {active ? "Aktif · klik untuk tutup" : "Klik untuk buka sub-card"}
                     </div>
-                    <div className={`p-2 rounded-full transition-all ${isSelected ? "bg-teal-600 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-teal-50 group-hover:text-teal-600"}`}>
+                    <div className={`p-2 rounded-full transition-all ${active ? colorMap.arrowActive : colorMap.arrowIdle + " group-hover:bg-opacity-80"}`}>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </div>
                   </div>
                 </div>
               );
             })}
-
-            {/* Mixed Row Card — TOs whose rows span across multiple card ranges */}
-            {cardBatches.length > 0 && (() => {
-              const isSelected = selectedCardRange && selectedCardRange.type === "mixed";
-              const mixedTOs = batchAssignments.mixed;
-              return (
-                <div
-                  key="mixed-card"
-                  onClick={() => {
-                    if (isSelected) setSelectedCardRange(null);
-                    else setSelectedCardRange({ type: "mixed", batchIndex: "mixed" });
-                  }}
-                  data-testid="card-batch-mixed"
-                  className={`relative p-5 rounded-2xl transition-all cursor-pointer border shadow-xs flex flex-col justify-between group ${
-                    isSelected
-                      ? "bg-amber-50/90 border-amber-500 ring-2 ring-amber-400/30 shadow-md"
-                      : "bg-white border-amber-200/80 hover:border-amber-400 hover:shadow-md hover:-translate-y-0.5"
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${isSelected ? "bg-amber-600 text-white" : "bg-amber-100 text-amber-800 group-hover:bg-amber-200 transition-colors"}`}>
-                        Mixed Row
-                      </span>
-                      <span className="text-[11px] font-medium text-amber-500 flex items-center">
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        Nyebar
-                      </span>
-                    </div>
-
-                    <div className="space-y-1 mb-3">
-                      <div className="text-xs font-semibold text-slate-700">TO Lintas Range:</div>
-                      <div className="text-xs text-slate-500 leading-relaxed">
-                        TO yang punya item di lebih dari 1 range card.
-                      </div>
-                    </div>
-
-                    {/* Mixed card metric chips */}
-                    <div className="grid grid-cols-2 gap-1.5 mb-1" data-testid="card-metrics-mixed">
-                      <div className="bg-emerald-50/70 border border-emerald-100 rounded-md px-2 py-1">
-                        <div className="text-[9px] uppercase font-semibold tracking-wider text-emerald-700">Total Qty</div>
-                        <div className="text-xs font-bold font-mono text-emerald-800">{(batchStats.get("mixed")?.totalQty || 0).toLocaleString("id-ID")}</div>
-                      </div>
-                      <div className="bg-indigo-50/70 border border-indigo-100 rounded-md px-2 py-1">
-                        <div className="text-[9px] uppercase font-semibold tracking-wider text-indigo-700">Avg Bin/TO</div>
-                        <div className="text-xs font-bold font-mono text-indigo-800">{(batchStats.get("mixed")?.avgBins || 0)} Loc</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-amber-100 flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] text-amber-500 uppercase tracking-wider font-semibold">Transfer Orders</div>
-                      <div className="text-xs font-bold text-slate-800">{mixedTOs.length.toLocaleString("id-ID")} TO Unik</div>
-                    </div>
-                    <div className={`p-2 rounded-full transition-all ${isSelected ? "bg-amber-600 text-white" : "bg-amber-50 text-amber-500 group-hover:bg-amber-100 group-hover:text-amber-700"}`}>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
           </div>
 
-          {/* Mixed Row Sub-Filter chips — visible only when Mixed card is selected */}
-          {selectedCardRange && selectedCardRange.type === "mixed" && (() => {
-            const mixed = batchAssignments.mixed;
+          {/* Sub-cards panel for selected Wing (Kiri/Kanan only). Cross Wing filters directly. */}
+          {selectedWing && selectedWing !== "cross" && (() => {
+            const wingDef = WING_STRUCTURE[selectedWing];
+            const wingBucket = wingAssignments[selectedWing];
+            const wingColor = selectedWing === "left" ? "teal" : "indigo";
+            const activeChipBg = wingColor === "teal" ? "bg-teal-600 text-white" : "bg-indigo-600 text-white";
+            const idleChipBg = wingColor === "teal" ? "bg-teal-100 text-teal-800" : "bg-indigo-100 text-indigo-800";
+            const idleBorder = wingColor === "teal" ? "border-teal-200/80 hover:border-teal-400" : "border-indigo-200/80 hover:border-indigo-400";
+            const activeRing = wingColor === "teal" ? "border-teal-500 ring-2 ring-teal-400/30 bg-teal-50/70" : "border-indigo-500 ring-2 ring-indigo-400/30 bg-indigo-50/70";
+            const numColor = wingColor === "teal" ? "text-teal-700" : "text-indigo-700";
+            return (
+              <div
+                className={`mt-2 p-4 rounded-2xl border ${wingColor === "teal" ? "bg-teal-50/40 border-teal-200/60" : "bg-indigo-50/40 border-indigo-200/60"}`}
+                data-testid={`subcards-panel-${selectedWing}`}
+              >
+                <div className="text-xs font-semibold text-slate-700 mb-3 flex items-center">
+                  <Layers className={`w-3.5 h-3.5 mr-1.5 ${wingColor === "teal" ? "text-teal-600" : "text-indigo-600"}`} />
+                  Sub-card {wingDef.label} — pilih rentang atau Mixed:
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {/* Range sub-cards */}
+                  {wingDef.subRanges.map(sr => {
+                    const tos = wingBucket.ranges[sr.key] || [];
+                    const stats = computeBucketStats(tos);
+                    const active = selectedSubCard && selectedSubCard.type === "range" && selectedSubCard.wing === selectedWing && selectedSubCard.key === sr.key;
+                    return (
+                      <div
+                        key={sr.key}
+                        onClick={() => {
+                          if (active) setSelectedSubCard(null);
+                          else setSelectedSubCard({ type: "range", wing: selectedWing, key: sr.key, start: sr.start, end: sr.end });
+                        }}
+                        data-testid={`subcard-range-${selectedWing}-${sr.key}`}
+                        className={`p-4 rounded-xl border cursor-pointer transition-all bg-white ${
+                          active ? activeRing + " shadow-md" : idleBorder + " hover:shadow-md hover:-translate-y-0.5"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${active ? activeChipBg : idleChipBg}`}>
+                            {wingDef.shortLabel} {sr.key}
+                          </span>
+                          <span className="text-[10px] font-medium text-slate-400">Row {String(sr.start).padStart(2, "0")}-{String(sr.end).padStart(2, "0")}</span>
+                        </div>
+                        <div className={`text-2xl font-bold font-mono mb-2 ${numColor}`}>
+                          {stats.toCount.toLocaleString("id-ID")}
+                          <span className="text-[10px] text-slate-400 font-normal ml-1">TO Unik</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1">
+                          <div className="bg-emerald-50/70 border border-emerald-100 rounded px-1.5 py-1">
+                            <div className="text-[8px] uppercase font-semibold tracking-wider text-emerald-700">Qty</div>
+                            <div className="text-[11px] font-bold font-mono text-emerald-800">{stats.totalQty.toLocaleString("id-ID")}</div>
+                          </div>
+                          <div className="bg-indigo-50/70 border border-indigo-100 rounded px-1.5 py-1">
+                            <div className="text-[8px] uppercase font-semibold tracking-wider text-indigo-700">Bin/TO</div>
+                            <div className="text-[11px] font-bold font-mono text-indigo-800">{stats.avgBinPerTO}</div>
+                          </div>
+                          <div className="bg-amber-50/70 border border-amber-100 rounded px-1.5 py-1">
+                            <div className="text-[8px] uppercase font-semibold tracking-wider text-amber-700">Qty/Bin</div>
+                            <div className="text-[11px] font-bold font-mono text-amber-800">{stats.avgQtyPerBin.toFixed(1)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Mixed Wing sub-card */}
+                  {(() => {
+                    const tos = wingBucket.mixed;
+                    const stats = computeBucketStats(tos);
+                    const active = selectedSubCard && selectedSubCard.type === "mixed" && selectedSubCard.wing === selectedWing;
+                    return (
+                      <div
+                        onClick={() => {
+                          if (active) setSelectedSubCard(null);
+                          else setSelectedSubCard({ type: "mixed", wing: selectedWing, key: "mixed" });
+                        }}
+                        data-testid={`subcard-mixed-${selectedWing}`}
+                        className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                          active
+                            ? "bg-amber-50 border-amber-500 ring-2 ring-amber-400/30 shadow-md"
+                            : "bg-white border-amber-200 hover:border-amber-400 hover:shadow-md hover:-translate-y-0.5"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${active ? "bg-amber-600 text-white" : "bg-amber-100 text-amber-800"}`}>
+                            Mixed {wingDef.shortLabel}
+                          </span>
+                          <span className="text-[10px] font-medium text-amber-500 flex items-center">
+                            <AlertCircle className="w-3 h-3 mr-0.5" />
+                            Nyebar
+                          </span>
+                        </div>
+                        <div className="text-2xl font-bold font-mono mb-2 text-amber-700">
+                          {stats.toCount.toLocaleString("id-ID")}
+                          <span className="text-[10px] text-slate-400 font-normal ml-1">TO Unik</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1">
+                          <div className="bg-emerald-50/70 border border-emerald-100 rounded px-1.5 py-1">
+                            <div className="text-[8px] uppercase font-semibold tracking-wider text-emerald-700">Qty</div>
+                            <div className="text-[11px] font-bold font-mono text-emerald-800">{stats.totalQty.toLocaleString("id-ID")}</div>
+                          </div>
+                          <div className="bg-indigo-50/70 border border-indigo-100 rounded px-1.5 py-1">
+                            <div className="text-[8px] uppercase font-semibold tracking-wider text-indigo-700">Bin/TO</div>
+                            <div className="text-[11px] font-bold font-mono text-indigo-800">{stats.avgBinPerTO}</div>
+                          </div>
+                          <div className="bg-amber-100/70 border border-amber-200 rounded px-1.5 py-1">
+                            <div className="text-[8px] uppercase font-semibold tracking-wider text-amber-700">Qty/Bin</div>
+                            <div className="text-[11px] font-bold font-mono text-amber-800">{stats.avgQtyPerBin.toFixed(1)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Mixed sub-filter chips (only when Mixed sub-card is selected) */}
+          {selectedSubCard && selectedSubCard.type === "mixed" && (() => {
+            const wingBucket = wingAssignments[selectedSubCard.wing];
+            const mixed = wingBucket.mixed;
             const bucketAgg = (predicate) => mixed.reduce((acc, to) => {
               const info = toRowInfo.get(to);
               if (!info) return acc;
@@ -1000,8 +1118,9 @@ export default function App() {
               return acc;
             }, { count: 0, qty: 0 });
             const all = bucketAgg(null);
+            const wingShort = WING_STRUCTURE[selectedSubCard.wing].shortLabel;
             const buckets = [
-              { key: "all", label: "Semua Mixed", ...all },
+              { key: "all", label: `Semua Mixed ${wingShort}`, ...all },
               { key: "2", label: "2 Row", ...bucketAgg(n => n === 2) },
               { key: "3", label: "3 Row", ...bucketAgg(n => n === 3) },
               { key: "4", label: "4 Row", ...bucketAgg(n => n === 4) },
@@ -1010,13 +1129,13 @@ export default function App() {
             ];
             return (
               <div
-                className="mt-4 bg-amber-50/60 border border-amber-200 rounded-2xl px-4 py-3"
+                className="bg-amber-50/60 border border-amber-200 rounded-2xl px-4 py-3"
                 data-testid="mixed-subfilter-bar"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2.5">
                   <div className="flex items-center text-xs font-semibold text-amber-900">
                     <Filter className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
-                    Sub-filter Mixed Row — kelompokkan berdasarkan jumlah Row per TO:
+                    Sub-filter Mixed {wingShort} — kelompokkan berdasarkan jumlah Row per TO:
                   </div>
                   <span className="text-[11px] text-amber-700 font-medium">
                     Aktif: <span className="font-bold">{buckets.find(b => b.key === mixedSubFilter)?.label}</span>
@@ -1074,21 +1193,34 @@ export default function App() {
                 </CardTitle>
                 <CardDescription className="text-xs" data-testid="table-caption">
                   {(() => {
-                    if (selectedCardRange && selectedCardRange.type === "range") {
-                      return `Menampilkan TO yang SEMUA item Row-nya ada di Card ${selectedCardRange.batchIndex} (Range ${String(selectedCardRange.start).padStart(2, "0")} - ${String(selectedCardRange.end).padStart(2, "0")})`;
-                    }
-                    if (selectedCardRange && selectedCardRange.type === "mixed") {
-                      const bucketLabel = mixedSubFilter === "all"
-                        ? "semua"
-                        : mixedSubFilter === ">5"
-                          ? "lebih dari 5 Row"
-                          : `tepat ${mixedSubFilter} Row`;
-                      return `Menampilkan TO Mixed Row (${bucketLabel}) — TO yang item Row-nya nyebar di lebih dari 1 range card`;
-                    }
-                    if (searchQuery) {
+                    if (!selectedWing && searchQuery) {
                       return `Hasil pencarian untuk "${searchQuery}"`;
                     }
-                    return "Menampilkan semua Transfer Order Number unik (Pilih card di atas untuk memfilter)";
+                    if (!selectedWing) {
+                      return "Menampilkan semua Transfer Order Number unik (Pilih Wing di atas untuk memfilter)";
+                    }
+                    if (selectedWing === "cross") {
+                      return "Menampilkan TO Cross Wing — TO yang item Row-nya berada di kedua wing (Kiri & Kanan) atau di luar Row 1-36";
+                    }
+                    const wingLabel = WING_STRUCTURE[selectedWing].label;
+                    if (!selectedSubCard) {
+                      return `Menampilkan SEMUA TO di ${wingLabel} (pilih sub-card untuk fokus ke rentang tertentu)`;
+                    }
+                    if (selectedSubCard.type === "range") {
+                      return `Menampilkan TO ${wingLabel} yang SEMUA item Row-nya ada di rentang ${selectedSubCard.key}`;
+                    }
+                    if (selectedSubCard.type === "mixed") {
+                      let bucketLabel;
+                      if (mixedSubFilter === "all") {
+                        bucketLabel = "semua";
+                      } else if (mixedSubFilter === ">5") {
+                        bucketLabel = "lebih dari 5 Row";
+                      } else {
+                        bucketLabel = `tepat ${mixedSubFilter} Row`;
+                      }
+                      return `Menampilkan TO Mixed ${WING_STRUCTURE[selectedSubCard.wing].shortLabel} (${bucketLabel}) — TO yang item Row-nya nyebar di lebih dari 1 sub-range wing`;
+                    }
+                    return "";
                   })()}
                 </CardDescription>
               </div>
@@ -1121,7 +1253,7 @@ export default function App() {
                   <tr>
                     <th className="py-3 px-4 w-16">No</th>
                     <th className="py-3 px-4 text-teal-800 font-bold bg-teal-50">Transfer Order Number</th>
-                    {selectedCardRange && (
+                    {isFiltered && (
                       <>
                         <th className="py-3 px-4 text-indigo-800 font-bold bg-indigo-50 w-28">Total Bin</th>
                         <th className="py-3 px-4 text-rose-800 font-bold bg-rose-50 w-28">Total Article</th>
@@ -1143,7 +1275,7 @@ export default function App() {
                         <tr key={to} data-testid={`to-row-${idx}`} className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-2.5 px-4 text-slate-400 font-mono">{idx + 1}</td>
                           <td className="py-2.5 px-4 font-bold font-mono text-teal-800 text-sm">{to}</td>
-                          {selectedCardRange && (
+                          {isFiltered && (
                             <>
                               <td className="py-2.5 px-4 bg-indigo-50/40 font-mono font-semibold text-indigo-800" data-testid={`total-bin-${idx}`}>{totalBin.toLocaleString("id-ID")}</td>
                               <td className="py-2.5 px-4 bg-rose-50/40 font-mono font-semibold text-rose-800" data-testid={`total-article-${idx}`}>{totalArticle.toLocaleString("id-ID")}</td>
@@ -1164,7 +1296,7 @@ export default function App() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={selectedCardRange ? "6" : "2"} className="py-12 text-center text-slate-400">
+                      <td colSpan={isFiltered ? "6" : "2"} className="py-12 text-center text-slate-400">
                         Tidak ada Transfer Order Number yang sesuai dengan filter saat ini.
                       </td>
                     </tr>

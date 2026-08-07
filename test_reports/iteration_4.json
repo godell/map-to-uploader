@@ -1,0 +1,28 @@
+{
+  "summary": "Iteration 4 major refactor verified end-to-end. All new wing/sub-card/mixed-chip testids exist and behave correctly. Data assignment matches spec exactly: Wing Kiri=3 TO (Qty 33, Avg Bin/TO 3, Avg Qty/Bin 4.1), Wing Kanan=2 TO (Qty 8, 1, 4.0), Cross Wing=7 TO (Qty 45, 1, 6.4). Sub-cards distribution correct: Kiri 1-6=1 TO (5330157, Qty 2), Kiri 7-12=0, Kiri 13-18=0, Mixed Kiri=2 TO Qty 31. Kanan 19-24=1 (Qty 2), 25-30=1 (Qty 6), 31-36=0, Mixed Kanan=0. Mixed chips: Semua=2/31, 2 Row=1/9 (5330147), 3 Row=0, 4 Row=1/22 (5330146), 5 Row=0, >5=0. Cross Wing click does NOT open subcards panel and shows 7 TOs. Clear filter resets header to only [No | Transfer Order Number]. Search input filters correctly. Reset Data clears dataset to 0 records. No React console errors/warnings observed during full interaction flow.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "After Reset Data", "issues": ["Spec says 'hides card grid' after Reset Data, but the 3 wing cards + sub-card region remain visible with 0 values (screenshot confirms). Minor UX deviation from spec; either update spec or hide cards when dataset is empty."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_frontend_e2e.py"],
+  "action_items": [
+    "Optional: after Reset Data, consider hiding the '3. Menu Card Range' section entirely (or show an empty-state placeholder) since spec explicitly mentions 'hides card grid'. Currently cards render with all-zero metrics.",
+    "Optional cleanup: header badge text 'Records Loaded' + '0' wraps as two lines in DOM (regex captured 'Records Loaded\\n1' — the '1' actually belongs to a following element). Purely cosmetic — screenshot renders correctly as '0 Records Loaded'."
+  ],
+  "critical_code_review_comments": [
+    "App.js is ~1370 lines — consider splitting into components/hooks (WingCard, SubCardPanel, MixedSubFilterBar, TOTable, useWingAssignments hook) to improve maintainability and testability.",
+    "computeBucketStats is called from a useMemo but declared outside useCallback — memoization dependencies (toRowInfo) are captured via closure. Not a bug because it's recreated each render, but wrapping in useCallback would be cleaner.",
+    "wingLevelStats useMemo dependency list omits WING_STRUCTURE and computeBucketStats — since these are stable per-render this is fine, but ESLint react-hooks/exhaustive-deps may flag it."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100% (all functional testids and metrics validated); 1 minor spec deviation"},
+  "seed_data_creation": "None — used built-in INITIAL_RAW_DATA (17 rows) as documented in mocked_api.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Frontend hierarchy fully working: wing-card-{left|right|cross} → subcards-panel-{left|right} with subcard-range-{wing}-{key} + subcard-mixed-{wing} → mixed-subfilter-{all|2|3|4|5|gt5}. Cross Wing has no subcards. Reset Data clears data to []. Clear-filter-btn resets wing+subcard. Only remaining spec deviation is cosmetic (cards still visible with 0 metrics after Reset Data).",
+  "rca of the issue": "N/A — no functional bugs found."
+}
