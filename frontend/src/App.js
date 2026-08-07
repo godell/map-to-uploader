@@ -887,6 +887,23 @@ export default function App() {
             </div>
           </div>
 
+          {data.length === 0 ? (
+            <div
+              className="bg-white border border-dashed border-slate-300 rounded-2xl p-10 flex flex-col items-center justify-center text-center"
+              data-testid="empty-state"
+            >
+              <div className="w-14 h-14 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-3">
+                <Database className="w-6 h-6 text-slate-400" />
+              </div>
+              <div className="text-sm font-semibold text-slate-700 mb-1">
+                Belum ada data yang di-upload.
+              </div>
+              <div className="text-xs text-slate-400 max-w-md">
+                Upload file <span className="font-mono">Sourcedb.xlsx</span> atau CSV di panel <strong>1. Upload Data Sumber</strong> di atas untuk mulai memfilter Transfer Order.
+              </div>
+            </div>
+          ) : (
+          <>
           {/* Top-level Wing Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="wing-cards-grid">
             {[
@@ -1180,6 +1197,8 @@ export default function App() {
               </div>
             );
           })()}
+          </>
+          )}
         </div>
 
         {/* Step 4: SAP Transfer Order Table & Copy-Paste Section */}
