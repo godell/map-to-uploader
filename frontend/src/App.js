@@ -4,8 +4,9 @@ import {
   FileSpreadsheet, Upload, Download, Copy, Check, Filter, 
   Layers, RefreshCw, Eye, ArrowRight, CheckCircle2, AlertCircle,
   Database, HelpCircle, Sparkles, SlidersHorizontal, Table as TableIcon,
-  Search, Loader2
+  Search, Loader2, Printer, Package, Users, AlertTriangle, X
 } from "lucide-react";
+import axios from "axios";
 import * as XLSX from "xlsx";
 import { Button } from "./components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
@@ -14,6 +15,9 @@ import { Badge } from "./components/ui/badge";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 import { toast } from "sonner";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 // Initial mock dataset from the user's uploaded Sourcedb.xlsx
 const INITIAL_RAW_DATA = [
@@ -319,6 +323,16 @@ export default function App() {
   const [mixedSubFilter, setMixedSubFilter] = useState("all"); // "all" | "2" | "3" | "4" | "5" | ">5"
   const [copyPulse, setCopyPulse] = useState(false); // ephemeral flag for enhanced copy feedback
 
+  // ── Batch Picking (Cross Wing) state ──
+  const [batchPickingOpen, setBatchPickingOpen] = useState(false); // true if BP sub-card selected
+  const [batchSize, setBatchSize] = useState(null); // null | 10 | 15 | 20 | 25 | 30 | custom number
+  const [customBatchSize, setCustomBatchSize] = useState("");
+  const [selectedBatchNumber, setSelectedBatchNumber] = useState(null); // 1..N
+  const [pickerCount, setPickerCount] = useState(3);
+  const [printModalOpen, setPrintModalOpen] = useState(false);
+  const [printWarning, setPrintWarning] = useState(null); // { previousPrints: [] } | null
+  const [isPrinting, setIsPrinting] = useState(false);
+
   const processedData = useMemo(() => {
     return processDataset(data);
   }, [data]);
@@ -496,10 +510,103 @@ export default function App() {
     };
   }, [wingAssignments, toRowInfo]);
 
+  // ── Batch Picking computation (only relevant when Cross Wing is selected + batchSize chosen) ──
+  // Deterministic sort of Cross Wing TOs by TO number ascending.
+  const crossWingTOsSorted = useMemo(() => {
+    return [...wingAssignments.cross].sort();
+  }, [wingAssignments.cross]);
+
+  // Split into batches of `batchSize`. Each TO gets a running global unique code
+  // (Batch 1: codes 1..bs, Batch 2: codes bs+1..2bs, dst).
+  const batches = useMemo(() => {
+    if (!batchSize || batchSize <= 0) return [];
+    const result = [];
+    let running = 1;
+    for (let i = 0; i < crossWingTOsSorted.length; i += batchSize) {
+      const chunk = crossWingTOsSorted.slice(i, i + batchSize);
+      const codedTOs = chunk.map((to, idx) => ({ code: running + idx, to }));
+      running += chunk.length;
+      const stats = computeBucketStats(chunk);
+      result.push({
+        batchNumber: result.length + 1,
+        tos: chunk,
+        codedTOs,
+        stats,
+      });
+    }
+    return result;
+  }, [crossWingTOsSorted, batchSize]);
+
+  const selectedBatch = useMemo(() => {
+    if (!selectedBatchNumber) return null;
+    return batches.find(b => b.batchNumber === selectedBatchNumber) || null;
+  }, [batches, selectedBatchNumber]);
+
+  // Build per-picker item plan for a given batch. Groups by physical Row across all items in TOs.
+  // Balances by assigning each Row (in ascending order) to the picker with the lowest running item count.
+  const buildPickerPlan = (batch, pickerCountNum) => {
+    if (!batch) return [];
+    // Collect all items belonging to batch's TOs from processedData
+    const toSet = new Set(batch.tos);
+    const items = processedData.filter(item => toSet.has(item["Transfer Order Number"]));
+    // Group items by their raw Source Storage Bin's row segment (numeric or raw)
+    const groups = new Map();
+    items.forEach(it => {
+      const row = it.Row || "??";
+      if (!groups.has(row)) groups.set(row, []);
+      groups.get(row).push(it);
+    });
+    // Sort row keys ascending (numeric-aware)
+    const rows = Array.from(groups.keys()).sort((a, b) => {
+      const na = parseInt(a, 10);
+      const nb = parseInt(b, 10);
+      if (Number.isNaN(na) && Number.isNaN(nb)) return String(a).localeCompare(String(b));
+      if (Number.isNaN(na)) return 1;
+      if (Number.isNaN(nb)) return -1;
+      return na - nb;
+    });
+    // Initialize picker buckets
+    const pickers = Array.from({ length: pickerCountNum }, (_, i) => ({
+      pickerIndex: i + 1,
+      rows: [],
+      items: [],
+      itemCount: 0,
+    }));
+    // Greedy: for each row (largest first — Longest Processing Time heuristic), assign to lightest picker
+    rows.sort((a, b) => groups.get(b).length - groups.get(a).length);
+    rows.forEach(rowKey => {
+      const rowItems = groups.get(rowKey);
+      const lightest = pickers.reduce((min, p) => (p.itemCount < min.itemCount ? p : min), pickers[0]);
+      lightest.rows.push(rowKey);
+      lightest.items = lightest.items.concat(rowItems);
+      lightest.itemCount += rowItems.length;
+    });
+    // Sort each picker's items by Row asc then Bin asc for travel order
+    pickers.forEach(p => {
+      p.rows.sort((a, b) => {
+        const na = parseInt(a, 10);
+        const nb = parseInt(b, 10);
+        return (Number.isNaN(na) ? 999 : na) - (Number.isNaN(nb) ? 999 : nb);
+      });
+      p.items.sort((a, b) => {
+        const ra = parseInt(a.Row, 10);
+        const rb = parseInt(b.Row, 10);
+        const rDiff = (Number.isNaN(ra) ? 999 : ra) - (Number.isNaN(rb) ? 999 : rb);
+        if (rDiff !== 0) return rDiff;
+        return String(a["Source Storage Bin"] || "").localeCompare(String(b["Source Storage Bin"] || ""));
+      });
+    });
+    return pickers;
+  };
+
   // Resolve which list of TOs corresponds to the current wing + subcard selection.
   const currentTOList = useMemo(() => {
     if (!selectedWing) return Array.from(toRowInfo.keys());
-    if (selectedWing === "cross") return wingAssignments.cross;
+    if (selectedWing === "cross") {
+      // Cross Wing: default is all cross TOs. If a batch is selected, narrow to that batch.
+      if (selectedBatch) return selectedBatch.tos;
+      return wingAssignments.cross;
+    }
 
     const wingBucket = wingAssignments[selectedWing];
     if (!selectedSubCard) {
@@ -528,7 +635,7 @@ export default function App() {
       });
     }
     return [];
-  }, [selectedWing, selectedSubCard, wingAssignments, mixedSubFilter, toRowInfo]);
+  }, [selectedWing, selectedSubCard, wingAssignments, mixedSubFilter, toRowInfo, selectedBatch]);
 
   // Unique TOs (sorted) applied with search filter — used by the table & copy.
   const uniqueTransferOrders = useMemo(() => {
@@ -543,10 +650,86 @@ export default function App() {
   // Convenience flag: is any card-level selection active? (turns on the extra columns)
   const isFiltered = selectedWing !== null;
 
+  // ── Batch Picking helpers ──
+  const formatBatchCode = (batchNumber) => {
+    const d = new Date();
+    const yy = String(d.getFullYear()).slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `PTF-Batch-${batchNumber}-${yy}${mm}${dd}`;
+  };
+
+  // Trigger print flow: check backend for previous prints, then either warn or proceed.
+  const handleRequestPrint = async () => {
+    if (!selectedBatch) return;
+    try {
+      const res = await axios.post(`${API}/pick-tickets/check`, {
+        to_numbers: selectedBatch.tos,
+      });
+      const prev = res.data?.previous_prints || [];
+      if (prev.length > 0) {
+        // Keep modal open with warning inside
+        setPrintWarning({ previousPrints: prev });
+      } else {
+        setPrintWarning(null);
+        setPrintModalOpen(false);
+        proceedWithPrint();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal memeriksa riwayat print. Melanjutkan tanpa cek duplikat.");
+      setPrintModalOpen(false);
+      proceedWithPrint();
+    }
+  };
+
+  // Actually render the print view + trigger browser print + save to backend
+  const proceedWithPrint = async () => {
+    if (!selectedBatch) return;
+    setPrintWarning(null);
+    setIsPrinting(true);
+
+    // Give React a tick to mount the print view before invoking window.print()
+    setTimeout(async () => {
+      try {
+        window.print();
+      } finally {
+        // Save the print event regardless of user's print-dialog action (best-effort)
+        try {
+          await axios.post(`${API}/pick-tickets`, {
+            batch_code: formatBatchCode(selectedBatch.batchNumber),
+            batch_number: selectedBatch.batchNumber,
+            batch_size: batchSize,
+            picker_count: pickerCount,
+            to_numbers: selectedBatch.tos,
+          });
+          toast.success(`Pick ticket Batch ${selectedBatch.batchNumber} berhasil disimpan di history.`);
+        } catch (e) {
+          console.error(e);
+          toast.error("Print sukses, tetapi gagal menyimpan history di backend.");
+        }
+        setIsPrinting(false);
+      }
+    }, 200);
+  };
+
   // Reset the mixed sub-filter whenever the sub-card or wing changes
   useEffect(() => {
     setMixedSubFilter("all");
   }, [selectedWing, selectedSubCard]);
+
+  // Reset batch picking state whenever the wing changes
+  useEffect(() => {
+    setBatchPickingOpen(false);
+    setBatchSize(null);
+    setCustomBatchSize("");
+    setSelectedBatchNumber(null);
+  }, [selectedWing]);
+
+  // Reset selected batch when batch size changes
+  useEffect(() => {
+    setSelectedBatchNumber(null);
+  }, [batchSize]);
 
   // When switching wings, clear any sub-card selection
   useEffect(() => {
@@ -1120,6 +1303,122 @@ export default function App() {
             );
           })()}
 
+          {/* Cross Wing → Batch Picking Sub-Card */}
+          {selectedWing === "cross" && (
+            <div className="p-4 rounded-2xl border bg-rose-50/40 border-rose-200/60" data-testid="cross-wing-panel">
+              <div className="text-xs font-semibold text-slate-700 mb-3 flex items-center">
+                <Package className="w-3.5 h-3.5 mr-1.5 text-rose-600" />
+                Cross Wing — pilih Batch Picking untuk membagi beban picker:
+              </div>
+
+              <div
+                onClick={() => setBatchPickingOpen(!batchPickingOpen)}
+                data-testid="subcard-batch-picking"
+                className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                  batchPickingOpen
+                    ? "bg-rose-50 border-rose-500 ring-2 ring-rose-400/30 shadow-md"
+                    : "bg-white border-rose-200 hover:border-rose-400 hover:shadow-md"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-lg ${batchPickingOpen ? "bg-rose-600 text-white" : "bg-rose-100 text-rose-700"}`}>
+                      <Package className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-800">Batch Picking</div>
+                      <div className="text-[11px] text-slate-500">Bagi {wingAssignments.cross.length} TO Cross Wing jadi batch, print pick ticket rata per picker.</div>
+                    </div>
+                  </div>
+                  <ArrowRight className={`w-4 h-4 transition-transform ${batchPickingOpen ? "rotate-90 text-rose-600" : "text-rose-400"}`} />
+                </div>
+              </div>
+
+              {batchPickingOpen && (
+                <div className="mt-3 bg-white border border-rose-200/70 rounded-xl p-3.5" data-testid="batch-size-selector">
+                  <div className="text-xs font-semibold text-slate-700 mb-2 flex items-center">
+                    <Layers className="w-3.5 h-3.5 mr-1.5 text-rose-500" />
+                    Pilih ukuran batch (jumlah TO per batch):
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[10, 15, 20, 25, 30].map(size => {
+                      const active = batchSize === size;
+                      return (
+                        <button
+                          key={size}
+                          onClick={() => { setBatchSize(size); setCustomBatchSize(""); }}
+                          data-testid={`batch-size-${size}`}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all ${
+                            active ? "bg-rose-600 border-rose-600 text-white shadow-sm" : "bg-white border-rose-200 text-rose-800 hover:bg-rose-50"
+                          }`}
+                        >
+                          {size} TO
+                        </button>
+                      );
+                    })}
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={200}
+                        placeholder="Custom"
+                        value={customBatchSize}
+                        onChange={(e) => setCustomBatchSize(e.target.value)}
+                        data-testid="batch-size-custom-input"
+                        className="h-9 w-24 text-xs border-rose-200"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const n = parseInt(customBatchSize, 10);
+                          if (!Number.isNaN(n) && n > 0) setBatchSize(n);
+                          else toast.error("Custom batch size harus angka > 0");
+                        }}
+                        data-testid="batch-size-custom-apply"
+                        className="h-9 text-xs bg-rose-600 hover:bg-rose-700"
+                      >
+                        Set
+                      </Button>
+                    </div>
+                  </div>
+
+                  {batchSize && batches.length > 0 && (
+                    <>
+                      <div className="text-xs text-slate-600 mt-3 mb-2">
+                        Terbagi menjadi <span className="font-bold text-rose-700">{batches.length}</span> batch (@ {batchSize} TO). Pilih batch untuk print:
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2" data-testid="batch-grid">
+                        {batches.map(b => {
+                          const active = selectedBatchNumber === b.batchNumber;
+                          return (
+                            <button
+                              key={b.batchNumber}
+                              onClick={() => setSelectedBatchNumber(active ? null : b.batchNumber)}
+                              data-testid={`batch-card-${b.batchNumber}`}
+                              className={`text-left rounded-lg border p-2.5 transition-all ${
+                                active ? "bg-rose-600 border-rose-600 text-white shadow-sm" : "bg-white border-rose-200 hover:border-rose-400"
+                              }`}
+                            >
+                              <div className={`text-[10px] uppercase font-semibold tracking-wider ${active ? "text-white/80" : "text-rose-500"}`}>Batch</div>
+                              <div className={`text-lg font-bold font-mono ${active ? "text-white" : "text-rose-800"}`}>{b.batchNumber}</div>
+                              <div className={`text-[10px] font-mono ${active ? "text-white/80" : "text-slate-500"}`}>
+                                {b.tos.length} TO · Qty {b.stats.totalQty.toLocaleString("id-ID")}
+                              </div>
+                              <div className={`text-[9px] font-mono ${active ? "text-white/70" : "text-slate-400"}`}>
+                                Kode {b.codedTOs[0]?.code} - {b.codedTOs[b.codedTOs.length - 1]?.code}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+
           {/* Mixed sub-filter chips (only when Mixed sub-card is selected) */}
           {selectedSubCard && selectedSubCard.type === "mixed" && (() => {
             const wingBucket = wingAssignments[selectedSubCard.wing];
@@ -1219,7 +1518,10 @@ export default function App() {
                       return "Menampilkan semua Transfer Order Number unik (Pilih Wing di atas untuk memfilter)";
                     }
                     if (selectedWing === "cross") {
-                      return "Menampilkan TO Cross Wing — TO yang item Row-nya berada di kedua wing (Kiri & Kanan) atau di luar Row 1-36";
+                      if (selectedBatch) {
+                        return `Menampilkan TO Batch ${selectedBatch.batchNumber} (${selectedBatch.tos.length} TO · Kode ${selectedBatch.codedTOs[0]?.code}-${selectedBatch.codedTOs[selectedBatch.codedTOs.length-1]?.code}) — siap di-print sebagai Pick Ticket A4`;
+                      }
+                      return "Menampilkan TO Cross Wing — pilih Batch Picking di atas untuk membagi jadi batch, atau print pick ticket per batch";
                     }
                     const wingLabel = WING_STRUCTURE[selectedWing].label;
                     if (!selectedSubCard) {
@@ -1245,6 +1547,16 @@ export default function App() {
               </div>
 
               <div className="flex items-center space-x-3">
+                {selectedWing === "cross" && selectedBatch && (
+                  <Button
+                    onClick={() => setPrintModalOpen(true)}
+                    data-testid="print-pick-ticket-btn"
+                    className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs flex items-center"
+                  >
+                    <Printer className="w-3.5 h-3.5 mr-1.5" />
+                    Print Pick Ticket Batch {selectedBatch.batchNumber}
+                  </Button>
+                )}
                 <Button
                   onClick={handleCopyToSAP}
                   data-testid="copy-to-sap-btn"
@@ -1338,6 +1650,207 @@ export default function App() {
         </Card>
 
       </main>
+
+      {/* Print Modal — asks number of pickers, then triggers pick ticket flow */}
+      {printModalOpen && selectedBatch && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm no-print"
+          data-testid="print-modal"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-start justify-between px-5 py-4 border-b border-slate-200 bg-rose-50">
+              <div>
+                <div className="text-sm font-bold text-slate-800 flex items-center">
+                  <Printer className="w-4 h-4 mr-1.5 text-rose-600" />
+                  Print Pick Ticket · Batch {selectedBatch.batchNumber}
+                </div>
+                <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                  {formatBatchCode(selectedBatch.batchNumber)} · {selectedBatch.tos.length} TO
+                </div>
+              </div>
+              <button
+                onClick={() => setPrintModalOpen(false)}
+                className="text-slate-400 hover:text-slate-700"
+                data-testid="print-modal-close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div>
+                <Label htmlFor="picker-count-input" className="text-xs font-semibold text-slate-700 flex items-center mb-2">
+                  <Users className="w-3.5 h-3.5 mr-1.5 text-rose-500" />
+                  Jumlah Picker (untuk load balance per Row):
+                </Label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setPickerCount(n)}
+                      data-testid={`picker-count-${n}`}
+                      className={`h-9 w-9 rounded-lg border text-sm font-bold transition-all ${
+                        pickerCount === n ? "bg-rose-600 border-rose-600 text-white" : "bg-white border-slate-200 text-slate-700 hover:border-rose-400"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                  <Input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={pickerCount}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value, 10);
+                      if (!Number.isNaN(v) && v > 0 && v <= 20) setPickerCount(v);
+                    }}
+                    data-testid="picker-count-input"
+                    className="h-9 w-16 text-sm text-center border-slate-200"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400 mt-2">
+                  Setiap picker akan mendapat halaman pick ticket sendiri (dibagi rata per Row).
+                </p>
+              </div>
+
+              {printWarning && printWarning.previousPrints && printWarning.previousPrints.length > 0 && (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 p-3" data-testid="print-warning">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="text-xs">
+                      <div className="font-bold text-amber-900 mb-1">
+                        Peringatan: {printWarning.previousPrints.length} TO sudah pernah di-print sebelumnya!
+                      </div>
+                      <div className="max-h-32 overflow-y-auto space-y-0.5 text-amber-800 font-mono text-[11px]">
+                        {printWarning.previousPrints.slice(0, 20).map(p => (
+                          <div key={p.to_number}>
+                            <span className="font-bold">{p.to_number}</span> · {p.batch_code} · {new Date(p.printed_at).toLocaleString("id-ID")}
+                          </div>
+                        ))}
+                        {printWarning.previousPrints.length > 20 && (
+                          <div className="text-[10px] text-amber-600 italic">
+                            ... dan {printWarning.previousPrints.length - 20} lainnya
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-amber-700 mt-2 text-[11px]">
+                        Klik <strong>Tetap Print</strong> untuk lanjutkan atau <strong>Batal</strong> untuk cek dulu.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-200 bg-slate-50">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setPrintModalOpen(false); setPrintWarning(null); }}
+                data-testid="print-modal-cancel"
+                className="text-xs"
+              >
+                Batal
+              </Button>
+              {printWarning ? (
+                <Button
+                  size="sm"
+                  onClick={() => { setPrintModalOpen(false); proceedWithPrint(); }}
+                  data-testid="print-force-btn"
+                  className="text-xs bg-amber-600 hover:bg-amber-700"
+                >
+                  Tetap Print
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={handleRequestPrint}
+                  data-testid="print-confirm-btn"
+                  className="text-xs bg-rose-600 hover:bg-rose-700"
+                >
+                  <Printer className="w-3.5 h-3.5 mr-1.5" />
+                  Print Sekarang
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Printable pick ticket (hidden on screen, shown only in @media print) */}
+      {selectedBatch && (
+        <div className="print-only pick-ticket-print" data-testid="pick-ticket-print" aria-hidden="true">
+          {(() => {
+            const pickers = buildPickerPlan(selectedBatch, pickerCount);
+            const batchCode = formatBatchCode(selectedBatch.batchNumber);
+            const printedAt = new Date().toLocaleString("id-ID", { dateStyle: "short", timeStyle: "medium" });
+            // Map TO -> code for this batch
+            const codeMap = new Map(selectedBatch.codedTOs.map(c => [c.to, c.code]));
+
+            return pickers.map((pk, pIdx) => (
+              <div key={pk.pickerIndex} className="pick-page">
+                <div className="pt-header">
+                  <div className="pt-title">
+                    <div className="pt-h1">TRANSFER ORDER PICKING</div>
+                    <div className="pt-sub">Batch {selectedBatch.batchNumber} · Picker {pk.pickerIndex} of {pickers.length}</div>
+                  </div>
+                  <div className="pt-code-box">
+                    <div className="pt-code-num">{batchCode}</div>
+                    <div className="pt-code-meta">Printed: {printedAt}</div>
+                    <div className="pt-code-meta">Page {pIdx + 1} of {pickers.length}</div>
+                  </div>
+                </div>
+
+                <table className="pt-table">
+                  <thead>
+                    <tr>
+                      <th style={{width: "40px"}}>Item</th>
+                      <th style={{width: "60px"}}>Kode</th>
+                      <th style={{width: "90px"}}>TO Number</th>
+                      <th style={{width: "80px"}}>Article</th>
+                      <th>Article Description</th>
+                      <th style={{width: "50px"}}>Qty</th>
+                      <th style={{width: "40px"}}>UoM</th>
+                      <th style={{width: "70px"}}>Source Bin</th>
+                      <th style={{width: "70px"}}>Dest. Bin</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pk.items.map((it, idx) => (
+                      <tr key={idx}>
+                        <td>{String(idx + 1).padStart(4, "0")}</td>
+                        <td>{codeMap.get(it["Transfer Order Number"]) || ""}</td>
+                        <td>{it["Transfer Order Number"]}</td>
+                        <td>{it["Article"] || ""}</td>
+                        <td>{it["Article Description"] || ""}</td>
+                        <td>{it["Source target qty"] || ""}</td>
+                        <td>EA</td>
+                        <td>{it["Source Storage Bin"] || ""}</td>
+                        <td>{it["Dest.Storage Bin"] || ""}</td>
+                      </tr>
+                    ))}
+                    <tr className="pt-total-row">
+                      <td colSpan={5} style={{textAlign: "right"}}>TOTAL</td>
+                      <td>{pk.itemCount}</td>
+                      <td colSpan={3}></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div className="pt-footer">
+                  <div>Rows: {pk.rows.map(r => String(r).padStart(2, "0")).join(", ") || "-"}</div>
+                  <div>Total Items: {pk.itemCount} · Total TO in Batch: {selectedBatch.tos.length}</div>
+                  <div className="pt-signature">
+                    <div>Picker: ____________________</div>
+                    <div>Checker: ____________________</div>
+                  </div>
+                </div>
+              </div>
+            ));
+          })()}
+        </div>
+      )}
 
       {/* Global Upload Loading Overlay */}
       {uploadStatus.active && (

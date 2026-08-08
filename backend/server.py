@@ -37,6 +37,34 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
+
+# ── Pick Ticket / Batch Print History Models ──
+class PickTicketRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    batch_code: str  # e.g. PTF-Batch-1-260807
+    batch_number: int
+    batch_size: int
+    picker_count: int
+    to_numbers: List[str]
+    printed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PickTicketCreate(BaseModel):
+    batch_code: str
+    batch_number: int
+    batch_size: int
+    picker_count: int
+    to_numbers: List[str]
+
+class PickTicketCheckRequest(BaseModel):
+    to_numbers: List[str]
+
+class PickTicketPreviousPrint(BaseModel):
+    to_number: str
+    batch_code: str
+    printed_at: str
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
@@ -65,6 +93,53 @@ async def get_status_checks():
             check['timestamp'] = datetime.fromisoformat(check['timestamp'])
     
     return status_checks
+
+
+# ── Pick Ticket / Batch Print History Endpoints ──
+@api_router.post("/pick-tickets/check")
+async def check_pick_tickets(payload: PickTicketCheckRequest):
+    """
+    Given a list of TO numbers, return which ones have been printed before
+    (each entry: to_number, batch_code, printed_at ISO string).
+    """
+    if not payload.to_numbers:
+        return {"previous_prints": []}
+
+    cursor = db.pick_tickets.find(
+        {"to_numbers": {"$in": payload.to_numbers}},
+        {"_id": 0, "batch_code": 1, "printed_at": 1, "to_numbers": 1},
+    ).sort("printed_at", -1)
+
+    docs = await cursor.to_list(2000)
+    seen: dict = {}
+    for d in docs:
+        printed_at = d.get("printed_at")
+        for to in d.get("to_numbers", []):
+            if to in payload.to_numbers and to not in seen:
+                seen[to] = {
+                    "to_number": to,
+                    "batch_code": d.get("batch_code", ""),
+                    "printed_at": printed_at if isinstance(printed_at, str) else (printed_at.isoformat() if printed_at else ""),
+                }
+    return {"previous_prints": list(seen.values())}
+
+
+@api_router.post("/pick-tickets", response_model=PickTicketRecord)
+async def create_pick_ticket(payload: PickTicketCreate):
+    record = PickTicketRecord(**payload.model_dump())
+    doc = record.model_dump()
+    doc["printed_at"] = doc["printed_at"].isoformat()
+    await db.pick_tickets.insert_one(doc)
+    return record
+
+
+@api_router.get("/pick-tickets", response_model=List[PickTicketRecord])
+async def list_pick_tickets():
+    docs = await db.pick_tickets.find({}, {"_id": 0}).sort("printed_at", -1).to_list(500)
+    for d in docs:
+        if isinstance(d.get("printed_at"), str):
+            d["printed_at"] = datetime.fromisoformat(d["printed_at"])
+    return docs
 
 # Include the router in the main app
 app.include_router(api_router)

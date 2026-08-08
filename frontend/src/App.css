@@ -47,3 +47,134 @@
 .animate-upload-bar {
     animation: upload-bar 1.2s linear infinite;
 }
+
+
+/* ── Print styles for Pick Ticket ── */
+/* Hide the printable component on screen; show only during @media print */
+.print-only {
+    display: none;
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
+
+    /* Hide everything from screen except the print target */
+    body * {
+        visibility: hidden;
+    }
+
+    .print-only,
+    .print-only * {
+        visibility: visible;
+    }
+
+    .print-only {
+        display: block;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        color: #000;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 10pt;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    .pick-page {
+        page-break-after: always;
+        padding: 4mm 2mm;
+    }
+    .pick-page:last-child {
+        page-break-after: auto;
+    }
+
+    .pt-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2px solid #000;
+        padding-bottom: 4mm;
+        margin-bottom: 4mm;
+    }
+
+    .pt-title .pt-h1 {
+        font-size: 13pt;
+        font-weight: 800;
+        letter-spacing: 0.5pt;
+    }
+
+    .pt-title .pt-sub {
+        font-size: 10pt;
+        margin-top: 1mm;
+        color: #333;
+    }
+
+    .pt-code-box {
+        text-align: right;
+    }
+
+    .pt-code-num {
+        font-family: "Courier New", monospace;
+        font-size: 12pt;
+        font-weight: 700;
+        letter-spacing: 0.8pt;
+    }
+
+    .pt-code-meta {
+        font-size: 8pt;
+        color: #555;
+        margin-top: 1mm;
+    }
+
+    .pt-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.5pt;
+    }
+
+    .pt-table th,
+    .pt-table td {
+        border: 1px solid #333;
+        padding: 1.5mm 2mm;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .pt-table th {
+        background-color: #eee !important;
+        font-weight: 700;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .pt-total-row td {
+        font-weight: 700;
+        background-color: #f5f5f5 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .pt-footer {
+        margin-top: 4mm;
+        font-size: 9pt;
+        border-top: 1px dashed #666;
+        padding-top: 3mm;
+    }
+
+    .pt-footer > div {
+        margin-bottom: 1mm;
+    }
+
+    .pt-signature {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10mm;
+        font-size: 9pt;
+    }
+}

@@ -1,0 +1,43 @@
+{
+  "summary": "Iteration 5 (Batch Picking for Cross Wing) fully tested. Backend pick-tickets endpoints (POST /pick-tickets, POST /pick-tickets/check, GET /pick-tickets) all pass — 7/7 pytest tests green. Frontend E2E flow verified end-to-end: Cross Wing → Batch Picking subcard → batch size selector (5 presets + custom) → 3 batches from 7 TOs → batch-card-1 filters to 3 TOs → print modal with picker-count 1-5+custom → first print (no warning) saves to MongoDB & fires window.print → second print shows warning box listing all 3 TOs with batch_code and timestamp → Tetap Print (amber) force-prints. State reset on wing switch confirmed. No console errors.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "First print click (no warning path)",
+        "issue": "window.print() was invoked TWICE on the very first Print Sekarang click (fresh DB, no prior history). Force-print path only invokes it once. Likely a React StrictMode double-invocation or an unintended re-render firing proceedWithPrint's setTimeout twice. Non-blocking but annoying (user sees native print dialog behavior twice / double record risk needs verification). Backend history collection may receive 2 records if the axios save is also duplicated — recommend main agent guard proceedWithPrint with an inFlight ref or move print+save out of setTimeout.",
+        "affected_selectors": ["print-confirm-btn"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_pick_tickets.py",
+    "/app/test_reports/pytest/pick_tickets_results.xml"
+  ],
+  "action_items": [
+    "Investigate why proceedWithPrint executes window.print() twice on the first (no-warning) path. Likely add a useRef guard to prevent double invocation, or hoist the print/save logic out of the setTimeout closure that may capture stale state under strict mode."
+  ],
+  "critical_code_review_comments": [
+    "proceedWithPrint uses setTimeout(200ms) + async work but no guard against re-entry — can cause duplicate window.print + duplicate MongoDB inserts on rapid or React-strict double invocations.",
+    "handleRequestPrint / proceedWithPrint call POST /pick-tickets even if window.print is cancelled by user — this is documented as best-effort but could inflate history with false records if user aborts.",
+    "App.js is 1898 lines — approaching maintainability limit; recommend splitting Batch Picking panel + Print modal + Printable component into separate files.",
+    "No backend uniqueness / rate-limit on POST /pick-tickets — a client bug (like the double-invoke above) will duplicate rows silently."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_pick_tickets.py"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "95%"
+  },
+  "seed_data_creation": "Cleared db.pick_tickets collection before frontend testing to have a deterministic starting state. Left a few residual PTF-Batch-1 records after final test run (safe to ignore).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend pytest suite lives at /app/backend/tests/test_pick_tickets.py (7 tests, all pass in ~2.6s). Reuse it as regression. For frontend, all Batch Picking data-testids exist and behave correctly. INITIAL_RAW_DATA still has 7 Cross Wing TOs (5330150-5330156). If main agent fixes the double-print bug, re-verify by clicking print-pick-ticket-btn → print-confirm-btn once with a stub `window.print = () => window.__c = (window.__c||0)+1` and assert __c === 1.",
+  "rca of the issue": "Double window.print on first print: handleRequestPrint's success branch does setPrintModalOpen(false) then calls proceedWithPrint(). Inside proceedWithPrint, setIsPrinting(true) + setPrintWarning(null) trigger a render; the setTimeout callback then calls window.print(). If a preceding state update causes handleRequestPrint's promise to resolve twice (e.g. axios call chain re-entered due to StrictMode or dual event dispatch), both invocations reach proceedWithPrint and each schedules a setTimeout. Recommended fix: `const printingRef = useRef(false); if (printingRef.current) return; printingRef.current = true; ...; finally { printingRef.current = false; }`. Only observed on the no-warning path (force-print path uses direct onClick without pre-network step, hence single invocation)."
+}
