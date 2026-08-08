@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import "./App.css";
 import { 
   FileSpreadsheet, Upload, Download, Copy, Check, Filter, 
@@ -332,6 +332,7 @@ export default function App() {
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [printWarning, setPrintWarning] = useState(null); // { previousPrints: [] } | null
   const [isPrinting, setIsPrinting] = useState(false);
+  const printingRef = useRef(false); // re-entry guard for print flow
 
   const processedData = useMemo(() => {
     return processDataset(data);
@@ -686,15 +687,15 @@ export default function App() {
   // Actually render the print view + trigger browser print + save to backend
   const proceedWithPrint = async () => {
     if (!selectedBatch) return;
+    if (printingRef.current) return; // guard against re-entry (defensive for rapid double-clicks)
+    printingRef.current = true;
     setPrintWarning(null);
     setIsPrinting(true);
 
-    // Give React a tick to mount the print view before invoking window.print()
     setTimeout(async () => {
       try {
         window.print();
       } finally {
-        // Save the print event regardless of user's print-dialog action (best-effort)
         try {
           await axios.post(`${API}/pick-tickets`, {
             batch_code: formatBatchCode(selectedBatch.batchNumber),
@@ -709,6 +710,7 @@ export default function App() {
           toast.error("Print sukses, tetapi gagal menyimpan history di backend.");
         }
         setIsPrinting(false);
+        printingRef.current = false;
       }
     }, 200);
   };
