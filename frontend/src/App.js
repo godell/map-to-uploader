@@ -543,21 +543,18 @@ export default function App() {
     return batches.find(b => b.batchNumber === selectedBatchNumber) || null;
   }, [batches, selectedBatchNumber]);
 
-  // Build per-picker item plan for a given batch. Groups by physical Row across all items in TOs.
-  // Balances by assigning each Row (in ascending order) to the picker with the lowest running item count.
-  const buildPickerPlan = (batch, pickerCountNum) => {
+  // Build per-Row pages for a given batch — each Row becomes its own printable page.
+  // Returns array of { rowKey, items, stats }
+  const buildRowPages = (batch) => {
     if (!batch) return [];
-    // Collect all items belonging to batch's TOs from processedData
     const toSet = new Set(batch.tos);
     const items = processedData.filter(item => toSet.has(item["Transfer Order Number"]));
-    // Group items by their raw Source Storage Bin's row segment (numeric or raw)
     const groups = new Map();
     items.forEach(it => {
       const row = it.Row || "??";
       if (!groups.has(row)) groups.set(row, []);
       groups.get(row).push(it);
     });
-    // Sort row keys ascending (numeric-aware)
     const rows = Array.from(groups.keys()).sort((a, b) => {
       const na = parseInt(a, 10);
       const nb = parseInt(b, 10);
@@ -566,38 +563,25 @@ export default function App() {
       if (Number.isNaN(nb)) return -1;
       return na - nb;
     });
-    // Initialize picker buckets
-    const pickers = Array.from({ length: pickerCountNum }, (_, i) => ({
-      pickerIndex: i + 1,
-      rows: [],
-      items: [],
-      itemCount: 0,
-    }));
-    // Greedy: for each row (largest first — Longest Processing Time heuristic), assign to lightest picker
-    rows.sort((a, b) => groups.get(b).length - groups.get(a).length);
-    rows.forEach(rowKey => {
+    return rows.map(rowKey => {
       const rowItems = groups.get(rowKey);
-      const lightest = pickers.reduce((min, p) => (p.itemCount < min.itemCount ? p : min), pickers[0]);
-      lightest.rows.push(rowKey);
-      lightest.items = lightest.items.concat(rowItems);
-      lightest.itemCount += rowItems.length;
-    });
-    // Sort each picker's items by Row asc then Bin asc for travel order
-    pickers.forEach(p => {
-      p.rows.sort((a, b) => {
-        const na = parseInt(a, 10);
-        const nb = parseInt(b, 10);
-        return (Number.isNaN(na) ? 999 : na) - (Number.isNaN(nb) ? 999 : nb);
+      // Sort items in a Row by Source Storage Bin ascending
+      rowItems.sort((a, b) => String(a["Source Storage Bin"] || "").localeCompare(String(b["Source Storage Bin"] || "")));
+      // Compute per-page stats
+      const toUniq = new Set();
+      const artUniq = new Set();
+      let qtySum = 0;
+      rowItems.forEach(it => {
+        if (it["Transfer Order Number"]) toUniq.add(it["Transfer Order Number"]);
+        if (it["Article"]) artUniq.add(it["Article"]);
+        qtySum += parseQty(it["Source target qty"]);
       });
-      p.items.sort((a, b) => {
-        const ra = parseInt(a.Row, 10);
-        const rb = parseInt(b.Row, 10);
-        const rDiff = (Number.isNaN(ra) ? 999 : ra) - (Number.isNaN(rb) ? 999 : rb);
-        if (rDiff !== 0) return rDiff;
-        return String(a["Source Storage Bin"] || "").localeCompare(String(b["Source Storage Bin"] || ""));
-      });
+      return {
+        rowKey,
+        items: rowItems,
+        stats: { totalTO: toUniq.size, totalArticle: artUniq.size, totalQty: qtySum },
+      };
     });
-    return pickers;
   };
 
   // Resolve which list of TOs corresponds to the current wing + subcard selection.
@@ -660,7 +644,8 @@ export default function App() {
     return `PTF-Batch-${batchNumber}-${yy}${mm}${dd}`;
   };
 
-  // Trigger print flow: check backend for previous prints, then either warn or proceed.
+  // Entry point when Print button is clicked. Checks history first — if any TO printed before,
+  // opens warning modal; otherwise proceeds directly to print.
   const handleRequestPrint = async () => {
     if (!selectedBatch) return;
     try {
@@ -669,8 +654,8 @@ export default function App() {
       });
       const prev = res.data?.previous_prints || [];
       if (prev.length > 0) {
-        // Keep modal open with warning inside
         setPrintWarning({ previousPrints: prev });
+        setPrintModalOpen(true);
       } else {
         setPrintWarning(null);
         setPrintModalOpen(false);
@@ -1551,7 +1536,7 @@ export default function App() {
               <div className="flex items-center space-x-3">
                 {selectedWing === "cross" && selectedBatch && (
                   <Button
-                    onClick={() => setPrintModalOpen(true)}
+                    onClick={handleRequestPrint}
                     data-testid="print-pick-ticket-btn"
                     className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs flex items-center"
                   >
@@ -1653,25 +1638,25 @@ export default function App() {
 
       </main>
 
-      {/* Print Modal — asks number of pickers, then triggers pick ticket flow */}
-      {printModalOpen && selectedBatch && (
+      {/* Print Warning Modal — shown only when duplicate print detected */}
+      {printModalOpen && selectedBatch && printWarning && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm no-print"
           data-testid="print-modal"
         >
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md mx-4 overflow-hidden">
-            <div className="flex items-start justify-between px-5 py-4 border-b border-slate-200 bg-rose-50">
+            <div className="flex items-start justify-between px-5 py-4 border-b border-slate-200 bg-amber-50">
               <div>
                 <div className="text-sm font-bold text-slate-800 flex items-center">
-                  <Printer className="w-4 h-4 mr-1.5 text-rose-600" />
-                  Print Pick Ticket · Batch {selectedBatch.batchNumber}
+                  <AlertTriangle className="w-4 h-4 mr-1.5 text-amber-600" />
+                  Peringatan Re-Print · Batch {selectedBatch.batchNumber}
                 </div>
                 <div className="text-[11px] text-slate-500 font-mono mt-0.5">
                   {formatBatchCode(selectedBatch.batchNumber)} · {selectedBatch.tos.length} TO
                 </div>
               </div>
               <button
-                onClick={() => setPrintModalOpen(false)}
+                onClick={() => { setPrintModalOpen(false); setPrintWarning(null); }}
                 className="text-slate-400 hover:text-slate-700"
                 data-testid="print-modal-close"
               >
@@ -1679,70 +1664,29 @@ export default function App() {
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
-              <div>
-                <Label htmlFor="picker-count-input" className="text-xs font-semibold text-slate-700 flex items-center mb-2">
-                  <Users className="w-3.5 h-3.5 mr-1.5 text-rose-500" />
-                  Jumlah Picker (untuk load balance per Row):
-                </Label>
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map(n => (
-                    <button
-                      key={n}
-                      onClick={() => setPickerCount(n)}
-                      data-testid={`picker-count-${n}`}
-                      className={`h-9 w-9 rounded-lg border text-sm font-bold transition-all ${
-                        pickerCount === n ? "bg-rose-600 border-rose-600 text-white" : "bg-white border-slate-200 text-slate-700 hover:border-rose-400"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                  <Input
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={pickerCount}
-                    onChange={(e) => {
-                      const v = parseInt(e.target.value, 10);
-                      if (!Number.isNaN(v) && v > 0 && v <= 20) setPickerCount(v);
-                    }}
-                    data-testid="picker-count-input"
-                    className="h-9 w-16 text-sm text-center border-slate-200"
-                  />
-                </div>
-                <p className="text-[11px] text-slate-400 mt-2">
-                  Setiap picker akan mendapat halaman pick ticket sendiri (dibagi rata per Row).
-                </p>
-              </div>
-
-              {printWarning && printWarning.previousPrints && printWarning.previousPrints.length > 0 && (
-                <div className="rounded-lg border border-amber-300 bg-amber-50 p-3" data-testid="print-warning">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <div className="text-xs">
-                      <div className="font-bold text-amber-900 mb-1">
-                        Peringatan: {printWarning.previousPrints.length} TO sudah pernah di-print sebelumnya!
-                      </div>
-                      <div className="max-h-32 overflow-y-auto space-y-0.5 text-amber-800 font-mono text-[11px]">
-                        {printWarning.previousPrints.slice(0, 20).map(p => (
-                          <div key={p.to_number}>
-                            <span className="font-bold">{p.to_number}</span> · {p.batch_code} · {new Date(p.printed_at).toLocaleString("id-ID")}
-                          </div>
-                        ))}
-                        {printWarning.previousPrints.length > 20 && (
-                          <div className="text-[10px] text-amber-600 italic">
-                            ... dan {printWarning.previousPrints.length - 20} lainnya
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-amber-700 mt-2 text-[11px]">
-                        Klik <strong>Tetap Print</strong> untuk lanjutkan atau <strong>Batal</strong> untuk cek dulu.
-                      </div>
+            <div className="p-5 space-y-3">
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-3" data-testid="print-warning">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="text-xs">
+                    <div className="font-bold text-amber-900 mb-1">
+                      {printWarning.previousPrints.length} TO sudah pernah di-print sebelumnya!
+                    </div>
+                    <div className="max-h-40 overflow-y-auto space-y-0.5 text-amber-800 font-mono text-[11px]">
+                      {printWarning.previousPrints.slice(0, 30).map(p => (
+                        <div key={p.to_number}>
+                          <span className="font-bold">{p.to_number}</span> · {p.batch_code} · {new Date(p.printed_at).toLocaleString("id-ID")}
+                        </div>
+                      ))}
+                      {printWarning.previousPrints.length > 30 && (
+                        <div className="text-[10px] text-amber-600 italic">
+                          ... dan {printWarning.previousPrints.length - 30} lainnya
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-200 bg-slate-50">
@@ -1755,101 +1699,120 @@ export default function App() {
               >
                 Batal
               </Button>
-              {printWarning ? (
-                <Button
-                  size="sm"
-                  onClick={() => { setPrintModalOpen(false); proceedWithPrint(); }}
-                  data-testid="print-force-btn"
-                  className="text-xs bg-amber-600 hover:bg-amber-700"
-                >
-                  Tetap Print
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={handleRequestPrint}
-                  data-testid="print-confirm-btn"
-                  className="text-xs bg-rose-600 hover:bg-rose-700"
-                >
-                  <Printer className="w-3.5 h-3.5 mr-1.5" />
-                  Print Sekarang
-                </Button>
-              )}
+              <Button
+                size="sm"
+                onClick={() => { setPrintModalOpen(false); proceedWithPrint(); }}
+                data-testid="print-force-btn"
+                className="text-xs bg-amber-600 hover:bg-amber-700"
+              >
+                <Printer className="w-3.5 h-3.5 mr-1.5" />
+                Tetap Print
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Printable pick ticket (hidden on screen, shown only in @media print) */}
+      {/* Printable pick ticket (hidden on screen, shown only in @media print) — one page per Row */}
       {selectedBatch && (
         <div className="print-only pick-ticket-print" data-testid="pick-ticket-print" aria-hidden="true">
           {(() => {
-            const pickers = buildPickerPlan(selectedBatch, pickerCount);
+            const rowPages = buildRowPages(selectedBatch);
+            const totalPages = rowPages.length;
             const batchCode = formatBatchCode(selectedBatch.batchNumber);
             const printedAt = new Date().toLocaleString("id-ID", { dateStyle: "short", timeStyle: "medium" });
-            // Map TO -> code for this batch
             const codeMap = new Map(selectedBatch.codedTOs.map(c => [c.to, c.code]));
 
-            return pickers.map((pk, pIdx) => (
-              <div key={pk.pickerIndex} className="pick-page">
-                <div className="pt-header">
-                  <div className="pt-title">
-                    <div className="pt-h1">TRANSFER ORDER PICKING</div>
-                    <div className="pt-sub">Batch {selectedBatch.batchNumber} · Picker {pk.pickerIndex} of {pickers.length}</div>
-                  </div>
-                  <div className="pt-code-box">
-                    <div className="pt-code-num">{batchCode}</div>
-                    <div className="pt-code-meta">Printed: {printedAt}</div>
-                    <div className="pt-code-meta">Page {pIdx + 1} of {pickers.length}</div>
-                  </div>
-                </div>
+            return rowPages.map((page, pIdx) => {
+              const rowLabel = (() => {
+                const n = parseInt(page.rowKey, 10);
+                return Number.isNaN(n) ? String(page.rowKey) : String(n).padStart(2, "0");
+              })();
 
-                <table className="pt-table">
-                  <thead>
-                    <tr>
-                      <th style={{width: "40px"}}>Item</th>
-                      <th style={{width: "60px"}}>Kode</th>
-                      <th style={{width: "90px"}}>TO Number</th>
-                      <th style={{width: "80px"}}>Article</th>
-                      <th>Article Description</th>
-                      <th style={{width: "50px"}}>Qty</th>
-                      <th style={{width: "40px"}}>UoM</th>
-                      <th style={{width: "70px"}}>Source Bin</th>
-                      <th style={{width: "70px"}}>Dest. Bin</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pk.items.map((it, idx) => (
-                      <tr key={idx}>
-                        <td>{String(idx + 1).padStart(4, "0")}</td>
-                        <td>{codeMap.get(it["Transfer Order Number"]) || ""}</td>
-                        <td>{it["Transfer Order Number"]}</td>
-                        <td>{it["Article"] || ""}</td>
-                        <td>{it["Article Description"] || ""}</td>
-                        <td>{it["Source target qty"] || ""}</td>
-                        <td>EA</td>
-                        <td>{it["Source Storage Bin"] || ""}</td>
-                        <td>{it["Dest.Storage Bin"] || ""}</td>
+              return (
+                <div key={page.rowKey} className="pick-page">
+                  <div className="pt-header">
+                    <div className="pt-title">
+                      <div className="pt-h1">TRANSFER ORDER PICKING</div>
+                      <div className="pt-sub">Batch <strong>{selectedBatch.batchNumber}</strong> · {selectedBatch.tos.length} TO in batch</div>
+                    </div>
+
+                    {/* Highlighted Row circle */}
+                    <div className="pt-row-badge">
+                      <div className="pt-row-label">ROW</div>
+                      <div className="pt-row-value">{rowLabel}</div>
+                    </div>
+
+                    <div className="pt-code-box">
+                      <div className="pt-code-num">{batchCode}</div>
+                      <div className="pt-code-meta">Printed: {printedAt}</div>
+                    </div>
+                  </div>
+
+                  {/* Per-page summary */}
+                  <div className="pt-summary">
+                    <div className="pt-summary-item">
+                      <span className="pt-sm-label">Total TO</span>
+                      <span className="pt-sm-value">{page.stats.totalTO}</span>
+                    </div>
+                    <div className="pt-summary-item">
+                      <span className="pt-sm-label">Total Article</span>
+                      <span className="pt-sm-value">{page.stats.totalArticle}</span>
+                    </div>
+                    <div className="pt-summary-item">
+                      <span className="pt-sm-label">Total Qty</span>
+                      <span className="pt-sm-value">{page.stats.totalQty.toLocaleString("id-ID")}</span>
+                    </div>
+                    <div className="pt-summary-item">
+                      <span className="pt-sm-label">Items in Row</span>
+                      <span className="pt-sm-value">{page.items.length}</span>
+                    </div>
+                  </div>
+
+                  <table className="pt-table">
+                    <thead>
+                      <tr>
+                        <th style={{width: "34px"}}>Item</th>
+                        <th style={{width: "48px"}}>Kode</th>
+                        <th style={{width: "78px"}}>TO Number</th>
+                        <th style={{width: "108px"}}>Article</th>
+                        <th>Article Description</th>
+                        <th style={{width: "42px"}}>Qty</th>
+                        <th style={{width: "36px"}}>UoM</th>
+                        <th style={{width: "78px"}}>Source Bin</th>
+                        <th style={{width: "78px"}}>Dest. Bin</th>
                       </tr>
-                    ))}
-                    <tr className="pt-total-row">
-                      <td colSpan={5} style={{textAlign: "right"}}>TOTAL</td>
-                      <td>{pk.itemCount}</td>
-                      <td colSpan={3}></td>
-                    </tr>
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {page.items.map((it, idx) => (
+                        <tr key={idx}>
+                          <td>{String(idx + 1).padStart(4, "0")}</td>
+                          <td>{codeMap.get(it["Transfer Order Number"]) || ""}</td>
+                          <td className="pt-nowrap">{it["Transfer Order Number"]}</td>
+                          <td className="pt-nowrap">{it["Article"] || ""}</td>
+                          <td className="pt-desc">{it["Article Description"] || ""}</td>
+                          <td>{it["Source target qty"] || ""}</td>
+                          <td>EA</td>
+                          <td className="pt-nowrap">{it["Source Storage Bin"] || ""}</td>
+                          <td className="pt-nowrap">{it["Dest.Storage Bin"] || ""}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
 
-                <div className="pt-footer">
-                  <div>Rows: {pk.rows.map(r => String(r).padStart(2, "0")).join(", ") || "-"}</div>
-                  <div>Total Items: {pk.itemCount} · Total TO in Batch: {selectedBatch.tos.length}</div>
-                  <div className="pt-signature">
-                    <div>Picker: ____________________</div>
-                    <div>Checker: ____________________</div>
+                  <div className="pt-footer">
+                    <div className="pt-footer-row">
+                      <div>Total Items in this Row: <strong>{page.items.length}</strong> · Row <strong>{rowLabel}</strong></div>
+                      <div className="pt-page-num">Page {pIdx + 1} of {totalPages}</div>
+                    </div>
+                    <div className="pt-signature">
+                      <div>Picker: ____________________</div>
+                      <div>Checker: ____________________</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ));
+              );
+            });
           })()}
         </div>
       )}

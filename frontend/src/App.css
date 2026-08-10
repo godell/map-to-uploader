@@ -49,19 +49,17 @@
 }
 
 
-/* ── Print styles for Pick Ticket ── */
-/* Hide the printable component on screen; show only during @media print */
+/* ── Print styles for Pick Ticket (LANDSCAPE A4, page per Row) ── */
 .print-only {
     display: none;
 }
 
 @media print {
     @page {
-        size: A4;
-        margin: 12mm;
+        size: A4 landscape;
+        margin: 10mm 10mm 12mm 10mm;
     }
 
-    /* Hide everything from screen except the print target */
     body * {
         visibility: hidden;
     }
@@ -79,7 +77,7 @@
         width: 100%;
         color: #000;
         font-family: "Helvetica Neue", Arial, sans-serif;
-        font-size: 10pt;
+        font-size: 9.5pt;
     }
 
     .no-print {
@@ -88,31 +86,61 @@
 
     .pick-page {
         page-break-after: always;
-        padding: 4mm 2mm;
+        padding: 2mm;
     }
     .pick-page:last-child {
         page-break-after: auto;
     }
 
+    /* Header row: Title | Row badge | Batch code */
     .pt-header {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
+        align-items: center;
         border-bottom: 2px solid #000;
-        padding-bottom: 4mm;
-        margin-bottom: 4mm;
+        padding-bottom: 3mm;
+        margin-bottom: 3mm;
     }
 
     .pt-title .pt-h1 {
-        font-size: 13pt;
+        font-size: 14pt;
         font-weight: 800;
         letter-spacing: 0.5pt;
     }
 
     .pt-title .pt-sub {
-        font-size: 10pt;
+        font-size: 9.5pt;
         margin-top: 1mm;
-        color: #333;
+        color: #222;
+    }
+
+    /* Highlighted Row circle */
+    .pt-row-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 22mm;
+        height: 22mm;
+        border: 3pt solid #000;
+        border-radius: 50%;
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .pt-row-label {
+        font-size: 7pt;
+        font-weight: 700;
+        letter-spacing: 1pt;
+        color: #555;
+    }
+
+    .pt-row-value {
+        font-size: 22pt;
+        font-weight: 900;
+        line-height: 1;
+        margin-top: 1mm;
     }
 
     .pt-code-box {
@@ -121,9 +149,9 @@
 
     .pt-code-num {
         font-family: "Courier New", monospace;
-        font-size: 12pt;
+        font-size: 11pt;
         font-weight: 700;
-        letter-spacing: 0.8pt;
+        letter-spacing: 0.6pt;
     }
 
     .pt-code-meta {
@@ -132,49 +160,105 @@
         margin-top: 1mm;
     }
 
+    /* Per-page summary block */
+    .pt-summary {
+        display: flex;
+        gap: 3mm;
+        margin-bottom: 3mm;
+    }
+
+    .pt-summary-item {
+        flex: 1;
+        border: 1px solid #333;
+        border-radius: 3px;
+        padding: 1.5mm 2.5mm;
+        background: #f6f6f6 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+    }
+
+    .pt-sm-label {
+        font-size: 8pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #444;
+        letter-spacing: 0.4pt;
+    }
+
+    .pt-sm-value {
+        font-size: 12pt;
+        font-weight: 800;
+        font-family: "Courier New", monospace;
+    }
+
     .pt-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 8.5pt;
+        table-layout: fixed;
     }
 
     .pt-table th,
     .pt-table td {
         border: 1px solid #333;
-        padding: 1.5mm 2mm;
+        padding: 1mm 1.5mm;
         text-align: left;
         vertical-align: top;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
     .pt-table th {
-        background-color: #eee !important;
+        background-color: #e8e8e8 !important;
         font-weight: 700;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
 
-    .pt-total-row td {
-        font-weight: 700;
-        background-color: #f5f5f5 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+    /* Fields that must stay on one line */
+    .pt-table td.pt-nowrap {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Article Description: max 2 lines with ellipsis */
+    .pt-table td.pt-desc {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        line-clamp: 2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.25;
+        max-height: 2.6em;
     }
 
     .pt-footer {
-        margin-top: 4mm;
+        margin-top: 3mm;
         font-size: 9pt;
         border-top: 1px dashed #666;
-        padding-top: 3mm;
+        padding-top: 2mm;
     }
 
-    .pt-footer > div {
-        margin-bottom: 1mm;
+    .pt-footer-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2mm;
+    }
+
+    .pt-page-num {
+        font-weight: 700;
+        font-family: "Courier New", monospace;
     }
 
     .pt-signature {
         display: flex;
         justify-content: space-between;
-        margin-top: 10mm;
+        margin-top: 8mm;
         font-size: 9pt;
     }
 }
