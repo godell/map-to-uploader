@@ -108,10 +108,39 @@
         letter-spacing: 0.5pt;
     }
 
-    .pt-title .pt-sub {
+    /* Big highlighted Batch label under the title */
+    .pt-batch-badge {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 3mm;
+        margin-top: 1.5mm;
+        padding: 1mm 3mm;
+        border: 1.5pt solid #000;
+        border-radius: 3mm;
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .pt-batch-label {
+        font-size: 10pt;
+        font-weight: 700;
+        letter-spacing: 0.6pt;
+        text-transform: uppercase;
+        color: #444;
+    }
+
+    .pt-batch-num {
+        font-size: 20pt;
+        font-weight: 900;
+        line-height: 1;
+        color: #000;
+        font-family: "Courier New", monospace;
+    }
+
+    .pt-batch-meta {
         font-size: 9.5pt;
-        margin-top: 1mm;
-        color: #222;
+        color: #333;
     }
 
     /* Highlighted Row circle */
@@ -223,6 +252,14 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    /* Article column: show full text, allow wrap on long codes */
+    .pt-table td.pt-article {
+        white-space: normal;
+        word-break: break-all;
+        overflow: visible;
+        text-overflow: clip;
     }
 
     /* Article Description: max 2 lines with ellipsis */

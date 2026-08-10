@@ -1734,7 +1734,11 @@ export default function App() {
                   <div className="pt-header">
                     <div className="pt-title">
                       <div className="pt-h1">TRANSFER ORDER PICKING</div>
-                      <div className="pt-sub">Batch <strong>{selectedBatch.batchNumber}</strong> · {selectedBatch.tos.length} TO in batch</div>
+                      <div className="pt-batch-badge">
+                        <span className="pt-batch-label">Batch</span>
+                        <span className="pt-batch-num">{selectedBatch.batchNumber}</span>
+                        <span className="pt-batch-meta">· {selectedBatch.tos.length} TO in batch</span>
+                      </div>
                     </div>
 
                     {/* Highlighted Row circle */}
@@ -1775,7 +1779,7 @@ export default function App() {
                         <th style={{width: "34px"}}>Item</th>
                         <th style={{width: "48px"}}>Kode</th>
                         <th style={{width: "78px"}}>TO Number</th>
-                        <th style={{width: "108px"}}>Article</th>
+                        <th style={{width: "150px"}}>Article</th>
                         <th>Article Description</th>
                         <th style={{width: "42px"}}>Qty</th>
                         <th style={{width: "36px"}}>UoM</th>
@@ -1789,7 +1793,7 @@ export default function App() {
                           <td>{String(idx + 1).padStart(4, "0")}</td>
                           <td>{codeMap.get(it["Transfer Order Number"]) || ""}</td>
                           <td className="pt-nowrap">{it["Transfer Order Number"]}</td>
-                          <td className="pt-nowrap">{it["Article"] || ""}</td>
+                          <td className="pt-article">{it["Article"] || ""}</td>
                           <td className="pt-desc">{it["Article Description"] || ""}</td>
                           <td>{it["Source target qty"] || ""}</td>
                           <td>EA</td>
