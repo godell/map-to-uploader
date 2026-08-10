@@ -494,7 +494,8 @@ export default function App() {
       right: computeBucketStats(rightTOs),
       cross: computeBucketStats(wingAssignments.cross),
     };
-  }, [wingAssignments, toRowInfo]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [wingAssignments, toRowInfo]);
 
   // Resolve which list of TOs corresponds to the current wing + subcard selection.
   const currentTOList = useMemo(() => {
