@@ -1768,11 +1768,7 @@ export default function App() {
                       <span className="pt-sm-label">Total Qty</span>
                       <span className="pt-sm-value">{page.stats.totalQty.toLocaleString("id-ID")}</span>
                     </div>
-                    <div className="pt-summary-item">
-                      <span className="pt-sm-label">Items in Row</span>
-                      <span className="pt-sm-value">{page.items.length}</span>
                     </div>
-                  </div>
 
                   <table className="pt-table">
                     <thead>
