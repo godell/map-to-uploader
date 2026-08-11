@@ -1782,9 +1782,9 @@ export default function App() {
                   <table className="pt-table">
                     <thead>
                       <tr>
-                        <th style={{width: "35px"}}>No. Urut</th>
+                        <th style={{width: "36px"}}>No. Urut</th>
                         <th style={{width: "48px"}}>Kode</th>
-                        <th style={{width: "48px"}}>TO Line</th>
+                        <th style={{width: "47px"}}>TO Line</th>
                         <th style={{width: "78px"}}>TO Number</th>
                         <th style={{width: "150px"}}>Article</th>
                         <th>Article Description</th>
