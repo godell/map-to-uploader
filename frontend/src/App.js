@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import * as XLSX from "xlsx";
+import Barcode from "react-barcode"; // <-- IMPORT BARU UNTUK BARCODE
 import { Button } from "./components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
@@ -529,11 +530,16 @@ export default function App() {
       const codedTOs = chunk.map((to, idx) => ({ code: running + idx, to }));
       running += chunk.length;
       const stats = computeBucketStats(chunk);
+      
+      // Generate a stable random 3-digit suffix for this specific batch during creation
+      const randomSuffix = Math.floor(100 + Math.random() * 900); 
+
       result.push({
         batchNumber: result.length + 1,
         tos: chunk,
         codedTOs,
         stats,
+        randomSuffix // Store random suffix here
       });
     }
     return result;
@@ -637,12 +643,14 @@ export default function App() {
   const isFiltered = selectedWing !== null;
 
   // ── Batch Picking helpers ──
-  const formatBatchCode = (batchNumber) => {
+  // UPDATE: formatBatchCode now takes a random suffix to make it completely unique per batch
+  const formatBatchCode = (batchNumber, randomSuffix) => {
     const d = new Date();
     const yy = String(d.getFullYear()).slice(-2);
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
-    return `PTF-Batch-${batchNumber}-${yy}${mm}${dd}`;
+    const suffixStr = String(randomSuffix || "000").padStart(3, '0');
+    return `PTF-Batch-${batchNumber}-${yy}${mm}${dd}-${suffixStr}`;
   };
 
   // Entry point when Print button is clicked. Checks history first — if any TO printed before,
@@ -684,7 +692,7 @@ export default function App() {
       } finally {
         try {
           await axios.post(`${API}/pick-tickets`, {
-            batch_code: formatBatchCode(selectedBatch.batchNumber),
+            batch_code: formatBatchCode(selectedBatch.batchNumber, selectedBatch.randomSuffix),
             batch_number: selectedBatch.batchNumber,
             batch_size: batchSize,
             picker_count: pickerCount,
@@ -1653,7 +1661,7 @@ export default function App() {
                   Peringatan Re-Print · Batch {selectedBatch.batchNumber}
                 </div>
                 <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-                  {formatBatchCode(selectedBatch.batchNumber)} · {selectedBatch.tos.length} TO
+                  {formatBatchCode(selectedBatch.batchNumber, selectedBatch.randomSuffix)} · {selectedBatch.tos.length} TO
                 </div>
               </div>
               <button
@@ -1720,7 +1728,7 @@ export default function App() {
           {(() => {
             const rowPages = buildRowPages(selectedBatch);
             const totalPages = rowPages.length;
-            const batchCode = formatBatchCode(selectedBatch.batchNumber);
+            const batchCode = formatBatchCode(selectedBatch.batchNumber, selectedBatch.randomSuffix);
             const printedAt = new Date().toLocaleString("id-ID", { dateStyle: "short", timeStyle: "medium" });
             const codeMap = new Map(selectedBatch.codedTOs.map(c => [c.to, c.code]));
 
@@ -1749,7 +1757,8 @@ export default function App() {
                     </div>
 
                     <div className="pt-code-box">
-                      <div className="pt-code-num">{batchCode}</div>
+                      <Barcode value={batchCode} width={1.2} height={35} displayValue={false} margin={0} />
+                      <div className="pt-code-num" style={{ marginTop: '4px' }}>{batchCode}</div>
                       <div className="pt-code-meta">Printed: {printedAt}</div>
                     </div>
                   </div>
@@ -1773,8 +1782,9 @@ export default function App() {
                   <table className="pt-table">
                     <thead>
                       <tr>
-                        <th style={{width: "34px"}}>Item</th>
+                        <th style={{width: "34px"}}>No. Urut</th>
                         <th style={{width: "48px"}}>Kode</th>
+                        <th style={{width: "50px"}}>TO Line</th>
                         <th style={{width: "78px"}}>TO Number</th>
                         <th style={{width: "150px"}}>Article</th>
                         <th>Article Description</th>
@@ -1789,6 +1799,7 @@ export default function App() {
                         <tr key={idx}>
                           <td>{String(idx + 1).padStart(4, "0")}</td>
                           <td>{codeMap.get(it["Transfer Order Number"]) || ""}</td>
+                          <td>{it["Transfer order item"] || ""}</td>
                           <td className="pt-nowrap">{it["Transfer Order Number"]}</td>
                           <td className="pt-article">{it["Article"] || ""}</td>
                           <td className="pt-desc">{it["Article Description"] || ""}</td>
