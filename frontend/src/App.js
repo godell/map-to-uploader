@@ -1798,7 +1798,9 @@ export default function App() {
                       {page.items.map((it, idx) => (
                         <tr key={idx}>
                           <td>{String(idx + 1).padStart(4, "0")}</td>
-                          <td>{codeMap.get(it["Transfer Order Number"]) || ""}</td>
+                          <td style={{ fontWeight: 'bold', color: '#e11d48', backgroundColor: '#ffe4e6' }}>
+  {codeMap.get(it["Transfer Order Number"]) || ""}
+</td>
                           <td>{it["Transfer order item"] || ""}</td>
                           <td className="pt-nowrap">{it["Transfer Order Number"]}</td>
                           <td className="pt-article">{it["Article"] || ""}</td>
