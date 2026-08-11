@@ -1,3 +1,11 @@
+import { createClient } from '@supabase/supabase-js';
+
+// Masukkan Project URL dan anon key dari Langkah 2 di sini
+const SUPABASE_URL = "https://dxfmqsrxoidpqyawxytu.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4Zm1xc3J4b2lkcHF5YXd4eXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NjkwNjgsImV4cCI6MjEwMjA0NTA2OH0.0OQSkLqm-VB3hquHRKgY6t-qrvm4chbD-Dijb1n2Pjs";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import "./App.css";
 import { 
@@ -656,58 +664,71 @@ export default function App() {
   // Entry point when Print button is clicked. Checks history first — if any TO printed before,
   // opens warning modal; otherwise proceeds directly to print.
   const handleRequestPrint = async () => {
-    if (!selectedBatch) return;
-    try {
-      const res = await axios.post(`${API}/pick-tickets/check`, {
-        to_numbers: selectedBatch.tos,
-      });
-      const prev = res.data?.previous_prints || [];
-      if (prev.length > 0) {
-        setPrintWarning({ previousPrints: prev });
-        setPrintModalOpen(true);
-      } else {
-        setPrintWarning(null);
-        setPrintModalOpen(false);
-        proceedWithPrint();
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal memeriksa riwayat print. Melanjutkan tanpa cek duplikat.");
+  if (!selectedBatch) return;
+  try {
+    // Ambil daftar TO dalam batch saat ini
+    const toNumbers = selectedBatch.tos;
+
+    // Cek ke database Supabase apakah TO ini sudah pernah diprint
+    const { data: prev, error } = await supabase
+      .from('print_history')
+      .select('*')
+      .in('to_number', toNumbers);
+
+    if (error) throw error;
+
+    if (prev && prev.length > 0) {
+      setPrintWarning({ previousPrints: prev });
+      setPrintModalOpen(true);
+    } else {
+      setPrintWarning(null);
       setPrintModalOpen(false);
       proceedWithPrint();
     }
-  };
+  } catch (err) {
+    console.error(err);
+    toast.error("Gagal memeriksa riwayat print. Melanjutkan tanpa cek duplikat.");
+    setPrintModalOpen(false);
+    proceedWithPrint();
+  }
+};
 
   // Actually render the print view + trigger browser print + save to backend
   const proceedWithPrint = async () => {
-    if (!selectedBatch) return;
-    if (printingRef.current) return; // guard against re-entry (defensive for rapid double-clicks)
-    printingRef.current = true;
-    setPrintWarning(null);
-    setIsPrinting(true);
+  if (!selectedBatch) return;
+  if (printingRef.current) return;
+  printingRef.current = true;
+  setPrintWarning(null);
+  setIsPrinting(true);
 
-    setTimeout(async () => {
+  setTimeout(async () => {
+    try {
+      window.print();
+    } finally {
       try {
-        window.print();
-      } finally {
-        try {
-          await axios.post(`${API}/pick-tickets`, {
-            batch_code: formatBatchCode(selectedBatch.batchNumber, selectedBatch.randomSuffix),
-            batch_number: selectedBatch.batchNumber,
-            batch_size: batchSize,
-            picker_count: pickerCount,
-            to_numbers: selectedBatch.tos,
-          });
-          toast.success(`Pick ticket Batch ${selectedBatch.batchNumber} berhasil disimpan di history.`);
-        } catch (e) {
-          console.error(e);
-          toast.error("Print sukses, tetapi gagal menyimpan history di backend.");
-        }
-        setIsPrinting(false);
-        printingRef.current = false;
+        // Siapkan data untuk dimasukkan ke Supabase
+        const recordsToInsert = selectedBatch.tos.map(to => ({
+          to_number: to,
+          batch_code: formatBatchCode(selectedBatch.batchNumber, selectedBatch.randomSuffix),
+        }));
+
+        // Simpan ke tabel print_history di Supabase
+        const { error } = await supabase
+          .from('print_history')
+          .insert(recordsToInsert);
+
+        if (error) throw error;
+
+        toast.success(`Pick ticket Batch ${selectedBatch.batchNumber} berhasil disimpan di database.`);
+      } catch (e) {
+        console.error(e);
+        toast.error("Print sukses, tetapi gagal menyimpan history ke Supabase.");
       }
-    }, 200);
-  };
+      setIsPrinting(false);
+      printingRef.current = false;
+    }
+  }, 200);
+};
 
   // Reset the mixed sub-filter whenever the sub-card or wing changes
   useEffect(() => {
