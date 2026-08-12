@@ -17,6 +17,7 @@ import {
 import axios from "axios";
 import * as XLSX from "xlsx";
 import Barcode from "react-barcode";
+import { QRCodeSVG } from "qrcode.react";
 import { Button } from "./components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
@@ -2289,7 +2290,7 @@ const preparePrintOrientation = (orientation) => {
 
       {selectedBatch && printType === 'checklist' && (
         <div className="print-only" aria-hidden="true">
-          {selectedBatch.codedTOs.map((item) => {
+          {selectedBatch.codedTOs.map((item, pageIndex) => {
              const info = toRowInfo.get(item.to);
              const rows = info ? Array.from(info.numericRows).sort((a,b)=>a-b) : [];
              
@@ -2385,9 +2386,14 @@ const preparePrintOrientation = (orientation) => {
 
                  <div className="border-t-[3px] border-slate-400 flex items-center justify-between p-8 bg-white">
                    <div className="flex items-center gap-6">
-                     <div className="w-24 h-24 bg-white flex items-center justify-center">
-                       <Barcode value={item.to} width={1.5} height={60} displayValue={false} margin={0} />
-                     </div>
+                     <div className="checklist-qr-box">
+  <QRCodeSVG
+    value={String(item.to)}
+    size={90}
+    level="M"
+    includeMargin={false}
+  />
+</div>
                      <div className="flex flex-col">
                        <div className="font-black text-lg text-slate-800 tracking-wide">SCAN UNTUK TRACEABILITY</div>
                        <div className="text-sm text-slate-600 font-semibold mt-1">Lihat detail PTF / TO / Row</div>
@@ -2409,6 +2415,9 @@ const preparePrintOrientation = (orientation) => {
                          <div className="font-black text-xl text-slate-800">{timeStr}</div>
                        </div>
                      </div>
+                     <div className="checklist-page-number">
+    Page {pageIndex + 1} of {selectedBatch.codedTOs.length}
+</div>
                    </div>
                  </div>
 

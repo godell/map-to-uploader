@@ -736,6 +736,71 @@
         max-height: 12mm !important;
     }
 
+/* ========================================================
+   CHECKLIST - QR TRACEABILITY
+   ======================================================== */
+
+.checklist-qr-box {
+    width: 24mm !important;
+
+    height: 24mm !important;
+
+    min-width: 24mm !important;
+
+    min-height: 24mm !important;
+
+    max-width: 24mm !important;
+
+    max-height: 24mm !important;
+
+    background: #ffffff !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+
+    flex-shrink: 0 !important;
+
+    overflow: hidden !important;
+}
+
+
+.checklist-qr-box svg {
+    width: 22mm !important;
+
+    height: 22mm !important;
+
+    max-width: 22mm !important;
+
+    max-height: 22mm !important;
+}
+
+/* ========================================================
+   CHECKLIST - PAGE NUMBER
+   ======================================================== */
+
+.checklist-page-number {
+    width: 100% !important;
+
+    text-align: right !important;
+
+    font-size: 6.5pt !important;
+
+    font-weight: 700 !important;
+
+    color: #64748b !important;
+
+    margin-top: 1.5mm !important;
+
+    line-height: 1 !important;
+
+    letter-spacing: 0.3px !important;
+
+    flex-shrink: 0 !important;
+}
+
     /* ========================================================
        TRACEABILITY
        ======================================================== */
