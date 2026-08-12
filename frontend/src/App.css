@@ -1,5 +1,5 @@
 @media print {
-    /* 1. Reset Global & Aturan Dasar Halaman */
+    /* 1. Aturan Dasar Halaman */
     @page {
         size: A4 landscape;
         margin: 10mm;
@@ -7,7 +7,7 @@
 
     @page pt-landscape {
         size: A4 landscape;
-        margin: 10mm 10mm 12mm 10mm;
+        margin: 10mm;
     }
 
     @page checklist-portrait {
@@ -31,7 +31,6 @@
         visibility: hidden;
     }
 
-    /* 2. Wrapper Utama Print */
     .print-only,
     .print-only * {
         visibility: visible !important;
@@ -48,7 +47,7 @@
         font-size: 9.5pt;
     }
 
-    /* 3. Pick Ticket (Landscape Layout) */
+    /* 2. Pick Ticket (Landscape Layout) */
     .pick-page {
         page: pt-landscape;
         page-break-before: always;
@@ -58,38 +57,37 @@
         padding: 2mm;
         box-sizing: border-box;
     }
-    
-    .pick-page:first-child {
-        page-break-before: avoid;
-        break-before: avoid;
-    }
 
-    /* 4. Form Checklist (Portrait Layout & Terkunci Rapi) */
+    /* 3. Form Checklist (Portrait Layout & Anti-Terpotong) */
     .checklist-a4-page {
         page: checklist-portrait;
         page-break-before: always;
         break-before: page;
         page-break-after: always;
         break-after: page;
-        page-break-inside: avoid;
-        break-inside: avoid;
+        
+        /* KUNCI UTAMA: Cegah elemen checklist terbelah di tengah halaman */
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
 
         display: flex !important;
         flex-direction: column !important;
         position: relative !important;
-        width: 100% !important;
-        max-width: 190mm !important;
-        min-height: 275mm !important;
+        width: 190mm !important;
         box-sizing: border-box !important;
         background: white !important;
         border: 2px solid #cbd5e1 !important;
         border-radius: 12px !important;
-        overflow: hidden !important;
         margin: 0 auto !important;
         padding: 8mm !important;
+        
+        /* Hapus height mati agar tidak overflow/terpotong */
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
     }
 
-    /* 5. Komponen Internal Pick Ticket & Checklist */
+    /* 4. Komponen Internal Pick Ticket & Checklist */
     .pt-header {
         display: flex;
         justify-content: space-between;
