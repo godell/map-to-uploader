@@ -2415,9 +2415,10 @@ const preparePrintOrientation = (orientation) => {
                          <div className="font-black text-xl text-slate-800">{timeStr}</div>
                        </div>
                      </div>
-                     <div className="checklist-page-number">
-    Page {pageIndex + 1} of {selectedBatch.codedTOs.length}
-</div>
+                     </div>
+                      <div className="checklist-page-number">
+                       Page {pageIndex + 1} of {selectedBatch.codedTOs.length}
+                     </div>
                    </div>
                  </div>
 
