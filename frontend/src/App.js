@@ -627,6 +627,31 @@ export default function App() {
     return `PTF-Batch-${batchNumber}-${yy}${mm}${dd}-${suffixStr}`;
   };
 
+const preparePrintOrientation = (orientation) => {
+  // Hapus style orientation sebelumnya
+  const oldStyle = document.getElementById('dynamic-print-page');
+
+  if (oldStyle) {
+    oldStyle.remove();
+  }
+
+  // Buat SATU @page untuk print session ini
+  const style = document.createElement('style');
+
+  style.id = 'dynamic-print-page';
+
+  style.textContent = `
+    @media print {
+      @page {
+        size: A4 ${orientation};
+        margin: 10mm;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+};
+
   const handleRequestPrint = async () => {
   if (!selectedBatch) return;
 
@@ -679,16 +704,44 @@ export default function App() {
 };
 
   const handlePrintChecklist = () => {
-    setPrintType('checklist');
+  if (!selectedBatch) return;
 
-    document.body.classList.remove('print-ptf');
-    document.body.classList.add('print-checklist');
+  setPrintType('checklist');
 
-    setTimeout(() => {
-        window.print();
+  document.body.classList.remove('print-ptf');
+  document.body.classList.add('print-checklist');
 
-        document.body.classList.remove('print-checklist');
-    }, 300);
+  setTimeout(async () => {
+    try {
+
+      // =====================================================
+      // CHECKLIST = A4 PORTRAIT
+      // =====================================================
+
+      preparePrintOrientation('portrait');
+
+      await new Promise(resolve => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      });
+
+      window.print();
+
+    } finally {
+
+      document.body.classList.remove('print-checklist');
+
+      const printStyle = document.getElementById(
+        'dynamic-print-page'
+      );
+
+      if (printStyle) {
+        printStyle.remove();
+      }
+
+    }
+  }, 300);
 };
 
   const proceedWithPrint = async () => {
@@ -699,19 +752,50 @@ export default function App() {
   setPrintWarning(null);
   setIsPrinting(true);
 
-  // Pick Ticket = Landscape
+  // Pastikan hanya mode Pick Ticket yang aktif
   document.body.classList.remove('print-checklist');
   document.body.classList.add('print-ptf');
 
   setTimeout(async () => {
     try {
+
+      // =====================================================
+      // PICK TICKET = A4 LANDSCAPE
+      // =====================================================
+
+      preparePrintOrientation('landscape');
+
+      // Beri waktu browser apply CSS @page
+      await new Promise(resolve => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      });
+
       window.print();
+
     } finally {
 
-      // Bersihkan mode setelah print
+      // =====================================================
+      // CLEANUP PRINT MODE
+      // =====================================================
+
       document.body.classList.remove('print-ptf');
 
+      const printStyle = document.getElementById(
+        'dynamic-print-page'
+      );
+
+      if (printStyle) {
+        printStyle.remove();
+      }
+
+      // =====================================================
+      // SAVE PRINT HISTORY
+      // =====================================================
+
       try {
+
         const recordsToInsert = selectedBatch.tos.map(to => ({
           to_number: to,
           batch_code: formatBatchCode(
@@ -731,6 +815,7 @@ export default function App() {
         );
 
       } catch (e) {
+
         console.error(e);
 
         toast.error(
@@ -741,6 +826,7 @@ export default function App() {
       setIsPrinting(false);
       printingRef.current = false;
     }
+
   }, 200);
 };
 

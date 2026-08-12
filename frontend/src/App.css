@@ -6,49 +6,19 @@
     display: none !important;
 }
 
-
-/* ============================================================
-   PRINT
-   ============================================================ */
-
 @media print {
 
-    /* ========================================================
-       PAGE SETUP
-       ======================================================== */
+    html,
+    body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
 
-    @page {
-        size: A4 Landscape;
-        margin: 10mm;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
-
-    @page pt-landscape {
-        size: A4 landscape;
-        margin: 10mm;
-    }
-
-    @page checklist-portrait {
-        size: A4 portrait;
-        margin: 10mm;
-    }
-
-
-    /* ========================================================
-       MODE PICK TICKET
-       ======================================================== */
-
-    body.print-ptf .pick-page {
-        page: pt-landscape;
-    }
-
-
-    /* ========================================================
-       MODE CHECKLIST
-       ======================================================== */
-
-    body.print-checklist .checklist-a4-page {
-        page: checklist-portrait;
-    }
+}
 
 
     /* ========================================================
@@ -150,24 +120,22 @@
 
     .pick-page {
 
-        page: pt-landscape;
+    width: 100% !important;
 
-        width: 100% !important;
+    box-sizing: border-box !important;
 
-        box-sizing: border-box !important;
+    padding: 2mm !important;
 
-        padding: 2mm !important;
+    margin: 0 !important;
 
-        margin: 0 !important;
+    page-break-after: always !important;
 
-        page-break-after: always !important;
+    break-after: page !important;
 
-        break-after: page !important;
+    page-break-inside: avoid !important;
 
-        page-break-inside: avoid !important;
-
-        break-inside: avoid !important;
-    }
+    break-inside: avoid !important;
+}
 
 
     /*
@@ -201,40 +169,17 @@
 
     .checklist-a4-page {
 
-        /*
-           Explicit named page.
-           Default @page juga sudah Portrait.
-        */
+    width: 190mm !important;
 
-        page: checklist-portrait;
+    height: 277mm !important;
 
+    min-width: 190mm !important;
 
-        /*
-           A4:
+    max-width: 190mm !important;
 
-           210mm x 297mm
+    min-height: 277mm !important;
 
-           Margin:
-           10mm kiri
-           10mm kanan
-           10mm atas
-           10mm bawah
-
-           Printable:
-           190mm x 277mm
-        */
-
-        width: 190mm !important;
-
-        height: 277mm !important;
-
-        min-width: 190mm !important;
-
-        max-width: 190mm !important;
-
-        min-height: 277mm !important;
-
-        max-height: 277mm !important;
+    max-height: 277mm !important;
 
 
         /*
