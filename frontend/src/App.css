@@ -31,10 +31,12 @@
        pt-landscape
     */
 
+   @media print {
+
     @page {
-    size: A4;
-    margin: 10mm;
-}
+        size: A4;
+        margin: 10mm;
+    }
 
     @page pt-landscape {
         size: A4 landscape;
@@ -45,6 +47,16 @@
         size: A4 portrait;
         margin: 10mm;
     }
+
+    body.print-ptf .pick-page {
+        page: pt-landscape;
+    }
+
+    body.print-checklist .checklist-a4-page {
+        page: checklist-portrait;
+    }
+
+}
 
 
     /* ========================================================

@@ -628,83 +628,121 @@ export default function App() {
   };
 
   const handleRequestPrint = async () => {
-    if (!selectedBatch) return;
-    setPrintType('ptf'); 
-    try {
-      const toNumbers = selectedBatch.tos;
-      const { data: prev, error } = await supabase
-        .from('print_history')
-        .select('*')
-        .in('to_number', toNumbers);
+  if (!selectedBatch) return;
 
-      if (error) throw error;
+  setPrintType('ptf');
 
-      if (prev && prev.length > 0) {
-        const counts = {};
-        prev.forEach(p => {
-          counts[p.to_number] = (counts[p.to_number] || 0) + 1;
-        });
-        const maxReprint = Math.max(...Object.values(counts));
-        
-        setReprintCount(maxReprint);
-        setPrintWarning({ previousPrints: prev });
-        setPrintModalOpen(true);
-      } else {
-        setReprintCount(0); 
-        setPrintWarning(null);
-        setPrintModalOpen(false);
-        proceedWithPrint();
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal memeriksa riwayat print. Melanjutkan tanpa cek duplikat.");
+  try {
+    const toNumbers = selectedBatch.tos;
+
+    const { data: prev, error } = await supabase
+      .from('print_history')
+      .select('*')
+      .in('to_number', toNumbers);
+
+    if (error) throw error;
+
+    if (prev && prev.length > 0) {
+      const counts = {};
+
+      prev.forEach(p => {
+        counts[p.to_number] = (counts[p.to_number] || 0) + 1;
+      });
+
+      const maxReprint = Math.max(...Object.values(counts));
+
+      setReprintCount(maxReprint);
+      setPrintWarning({ previousPrints: prev });
+      setPrintModalOpen(true);
+
+    } else {
       setReprintCount(0);
+      setPrintWarning(null);
       setPrintModalOpen(false);
+
       proceedWithPrint();
     }
-  };
+
+  } catch (err) {
+
+    console.error(err);
+
+    toast.error(
+      "Gagal memeriksa riwayat print. Melanjutkan tanpa cek duplikat."
+    );
+
+    setReprintCount(0);
+    setPrintModalOpen(false);
+
+    proceedWithPrint();
+  }
+};
 
   const handlePrintChecklist = () => {
-    if (!selectedBatch) return;
-    setPrintType('checklist'); 
-    
+    setPrintType('checklist');
+
+    document.body.classList.remove('print-ptf');
+    document.body.classList.add('print-checklist');
+
     setTimeout(() => {
-      window.print();
+        window.print();
+
+        document.body.classList.remove('print-checklist');
     }, 300);
-  };
+};
 
   const proceedWithPrint = async () => {
-    if (!selectedBatch) return;
-    if (printingRef.current) return;
-    printingRef.current = true;
-    setPrintWarning(null);
-    setIsPrinting(true);
+  if (!selectedBatch) return;
+  if (printingRef.current) return;
 
-    setTimeout(async () => {
+  printingRef.current = true;
+  setPrintWarning(null);
+  setIsPrinting(true);
+
+  // Pick Ticket = Landscape
+  document.body.classList.remove('print-checklist');
+  document.body.classList.add('print-ptf');
+
+  setTimeout(async () => {
+    try {
+      window.print();
+    } finally {
+
+      // Bersihkan mode setelah print
+      document.body.classList.remove('print-ptf');
+
       try {
-        window.print();
-      } finally {
-        try {
-          const recordsToInsert = selectedBatch.tos.map(to => ({
-            to_number: to,
-            batch_code: formatBatchCode(selectedBatch.batchNumber, selectedBatch.randomSuffix),
-          }));
+        const recordsToInsert = selectedBatch.tos.map(to => ({
+          to_number: to,
+          batch_code: formatBatchCode(
+            selectedBatch.batchNumber,
+            selectedBatch.randomSuffix
+          ),
+        }));
 
-          const { error } = await supabase
-            .from('print_history')
-            .insert(recordsToInsert);
+        const { error } = await supabase
+          .from('print_history')
+          .insert(recordsToInsert);
 
-          if (error) throw error;
-          toast.success(`Pick ticket Batch ${selectedBatch.batchNumber} berhasil disimpan di database.`);
-        } catch (e) {
-          console.error(e);
-          toast.error("Print sukses, tetapi gagal menyimpan history ke Supabase.");
-        }
-        setIsPrinting(false);
-        printingRef.current = false;
+        if (error) throw error;
+
+        toast.success(
+          `Pick ticket Batch ${selectedBatch.batchNumber} berhasil disimpan di database.`
+        );
+
+      } catch (e) {
+        console.error(e);
+
+        toast.error(
+          "Print sukses, tetapi gagal menyimpan history ke Supabase."
+        );
       }
-    }, 200);
-  };
+
+      setIsPrinting(false);
+      printingRef.current = false;
+    }
+  }, 200);
+};
 
   useEffect(() => {
     setMixedSubFilter("all");
@@ -1696,7 +1734,7 @@ export default function App() {
       )}
 
       {selectedBatch && printType === 'ptf' && (
-        <div className="print-only pick-ticket-print" data-testid="pick-ticket-print" aria-hidden="true">
+        <div className="print-only pick-ticket-print pick-page" data-testid="pick-ticket-print" aria-hidden="true">
           {(() => {
             const rowPages = buildRowPages(selectedBatch);
             const totalPages = rowPages.length;
