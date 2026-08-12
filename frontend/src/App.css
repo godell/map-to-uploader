@@ -2,10 +2,6 @@
    SCREEN
    ============================================================ */
 
-/*
-   IMPORTANT:
-   Semua element print-only TIDAK BOLEH muncul di landing page.
-*/
 .print-only {
     display: none !important;
 }
@@ -18,20 +14,8 @@
 @media print {
 
     /* ========================================================
-       1. PAGE SETUP
+       PAGE SETUP
        ======================================================== */
-
-    /*
-       DEFAULT:
-       A4 PORTRAIT
-
-       Checklist akan menggunakan Portrait.
-
-       Pick Ticket menggunakan named page:
-       pt-landscape
-    */
-
-   @media print {
 
     @page {
         size: A4;
@@ -48,28 +32,34 @@
         margin: 10mm;
     }
 
+
+    /* ========================================================
+       MODE PICK TICKET
+       ======================================================== */
+
     body.print-ptf .pick-page {
         page: pt-landscape;
     }
+
+
+    /* ========================================================
+       MODE CHECKLIST
+       ======================================================== */
 
     body.print-checklist .checklist-a4-page {
         page: checklist-portrait;
     }
 
-}
-
 
     /* ========================================================
-       2. GLOBAL PRINT
+       GLOBAL PRINT
        ======================================================== */
 
     html,
     body {
         background: white !important;
-
         margin: 0 !important;
         padding: 0 !important;
-
         width: 100% !important;
 
         -webkit-print-color-adjust: exact !important;
