@@ -32,9 +32,9 @@
     */
 
     @page {
-        size: A4 portrait;
-        margin: 10mm;
-    }
+    size: A4;
+    margin: 10mm;
+}
 
     @page pt-landscape {
         size: A4 landscape;
