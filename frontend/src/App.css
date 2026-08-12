@@ -302,25 +302,30 @@
     }
 
     /* ========================================================
-       STATION CODE
-       ======================================================== */
+   CHECKLIST - LARGER STATION CODE
+   ======================================================== */
 
-    .checklist-a4-page
-    .text-\[140px\] {
+.checklist-a4-page
+.text-\[140px\] {
 
-        font-size: 60px !important;
+    font-size: 92px !important;
 
-        line-height: 0.9 !important;
+    line-height: 0.95 !important;
 
-        margin: 0 !important;
-    }
+    margin: 0 !important;
+}
 
-    .checklist-a4-page
-    .text-center.py-8 {
+  /* ========================================================
+   CHECKLIST - STATION AREA SPACING
+   ======================================================== */
 
-        padding-top: 3mm !important;
-        padding-bottom: 3mm !important;
-    }
+.checklist-a4-page
+.text-center.py-8 {
+
+    padding-top: 3mm !important;
+
+    padding-bottom: 7mm !important;
+}
 
     /* ========================================================
        DIVIDER
@@ -489,7 +494,7 @@
 
 /* ========================================================
    CHECKLIST - COMPACT WING CARDS
-   Max 18 checklist = 6 columns x 3 rows
+   Maximum: 18 rows = 6 columns x 3 rows
    ======================================================== */
 
 .checklist-a4-page
@@ -497,11 +502,11 @@
 
     flex: 0 0 auto !important;
 
-    height: 58mm !important;
+    height: 50mm !important;
 
-    min-height: 58mm !important;
+    min-height: 50mm !important;
 
-    max-height: 58mm !important;
+    max-height: 50mm !important;
 
     overflow: hidden !important;
 }
