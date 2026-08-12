@@ -1,16 +1,20 @@
 @media print {
-    /* 1. Definisikan ukuran halaman (Named Pages) */
-    @page pt-layout {
+    /* 1. Reset Global & Aturan Dasar Halaman */
+    @page {
         size: A4 landscape;
         margin: 10mm;
     }
 
-    @page checklist-layout {
-        size: A4 portrait;
-        margin: 8mm;
+    @page pt-landscape {
+        size: A4 landscape;
+        margin: 10mm 10mm 12mm 10mm;
     }
 
-    /* 2. Bersihkan background dan sembunyikan elemen UI aplikasi */
+    @page checklist-portrait {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+
     body, html {
         background: white !important;
         margin: 0 !important;
@@ -23,64 +27,69 @@
         display: none !important;
     }
 
-    /* 3. Pengaturan kontainer Pick Ticket (Landscape) */
+    body * {
+        visibility: hidden;
+    }
+
+    /* 2. Wrapper Utama Print */
+    .print-only,
+    .print-only * {
+        visibility: visible !important;
+    }
+
     .print-only {
         display: block !important;
-        position: static !important;
-        visibility: visible !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
         width: 100% !important;
         color: #000;
         font-family: "Helvetica Neue", Arial, sans-serif;
         font-size: 9.5pt;
     }
 
-    .print-only * {
-        visibility: visible !important;
-    }
-
+    /* 3. Pick Ticket (Landscape Layout) */
     .pick-page {
-        page: pt-layout;
+        page: pt-landscape;
+        page-break-before: always;
+        break-before: page;
         page-break-after: always;
         break-after: page;
         padding: 2mm;
+        box-sizing: border-box;
     }
     
-    .pick-page:last-child {
-        page-break-after: auto;
-        break-after: auto;
+    .pick-page:first-child {
+        page-break-before: avoid;
+        break-before: avoid;
     }
 
-    /* 4. Pengaturan Form Checklist (Portrait & Terkunci Rapi) */
+    /* 4. Form Checklist (Portrait Layout & Terkunci Rapi) */
     .checklist-a4-page {
-        page: checklist-layout;
+        page: checklist-portrait;
+        page-break-before: always;
+        break-before: page;
+        page-break-after: always;
+        break-after: page;
+        page-break-inside: avoid;
+        break-inside: avoid;
+
         display: flex !important;
-        visibility: visible !important;
-        position: static !important;
-        width: 194mm !important;
-        height: 275mm !important;
-        max-height: 275mm !important;
+        flex-direction: column !important;
+        position: relative !important;
+        width: 100% !important;
+        max-width: 190mm !important;
+        min-height: 275mm !important;
         box-sizing: border-box !important;
         background: white !important;
         border: 2px solid #cbd5e1 !important;
         border-radius: 12px !important;
         overflow: hidden !important;
-        flex-direction: column !important;
-        
-        /* Kunci agar tidak terpotong di tengah halaman */
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-        
-        /* Pindah halaman untuk item checklist berikutnya */
-        page-break-after: always !important;
-        break-after: page !important;
         margin: 0 auto !important;
+        padding: 8mm !important;
     }
 
-    .checklist-a4-page * {
-        visibility: visible !important;
-    }
-
-    /* Header row: Title | Row badge | Batch code */
+    /* 5. Komponen Internal Pick Ticket & Checklist */
     .pt-header {
         display: flex;
         justify-content: space-between;
