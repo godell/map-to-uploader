@@ -1830,7 +1830,7 @@ export default function App() {
              const timeStr = today.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
              return (
-               <div key={item.to} style={{ pageBreakAfter: 'always' }} className="mb-8 border-2 border-slate-300 rounded-xl overflow-hidden font-sans bg-white h-[98vh] flex flex-col">
+               <div key={item.to} className="checklist-a4-page" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
                  
                  <div className="bg-[#1e3a8a] text-white text-center py-4 font-bold text-2xl tracking-widest border-b-2 border-slate-800">
                    KODE PTF (STATION)

@@ -186,6 +186,23 @@
         margin-top: 1mm;
     }
 
+/* Format halaman A4 untuk Checklist */
+  .checklist-a4-page {
+    width: 194mm !important;
+    height: 281mm !important;
+    max-height: 281mm !important;
+    box-sizing: border-box !important;
+    background: white !important;
+    border: 2px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    margin: 0 auto !important;
+  }
+
     .pt-code-box {
         text-align: right;
     }
