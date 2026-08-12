@@ -502,11 +502,11 @@
 
     flex: 0 0 auto !important;
 
-    height: 62mm !important;
+    height: auto !important;
 
-    min-height: 62mm !important;
+    min-height: auto !important;
 
-    max-height: 62mm !important;
+    max-height: auto !important;
 
     overflow: hidden !important;
 }
@@ -606,14 +606,14 @@
     .checklist-a4-page
     .w-14.h-14 {
 
-        width: 7mm !important;
-        height: 7mm !important;
+        width: 9mm !important;
+        height: 9mm !important;
 
-        min-width: 7mm !important;
-        min-height: 7mm !important;
+        min-width: 9mm !important;
+        min-height: 9mm !important;
 
-        max-width: 7mm !important;
-        max-height: 7mm !important;
+        max-width: 9mm !important;
+        max-height: 9mm !important;
 
         border-width: 1.2px !important;
 
