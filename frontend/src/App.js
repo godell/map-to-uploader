@@ -1968,13 +1968,19 @@ const preparePrintOrientation = (orientation) => {
 {/* =====================================================
     BATCH PICKING NUMBER
     ===================================================== */}
-<div className="checklist-batch-header">
-  <div className="checklist-batch-label">
-    BATCH PICKING NUMBER
+<div className="checklist-batch-section">
+  <div className="checklist-batch-icon">
+    <Package className="w-16 h-16 text-white" />
   </div>
 
-  <div className="checklist-batch-number">
-    BATCH {selectedBatch.batchNumber}
+  <div className="checklist-batch-content">
+    <div className="checklist-batch-label">
+      BATCH PICKING NUMBER
+    </div>
+
+    <div className="checklist-batch-number">
+      BATCH {selectedBatch.batchNumber}
+    </div>
   </div>
 </div>
 

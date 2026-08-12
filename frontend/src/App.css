@@ -147,64 +147,111 @@
 
 /* ========================================================
    CHECKLIST - BATCH PICKING NUMBER
+   Mirip dengan TO / ORDER
    ======================================================== */
 
-.checklist-batch-header {
+.checklist-batch-section {
+    display: flex !important;
+
+    align-items: center !important;
+
+    gap: 4mm !important;
+
     width: 100% !important;
 
     box-sizing: border-box !important;
 
-    background: #1e3a8a !important;
+    padding: 2mm 4mm !important;
 
-    color: #ffffff !important;
-
-    text-align: center !important;
-
-    padding: 2.5mm 4mm !important;
-
-    margin: 0 0 2mm 0 !important;
-
-    border-radius: 2px !important;
-
-    -webkit-print-color-adjust: exact !important;
-
-    print-color-adjust: exact !important;
-
-    display: flex !important;
-
-    flex-direction: column !important;
-
-    align-items: center !important;
-
-    justify-content: center !important;
-
-    line-height: 1 !important;
+    margin: 0 !important;
 
     flex-shrink: 0 !important;
 }
 
 
-.checklist-batch-label {
-    font-size: 7pt !important;
+/* ========================================================
+   BATCH ICON
+   ======================================================== */
 
-    font-weight: 700 !important;
+.checklist-batch-icon {
+    width: 18mm !important;
 
-    letter-spacing: 1.5px !important;
+    height: 18mm !important;
 
-    line-height: 1.1 !important;
+    min-width: 18mm !important;
 
-    margin-bottom: 1.2mm !important;
+    min-height: 18mm !important;
+
+    background: #1e3a8a !important;
+
+    border-radius: 4px !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+
+    flex-shrink: 0 !important;
+
+    border: 1px solid #172554 !important;
+
+    -webkit-print-color-adjust: exact !important;
+
+    print-color-adjust: exact !important;
 }
 
 
+/* ========================================================
+   BATCH CONTENT
+   ======================================================== */
+
+.checklist-batch-content {
+    display: flex !important;
+
+    flex-direction: column !important;
+
+    justify-content: center !important;
+
+    min-width: 0 !important;
+
+    line-height: 1 !important;
+}
+
+
+/* ========================================================
+   BATCH LABEL
+   ======================================================== */
+
+.checklist-batch-label {
+    color: #1e3a8a !important;
+
+    font-size: 12pt !important;
+
+    font-weight: 700 !important;
+
+    line-height: 1.1 !important;
+
+    margin-bottom: 1mm !important;
+
+    letter-spacing: 0.8px !important;
+}
+
+
+/* ========================================================
+   BATCH NUMBER
+   ======================================================== */
+
 .checklist-batch-number {
-    font-size: 14pt !important;
+    color: #1e3a8a !important;
+
+    font-size: 24pt !important;
 
     font-weight: 900 !important;
 
-    letter-spacing: 1px !important;
+    line-height: 0.95 !important;
 
-    line-height: 1 !important;
+    letter-spacing: 0.5px !important;
 }
 
 
