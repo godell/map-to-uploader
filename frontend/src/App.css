@@ -1,128 +1,61 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
-}
-
-/* Tambahkan di App.css */
-.pt-reprint-box {
-  border: 4px solid #000;
-  padding: 8px;
-  margin-bottom: 10px;
-  text-align: center;
-  font-weight: 900;
-  font-size: 24px;
-  line-height: 1;
-  color: #000;
-  text-transform: uppercase;
-  background: #fff;
-}
-
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
-}
-
-.App-link {
-    color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-
-/* Indeterminate progress bar animation used by upload loading overlay */
-@keyframes upload-bar {
-    0% {
-        transform: translateX(-120%);
-    }
-    100% {
-        transform: translateX(400%);
-    }
-}
-
-.animate-upload-bar {
-    animation: upload-bar 1.2s linear infinite;
-}
-
-
-/* ── Print styles for Pick Ticket & Checklist ── */
-.print-only {
-    display: none;
-}
-
 @media print {
-    /* Default / Fallback page */
-    @page {
-        size: A4 landscape;
-        margin: 10mm 10mm 12mm 10mm;
-    }
-
-    /* Named page untuk Pick Ticket (Landscape) */
+    /* 1. Definisikan ukuran halaman (Named Pages) */
     @page pt-layout {
         size: A4 landscape;
-        margin: 10mm 10mm 12mm 10mm;
+        margin: 10mm;
     }
 
-    /* Named page untuk Form Checklist (Portrait) */
     @page checklist-layout {
         size: A4 portrait;
         margin: 8mm;
     }
 
-    body * {
-        visibility: hidden;
+    /* 2. Bersihkan background dan sembunyikan elemen UI aplikasi */
+    body, html {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
-    .print-only,
-    .print-only * {
-        visibility: visible;
+    .no-print, header, nav, button, .App-header, .App-logo {
+        display: none !important;
     }
 
+    /* 3. Pengaturan kontainer Pick Ticket (Landscape) */
     .print-only {
-        display: block;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+        display: block !important;
+        position: static !important;
+        visibility: visible !important;
+        width: 100% !important;
         color: #000;
         font-family: "Helvetica Neue", Arial, sans-serif;
         font-size: 9.5pt;
     }
 
-    .no-print {
-        display: none !important;
+    .print-only * {
+        visibility: visible !important;
     }
 
     .pick-page {
         page: pt-layout;
         page-break-after: always;
+        break-after: page;
         padding: 2mm;
     }
+    
     .pick-page:last-child {
         page-break-after: auto;
+        break-after: auto;
     }
 
-    /* Format halaman A4 khusus Checklist (Portrait & terkunci rapi) */
+    /* 4. Pengaturan Form Checklist (Portrait & Terkunci Rapi) */
     .checklist-a4-page {
         page: checklist-layout;
+        display: flex !important;
+        visibility: visible !important;
+        position: static !important;
         width: 194mm !important;
         height: 275mm !important;
         max-height: 275mm !important;
@@ -131,16 +64,98 @@
         border: 2px solid #cbd5e1 !important;
         border-radius: 12px !important;
         overflow: hidden !important;
-        display: flex !important;
         flex-direction: column !important;
         
-        /* KUNCI UTAMA: Cegah elemen checklist terbelah atau terpotong di tengah halaman */
+        /* Kunci agar tidak terpotong di tengah halaman */
         page-break-inside: avoid !important;
         break-inside: avoid !important;
         
+        /* Pindah halaman untuk item checklist berikutnya */
         page-break-after: always !important;
         break-after: page !important;
         margin: 0 auto !important;
+    }
+
+    .checklist-a4-page * {
+        visibility: visible !important;
+    }
+
+    /* Header row: Title | Row badge | Batch code */
+    .pt-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #000;
+        padding-bottom: 3mm;
+        margin-bottom: 3mm;
+    }
+
+    .pt-title .pt-h1 {
+        font-size: 14pt;
+        font-weight: 800;
+        letter-spacing: 0.5pt;
+    }
+
+    .pt-batch-badge {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 3mm;
+        margin-top: 1.5mm;
+        padding: 1mm 3mm;
+        border: 1.5pt solid #000;
+        border-radius: 3mm;
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .pt-batch-label {
+        font-size: 10pt;
+        font-weight: 700;
+        letter-spacing: 0.6pt;
+        text-transform: uppercase;
+        color: #444;
+    }
+
+    .pt-batch-num {
+        font-size: 20pt;
+        font-weight: 900;
+        line-height: 1;
+        color: #000;
+        font-family: "Courier New", monospace;
+    }
+
+    .pt-batch-meta {
+        font-size: 9.5pt;
+        color: #333;
+    }
+
+    .pt-row-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 22mm;
+        height: 22mm;
+        border: 3pt solid #000;
+        border-radius: 50%;
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .pt-row-label {
+        font-size: 7pt;
+        font-weight: 700;
+        letter-spacing: 1pt;
+        color: #555;
+    }
+
+    .pt-row-value {
+        font-size: 22pt;
+        font-weight: 900;
+        line-height: 1;
+        margin-top: 1mm;
     }
 
     .pt-code-box {
@@ -160,7 +175,6 @@
         margin-top: 1mm;
     }
 
-    /* Per-page summary block */
     .pt-summary {
         display: flex;
         gap: 3mm;
@@ -218,14 +232,12 @@
         print-color-adjust: exact;
     }
 
-    /* Fields that must stay on one line */
     .pt-table td.pt-nowrap {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    /* Article column: show full text, allow wrap on long codes */
     .pt-table td.pt-article {
         white-space: normal;
         word-break: break-all;
@@ -233,7 +245,6 @@
         text-overflow: clip;
     }
 
-    /* Article Description: max 2 lines with ellipsis */
     .pt-table td.pt-desc {
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -247,7 +258,7 @@
 
     .pt-footer {
         margin-top: 3mm;
-        font-size: 9pt;
+        font-size: 9.5pt;
         border-top: 1px dashed #666;
         padding-top: 2mm;
     }
