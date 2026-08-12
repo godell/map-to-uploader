@@ -1960,12 +1960,27 @@ const preparePrintOrientation = (orientation) => {
                    KODE TO (STATION)
                  </div>
                  <div className="text-center py-8">
-                   <div className="text-[140px] font-black text-[#1e3a8a] leading-none tracking-tight">{item.code}</div>
-                 </div>
+  <div className="text-[140px] font-black text-[#1e3a8a] leading-none tracking-tight">
+    {item.code}
+  </div>
+</div>
 
-                 <div className="border-t-[3px] border-dashed border-slate-400 mx-10 my-4"></div>
+{/* =====================================================
+    BATCH PICKING NUMBER
+    ===================================================== */}
+<div className="checklist-batch-header">
+  <div className="checklist-batch-label">
+    BATCH PICKING NUMBER
+  </div>
 
-                 <div className="flex items-center px-12 py-8 gap-8">
+  <div className="checklist-batch-number">
+    BATCH {selectedBatch.batchNumber}
+  </div>
+</div>
+
+<div className="border-t-[3px] border-dashed border-slate-400 mx-10 my-4"></div>
+
+<div className="flex items-center px-12 py-8 gap-8">
                    <div className="bg-[#16a34a] rounded-2xl p-6 flex-shrink-0 shadow-sm border-2 border-green-700">
                      <ClipboardList className="w-16 h-16 text-white" />
                    </div>
