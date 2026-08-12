@@ -2384,42 +2384,82 @@ const preparePrintOrientation = (orientation) => {
                    </div>
                  </div>
 
-                 <div className="border-t-[3px] border-slate-400 flex items-center justify-between p-8 bg-white">
-                   <div className="flex items-center gap-6">
-                     <div className="checklist-qr-box">
-  <QRCodeSVG
-    value={String(item.to)}
-    size={90}
-    level="M"
-    includeMargin={false}
-  />
+                 <div className="border-t-[3px] border-slate-400 bg-white p-8">
+
+  <div className="flex items-center justify-between">
+
+    {/* QR + TRACEABILITY */}
+    <div className="flex items-center gap-6">
+
+      <div className="checklist-qr-box">
+        <QRCodeSVG
+          value={String(item.to)}
+          size={90}
+          level="M"
+          includeMargin={false}
+        />
+      </div>
+
+      <div className="flex flex-col">
+        <div className="font-black text-lg text-slate-800 tracking-wide">
+          SCAN UNTUK TRACEABILITY
+        </div>
+
+        <div className="text-sm text-slate-600 font-semibold mt-1">
+          Lihat detail PTF / TO / Row
+        </div>
+
+        <div className="text-sm text-slate-600 font-semibold">
+          & status proses
+        </div>
+      </div>
+
+    </div>
+
+
+    {/* TANGGAL + WAKTU */}
+    <div className="flex items-center gap-10 border-l-[3px] border-slate-300 pl-10">
+
+      <div className="flex items-center gap-4">
+        <Calendar className="w-10 h-10 text-[#1e3a8a]" />
+
+        <div className="flex flex-col">
+          <div className="text-sm text-slate-500 font-bold tracking-wider">
+            TANGGAL
+          </div>
+
+          <div className="font-black text-xl text-slate-800">
+            {dateStr}
+          </div>
+        </div>
+      </div>
+
+
+      <div className="flex items-center gap-4">
+        <Clock className="w-10 h-10 text-[#1e3a8a]" />
+
+        <div className="flex flex-col">
+          <div className="text-sm text-slate-500 font-bold tracking-wider">
+            WAKTU
+          </div>
+
+          <div className="font-black text-xl text-slate-800">
+            {timeStr}
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  {/* PAGE NUMBER */}
+  <div className="checklist-page-number">
+    Page {pageIndex + 1} of {selectedBatch.codedTOs.length}
+  </div>
+
 </div>
-                     <div className="flex flex-col">
-                       <div className="font-black text-lg text-slate-800 tracking-wide">SCAN UNTUK TRACEABILITY</div>
-                       <div className="text-sm text-slate-600 font-semibold mt-1">Lihat detail PTF / TO / Row</div>
-                       <div className="text-sm text-slate-600 font-semibold">& status proses</div>
-                     </div>
-                   </div>
-                   <div className="flex items-center gap-10 border-l-[3px] border-slate-300 pl-10">
-                     <div className="flex items-center gap-4">
-                       <Calendar className="w-10 h-10 text-[#1e3a8a]" />
-                       <div className="flex flex-col">
-                         <div className="text-sm text-slate-500 font-bold tracking-wider">TANGGAL</div>
-                         <div className="font-black text-xl text-slate-800">{dateStr}</div>
-                       </div>
-                     </div>
-                     <div className="flex items-center gap-4">
-                       <Clock className="w-10 h-10 text-[#1e3a8a]" />
-                       <div className="flex flex-col">
-                         <div className="text-sm text-slate-500 font-bold tracking-wider">WAKTU</div>
-                         <div className="font-black text-xl text-slate-800">{timeStr}</div>
-                       </div>
-                     </div>
-                     </div>
-                      <div className="checklist-page-number">
-                       Page {pageIndex + 1} of {selectedBatch.codedTOs.length}
-                     </div>
-                   </div>
                  </div>
 
                </div>
