@@ -1,10 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import "./App.css";
 import { 
@@ -25,6 +19,10 @@ import { Badge } from "./components/ui/badge";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 import { toast } from "sonner";
+
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -537,185 +535,106 @@ export default function App() {
   }, [batches, selectedBatchNumber]);
 
   const buildRowPages = (batch) => {
-  if (!batch) return [];
+    if (!batch) return [];
 
-  /*
-   * ==========================================================
-   * PICK TICKET PAGINATION
-   *
-   * 1 ROW = 1 GROUP
-   * Maksimal 10 item per physical page.
-   *
-   * Contoh:
-   * ROW 07 = 25 items
-   *
-   * Page 1 → item 01 - 10
-   * Page 2 → item 11 - 20
-   * Page 3 → item 21 - 25
-   *
-   * Page number dihitung PER ROW, bukan PER BATCH.
-   * ==========================================================
-   */
+    const ITEMS_PER_PAGE = 10;
+    const toSet = new Set(batch.tos);
 
-  const ITEMS_PER_PAGE = 10;
-
-  const toSet = new Set(batch.tos);
-
-  const items = processedData.filter(item =>
-    toSet.has(item["Transfer Order Number"])
-  );
-
-  /*
-   * Group data berdasarkan Row
-   */
-  const groups = new Map();
-
-  items.forEach(it => {
-    const row = it.Row || "??";
-
-    if (!groups.has(row)) {
-      groups.set(row, []);
-    }
-
-    groups.get(row).push(it);
-  });
-
-  /*
-   * Sort Row
-   */
-  const rows = Array.from(groups.keys()).sort((a, b) => {
-    const na = parseInt(a, 10);
-    const nb = parseInt(b, 10);
-
-    if (Number.isNaN(na) && Number.isNaN(nb)) {
-      return String(a).localeCompare(String(b));
-    }
-
-    if (Number.isNaN(na)) return 1;
-    if (Number.isNaN(nb)) return -1;
-
-    return na - nb;
-  });
-
-  /*
-   * ==========================================================
-   * BUILD PHYSICAL PAGES
-   * ==========================================================
-   */
-
-  const result = [];
-
-  rows.forEach(rowKey => {
-
-    /*
-     * Jangan modify array asli.
-     */
-    const rowItems = [...groups.get(rowKey)].sort((a, b) =>
-      String(a["Source Storage Bin"] || "")
-        .localeCompare(
-          String(b["Source Storage Bin"] || "")
-        )
+    const items = processedData.filter(item =>
+      toSet.has(item["Transfer Order Number"])
     );
 
-    /*
-     * Statistik TOTAL untuk seluruh Row.
-     *
-     * Ini penting:
-     * Footer Page 1, 2, 3 semuanya tetap menunjukkan
-     * Total Items = TOTAL seluruh item Row.
-     */
+    const groups = new Map();
 
-    const toUniq = new Set();
-    const artUniq = new Set();
-
-    let qtySum = 0;
-
-    rowItems.forEach(it => {
-
-      if (it["Transfer Order Number"]) {
-        toUniq.add(it["Transfer Order Number"]);
+    items.forEach(it => {
+      const row = it.Row || "??";
+      if (!groups.has(row)) {
+        groups.set(row, []);
       }
-
-      if (it["Article"]) {
-        artUniq.add(it["Article"]);
-      }
-
-      qtySum += parseQty(
-        it["Source target qty"]
-      );
+      groups.get(row).push(it);
     });
 
-    const stats = {
-      totalTO: toUniq.size,
-      totalArticle: artUniq.size,
-      totalQty: qtySum,
-    };
+    const rows = Array.from(groups.keys()).sort((a, b) => {
+      const na = parseInt(a, 10);
+      const nb = parseInt(b, 10);
 
-    /*
-     * Berapa physical page yang dibutuhkan Row ini?
-     */
+      if (Number.isNaN(na) && Number.isNaN(nb)) {
+        return String(a).localeCompare(String(b));
+      }
 
-    const totalRowPages = Math.max(
-      1,
-      Math.ceil(
-        rowItems.length / ITEMS_PER_PAGE
-      )
-    );
+      if (Number.isNaN(na)) return 1;
+      if (Number.isNaN(nb)) return -1;
 
-    /*
-     * Pecah Row menjadi beberapa page.
-     */
+      return na - nb;
+    });
 
-    for (
-      let start = 0;
-      start < rowItems.length;
-      start += ITEMS_PER_PAGE
-    ) {
+    const result = [];
 
-      const pageItems = rowItems.slice(
-        start,
-        start + ITEMS_PER_PAGE
+    rows.forEach(rowKey => {
+      const rowItems = [...groups.get(rowKey)].sort((a, b) =>
+        String(a["Source Storage Bin"] || "")
+          .localeCompare(
+            String(b["Source Storage Bin"] || "")
+          )
       );
 
-      const rowPageNumber =
-        Math.floor(start / ITEMS_PER_PAGE) + 1;
+      const toUniq = new Set();
+      const artUniq = new Set();
+      let qtySum = 0;
 
-      result.push({
-        rowKey,
+      rowItems.forEach(it => {
+        if (it["Transfer Order Number"]) {
+          toUniq.add(it["Transfer Order Number"]);
+        }
 
-        /*
-         * Item untuk physical page ini
-         */
-        items: pageItems,
+        if (it["Article"]) {
+          artUniq.add(it["Article"]);
+        }
 
-        /*
-         * Statistik seluruh Row
-         */
-        stats,
-
-        /*
-         * Total item seluruh Row
-         */
-        totalRowItems: rowItems.length,
-
-        /*
-         * Pagination PER ROW
-         */
-        rowPageNumber,
-
-        rowTotalPages: totalRowPages,
-
-        /*
-         * Hanya page pertama yang menampilkan
-         * Header besar + Summary.
-         */
-        isFirstPage: rowPageNumber === 1,
+        qtySum += parseQty(
+          it["Source target qty"]
+        );
       });
-    }
-  });
 
-  return result;
-};
+      const stats = {
+        totalTO: toUniq.size,
+        totalArticle: artUniq.size,
+        totalQty: qtySum,
+      };
+
+      const totalRowPages = Math.max(
+        1,
+        Math.ceil(
+          rowItems.length / ITEMS_PER_PAGE
+        )
+      );
+
+      for (
+        let start = 0;
+        start < rowItems.length;
+        start += ITEMS_PER_PAGE
+      ) {
+        const pageItems = rowItems.slice(
+          start,
+          start + ITEMS_PER_PAGE
+        );
+
+        const rowPageNumber = Math.floor(start / ITEMS_PER_PAGE) + 1;
+
+        result.push({
+          rowKey,
+          items: pageItems,
+          stats,
+          totalRowItems: rowItems.length,
+          rowPageNumber,
+          rowTotalPages: totalRowPages,
+          isFirstPage: rowPageNumber === 1,
+        });
+      }
+    });
+
+    return result;
+  };
 
   const currentTOList = useMemo(() => {
     if (!selectedWing) return Array.from(toRowInfo.keys());
@@ -772,208 +691,180 @@ export default function App() {
     return `PTF-Batch-${batchNumber}-${yy}${mm}${dd}-${suffixStr}`;
   };
 
-const preparePrintOrientation = (orientation) => {
-  // Hapus style orientation sebelumnya
-  const oldStyle = document.getElementById('dynamic-print-page');
+  const preparePrintOrientation = (orientation) => {
+    const oldStyle = document.getElementById('dynamic-print-page');
 
-  if (oldStyle) {
-    oldStyle.remove();
-  }
-
-  // Buat SATU @page untuk print session ini
-  const style = document.createElement('style');
-
-  style.id = 'dynamic-print-page';
-
-  style.textContent = `
-    @media print {
-      @page {
-        size: A4 ${orientation};
-        margin: 10mm;
-      }
+    if (oldStyle) {
+      oldStyle.remove();
     }
-  `;
 
-  document.head.appendChild(style);
-};
+    const style = document.createElement('style');
+
+    style.id = 'dynamic-print-page';
+
+    style.textContent = `
+      @media print {
+        @page {
+          size: A4 ${orientation};
+          margin: 10mm;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  };
 
   const handleRequestPrint = async () => {
-  if (!selectedBatch) return;
+    if (!selectedBatch) return;
 
-  setPrintType('ptf');
+    setPrintType('ptf');
 
-  try {
-    const toNumbers = selectedBatch.tos;
+    try {
+      const toNumbers = selectedBatch.tos;
 
-    const { data: prev, error } = await supabase
-      .from('print_history')
-      .select('*')
-      .in('to_number', toNumbers);
+      const { data: prev, error } = await supabase
+        .from('print_history')
+        .select('*')
+        .in('to_number', toNumbers);
 
-    if (error) throw error;
+      if (error) throw error;
 
-    if (prev && prev.length > 0) {
-      const counts = {};
+      if (prev && prev.length > 0) {
+        const counts = {};
 
-      prev.forEach(p => {
-        counts[p.to_number] = (counts[p.to_number] || 0) + 1;
-      });
+        prev.forEach(p => {
+          counts[p.to_number] = (counts[p.to_number] || 0) + 1;
+        });
 
-      const maxReprint = Math.max(...Object.values(counts));
+        const maxReprint = Math.max(...Object.values(counts));
 
-      setReprintCount(maxReprint);
-      setPrintWarning({ previousPrints: prev });
-      setPrintModalOpen(true);
+        setReprintCount(maxReprint);
+        setPrintWarning({ previousPrints: prev });
+        setPrintModalOpen(true);
 
-    } else {
+      } else {
+        setReprintCount(0);
+        setPrintWarning(null);
+        setPrintModalOpen(false);
+
+        proceedWithPrint();
+      }
+
+    } catch (err) {
+      console.error(err);
+
+      toast.error(
+        "Gagal memeriksa riwayat print. Melanjutkan tanpa cek duplikat."
+      );
+
       setReprintCount(0);
-      setPrintWarning(null);
       setPrintModalOpen(false);
 
       proceedWithPrint();
     }
-
-  } catch (err) {
-
-    console.error(err);
-
-    toast.error(
-      "Gagal memeriksa riwayat print. Melanjutkan tanpa cek duplikat."
-    );
-
-    setReprintCount(0);
-    setPrintModalOpen(false);
-
-    proceedWithPrint();
-  }
-};
+  };
 
   const handlePrintChecklist = () => {
-  if (!selectedBatch) return;
+    if (!selectedBatch) return;
 
-  setPrintType('checklist');
+    setPrintType('checklist');
 
-  document.body.classList.remove('print-ptf');
-  document.body.classList.add('print-checklist');
+    document.body.classList.remove('print-ptf');
+    document.body.classList.add('print-checklist');
 
-  setTimeout(async () => {
-    try {
+    setTimeout(async () => {
+      try {
+        preparePrintOrientation('portrait');
 
-      // =====================================================
-      // CHECKLIST = A4 PORTRAIT
-      // =====================================================
-
-      preparePrintOrientation('portrait');
-
-      await new Promise(resolve => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(resolve);
+        await new Promise(resolve => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(resolve);
+          });
         });
-      });
 
-      window.print();
+        window.print();
 
-    } finally {
+      } finally {
+        document.body.classList.remove('print-checklist');
 
-      document.body.classList.remove('print-checklist');
+        const printStyle = document.getElementById(
+          'dynamic-print-page'
+        );
 
-      const printStyle = document.getElementById(
-        'dynamic-print-page'
-      );
-
-      if (printStyle) {
-        printStyle.remove();
+        if (printStyle) {
+          printStyle.remove();
+        }
       }
-
-    }
-  }, 300);
-};
+    }, 300);
+  };
 
   const proceedWithPrint = async () => {
-  if (!selectedBatch) return;
-  if (printingRef.current) return;
+    if (!selectedBatch) return;
+    if (printingRef.current) return;
 
-  printingRef.current = true;
-  setPrintWarning(null);
-  setIsPrinting(true);
+    printingRef.current = true;
+    setPrintWarning(null);
+    setIsPrinting(true);
 
-  // Pastikan hanya mode Pick Ticket yang aktif
-  document.body.classList.remove('print-checklist');
-  document.body.classList.add('print-ptf');
+    document.body.classList.remove('print-checklist');
+    document.body.classList.add('print-ptf');
 
-  setTimeout(async () => {
-    try {
-
-      // =====================================================
-      // PICK TICKET = A4 LANDSCAPE
-      // =====================================================
-
-      preparePrintOrientation('landscape');
-
-      // Beri waktu browser apply CSS @page
-      await new Promise(resolve => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(resolve);
-        });
-      });
-
-      window.print();
-
-    } finally {
-
-      // =====================================================
-      // CLEANUP PRINT MODE
-      // =====================================================
-
-      document.body.classList.remove('print-ptf');
-
-      const printStyle = document.getElementById(
-        'dynamic-print-page'
-      );
-
-      if (printStyle) {
-        printStyle.remove();
-      }
-
-      // =====================================================
-      // SAVE PRINT HISTORY
-      // =====================================================
-
+    setTimeout(async () => {
       try {
+        preparePrintOrientation('landscape');
 
-        const recordsToInsert = selectedBatch.tos.map(to => ({
-          to_number: to,
-          batch_code: formatBatchCode(
-            selectedBatch.batchNumber,
-            selectedBatch.randomSuffix
-          ),
-        }));
+        await new Promise(resolve => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(resolve);
+          });
+        });
 
-        const { error } = await supabase
-          .from('print_history')
-          .insert(recordsToInsert);
+        window.print();
 
-        if (error) throw error;
+      } finally {
+        document.body.classList.remove('print-ptf');
 
-        toast.success(
-          `Pick ticket Batch ${selectedBatch.batchNumber} berhasil disimpan di database.`
+        const printStyle = document.getElementById(
+          'dynamic-print-page'
         );
 
-      } catch (e) {
+        if (printStyle) {
+          printStyle.remove();
+        }
 
-        console.error(e);
+        try {
+          const recordsToInsert = selectedBatch.tos.map(to => ({
+            to_number: to,
+            batch_code: formatBatchCode(
+              selectedBatch.batchNumber,
+              selectedBatch.randomSuffix
+            ),
+          }));
 
-        toast.error(
-          "Print sukses, tetapi gagal menyimpan history ke Supabase."
-        );
+          const { error } = await supabase
+            .from('print_history')
+            .insert(recordsToInsert);
+
+          if (error) throw error;
+
+          toast.success(
+            `Pick ticket Batch ${selectedBatch.batchNumber} berhasil disimpan di database.`
+          );
+
+        } catch (e) {
+          console.error(e);
+
+          toast.error(
+            "Print sukses, tetapi gagal menyimpan history ke Supabase."
+          );
+        }
+
+        setIsPrinting(false);
+        printingRef.current = false;
       }
 
-      setIsPrinting(false);
-      printingRef.current = false;
-    }
-
-  }, 200);
-};
+    }, 200);
+  };
 
   useEffect(() => {
     setMixedSubFilter("all");
@@ -1268,7 +1159,6 @@ const preparePrintOrientation = (orientation) => {
               </div>
             </CardContent>
           </Card>
-
         </div>
 
         <div className="space-y-4">
@@ -1979,314 +1869,135 @@ const preparePrintOrientation = (orientation) => {
               })();
 
               return (
-  <div
-    key={`${page.rowKey}-${page.rowPageNumber}`}
-    className="pick-page"
-  >
+                <div key={`${page.rowKey}-${page.rowPageNumber}`} className="pick-page">
+                  {page.isFirstPage && (
+                    <>
+                      <div className="pt-header">
+                        <div className="pt-title">
+                          <div className="pt-h1">TRANSFER ORDER PICKING</div>
+                          <div className="pt-batch-badge">
+                            <span className="pt-batch-label">Batch</span>
+                            <span className="pt-batch-num">{selectedBatch.batchNumber}</span>
+                            <span className="pt-batch-meta">· {selectedBatch.tos.length} TO in batch</span>
+                          </div>
+                        </div>
 
-    {/* =====================================================
-        HEADER BESAR
-        HANYA PAGE PERTAMA ROW
-       ===================================================== */}
+                        <div className="pt-row-badge">
+                          <div className="pt-row-label">ROW</div>
+                          <div className="pt-row-value">{rowLabel}</div>
+                        </div>
 
-    {page.isFirstPage && (
-      <>
-        <div className="pt-header">
+                        <div className="pt-code-box">
+                          {reprintCount > 0 && (
+                            <div
+                              style={{
+                                fontSize: '22px',
+                                fontWeight: '900',
+                                border: '3px solid black',
+                                padding: '4px 10px',
+                                marginBottom: '8px',
+                                textAlign: 'center',
+                                letterSpacing: '1px',
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              RE-PRINT {reprintCount}
+                            </div>
+                          )}
 
-          <div className="pt-title">
+                          <Barcode
+                            value={batchCode}
+                            width={1.2}
+                            height={35}
+                            displayValue={false}
+                            margin={0}
+                          />
 
-            <div className="pt-h1">
-              TRANSFER ORDER PICKING
-            </div>
+                          <div className="pt-code-num" style={{ marginTop: '4px' }}>
+                            {batchCode}
+                          </div>
 
-            <div className="pt-batch-badge">
-              <span className="pt-batch-label">
-                Batch
-              </span>
+                          <div className="pt-code-meta">
+                            Printed: {printedAt}
+                          </div>
+                        </div>
+                      </div>
 
-              <span className="pt-batch-num">
-                {selectedBatch.batchNumber}
-              </span>
+                      <div className="pt-summary">
+                        <div className="pt-summary-item">
+                          <span className="pt-sm-label">Total TO</span>
+                          <span className="pt-sm-value">{page.stats.totalTO}</span>
+                        </div>
 
-              <span className="pt-batch-meta">
-                · {selectedBatch.tos.length} TO in batch
-              </span>
-            </div>
+                        <div className="pt-summary-item">
+                          <span className="pt-sm-label">Total Article</span>
+                          <span className="pt-sm-value">{page.stats.totalArticle}</span>
+                        </div>
 
-          </div>
+                        <div className="pt-summary-item">
+                          <span className="pt-sm-label">Total Qty</span>
+                          <span className="pt-sm-value">{page.stats.totalQty.toLocaleString("id-ID")}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
+                  <table className="pt-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: "36px" }}>No. Urut</th>
+                        <th style={{ width: "48px" }}>Kode</th>
+                        <th style={{ width: "47px" }}>TO Line</th>
+                        <th style={{ width: "78px" }}>TO Number</th>
+                        <th style={{ width: "150px" }}>Article</th>
+                        <th>Article Description</th>
+                        <th style={{ width: "42px" }}>Qty</th>
+                        <th style={{ width: "37px" }}>UoM</th>
+                        <th style={{ width: "78px" }}>Source Bin</th>
+                        <th style={{ width: "78px" }}>Dest. Bin</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {page.items.map((it, idx) => (
+                        <tr key={idx}>
+                          <td>{String(idx + 1).padStart(4, "0")}</td>
+                          <td style={{ fontWeight: 'bold', color: '#000000', fontSize: '14px' }}>
+                            {codeMap.get(it["Transfer Order Number"]) || ""}
+                          </td>
+                          <td>{it["Transfer order item"] || ""}</td>
+                          <td className="pt-nowrap">{it["Transfer Order Number"]}</td>
+                          <td className="pt-article">{it["Article"] || ""}</td>
+                          <td className="pt-desc">{it["Article Description"] || ""}</td>
+                          <td>{it["Source target qty"] || ""}</td>
+                          <td>EA</td>
+                          <td className="pt-nowrap">{it["Source Storage Bin"] || ""}</td>
+                          <td className="pt-nowrap">{it["Dest.Storage Bin"] || ""}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
 
-          <div className="pt-row-badge">
+                  <div className="pt-footer">
+                    <div className="pt-footer-row">
+                      <div>
+                        Total Items in this Row: <strong>{page.totalRowItems}</strong> · Row <strong>{rowLabel}</strong>
+                      </div>
+                      <div className="pt-page-num">
+                        Page {page.rowPageNumber} of {page.rowTotalPages}
+                      </div>
+                    </div>
 
-            <div className="pt-row-label">
-              ROW
-            </div>
-
-            <div className="pt-row-value">
-              {rowLabel}
-            </div>
-
-          </div>
-
-
-          <div className="pt-code-box">
-
-            {reprintCount > 0 && (
-              <div
-                style={{
-                  fontSize: '22px',
-                  fontWeight: '900',
-                  border: '3px solid black',
-                  padding: '4px 10px',
-                  marginBottom: '8px',
-                  textAlign: 'center',
-                  letterSpacing: '1px',
-                  backgroundColor: '#ffffff'
-                }}
-              >
-                RE-PRINT {reprintCount}
-              </div>
-            )}
-
-            <Barcode
-              value={batchCode}
-              width={1.2}
-              height={35}
-              displayValue={false}
-              margin={0}
-            />
-
-            <div
-              className="pt-code-num"
-              style={{ marginTop: '4px' }}
-            >
-              {batchCode}
-            </div>
-
-            <div className="pt-code-meta">
-              Printed: {printedAt}
-            </div>
-
-          </div>
-
+                    <div className="pt-signature">
+                      <div>Picker: ____________________</div>
+                      <div>Checker: ____________________</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            });
+          })()}
         </div>
-
-
-        {/* =================================================
-            SUMMARY
-            HANYA PAGE PERTAMA ROW
-           ================================================= */}
-
-        <div className="pt-summary">
-
-          <div className="pt-summary-item">
-            <span className="pt-sm-label">
-              Total TO
-            </span>
-
-            <span className="pt-sm-value">
-              {page.stats.totalTO}
-            </span>
-          </div>
-
-
-          <div className="pt-summary-item">
-            <span className="pt-sm-label">
-              Total Article
-            </span>
-
-            <span className="pt-sm-value">
-              {page.stats.totalArticle}
-            </span>
-          </div>
-
-
-          <div className="pt-summary-item">
-            <span className="pt-sm-label">
-              Total Qty
-            </span>
-
-            <span className="pt-sm-value">
-              {page.stats.totalQty.toLocaleString("id-ID")}
-            </span>
-          </div>
-
-        </div>
-      </>
-    )}
-
-
-    {/* =====================================================
-        TABLE
-        SELALU ADA DI SETIAP PHYSICAL PAGE
-       ===================================================== */}
-
-    <table className="pt-table">
-
-      <thead>
-        <tr>
-
-          <th style={{ width: "36px" }}>
-            No. Urut
-          </th>
-
-          <th style={{ width: "48px" }}>
-            Kode
-          </th>
-
-          <th style={{ width: "47px" }}>
-            TO Line
-          </th>
-
-          <th style={{ width: "78px" }}>
-            TO Number
-          </th>
-
-          <th style={{ width: "150px" }}>
-            Article
-          </th>
-
-          <th>
-            Article Description
-          </th>
-
-          <th style={{ width: "42px" }}>
-            Qty
-          </th>
-
-          <th style={{ width: "37px" }}>
-            UoM
-          </th>
-
-          <th style={{ width: "78px" }}>
-            Source Bin
-          </th>
-
-          <th style={{ width: "78px" }}>
-            Dest. Bin
-          </th>
-
-        </tr>
-      </thead>
-
-
-      <tbody>
-
-        {page.items.map((it, idx) => (
-
-          <tr key={idx}>
-
-            <td>
-              {String(idx + 1).padStart(4, "0")}
-            </td>
-
-            <td
-              style={{
-                fontWeight: 'bold',
-                color: '#000000',
-                fontSize: '14px'
-              }}
-            >
-              {codeMap.get(
-                it["Transfer Order Number"]
-              ) || ""}
-            </td>
-
-            <td>
-              {it["Transfer order item"] || ""}
-            </td>
-
-            <td className="pt-nowrap">
-              {it["Transfer Order Number"]}
-            </td>
-
-            <td className="pt-article">
-              {it["Article"] || ""}
-            </td>
-
-            <td className="pt-desc">
-              {it["Article Description"] || ""}
-            </td>
-
-            <td>
-              {it["Source target qty"] || ""}
-            </td>
-
-            <td>
-              EA
-            </td>
-
-            <td className="pt-nowrap">
-              {it["Source Storage Bin"] || ""}
-            </td>
-
-            <td className="pt-nowrap">
-              {it["Dest.Storage Bin"] || ""}
-            </td>
-
-          </tr>
-
-        ))}
-
-      </tbody>
-
-    </table>
-
-
-    {/* =====================================================
-        FOOTER
-        SELALU ADA DI BOTTOM PAGE
-       ===================================================== */}
-
-    <div className="pt-footer">
-
-      <div className="pt-footer-row">
-
-        <div>
-          Total Items in this Row:
-          <strong>
-            {page.totalRowItems}
-          </strong>
-
-          {" · "}
-
-          Row
-          {" "}
-          <strong>
-            {rowLabel}
-          </strong>
-        </div>
-
-
-        <div className="pt-page-num">
-
-          Page {page.rowPageNumber} of {page.rowTotalPages}
-
-        </div>
-
-      </div>
-
-
-      <div className="pt-signature">
-
-        <div>
-          Picker: ____________________
-        </div>
-
-        <div>
-          Checker: ____________________
-        </div>
-
-      </div>
-
-        </div>
-
-              </div>
-            );
-          });
-        })()}
-      </div>
-    )}
+      )}
 
       {selectedBatch && printType === 'checklist' && (
         <div className="print-only" aria-hidden="true">
@@ -2303,40 +2014,31 @@ const preparePrintOrientation = (orientation) => {
 
              return (
                <div key={item.to} className="checklist-a4-page" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
-                 
                  <div className="bg-[#1e3a8a] text-white text-center py-4 font-bold text-2xl tracking-widest border-b-2 border-slate-800">
                    KODE TO (STATION)
                  </div>
+                 
                  <div className="text-center py-8">
-  <div className="text-[140px] font-black text-[#1e3a8a] leading-none tracking-tight">
-    {item.code}
-  </div>
-</div>
+                   <div className="text-[140px] font-black text-[#1e3a8a] leading-none tracking-tight">
+                     {item.code}
+                   </div>
+                 </div>
 
-<div className="checklist-station-separator"></div>
+                 <div className="checklist-station-separator"></div>
 
-{/* =====================================================
-    BATCH PICKING NUMBER
-    ===================================================== */}
-<div className="checklist-batch-section">
-  <div className="checklist-batch-icon">
-    <Package className="w-16 h-16 text-white" />
-  </div>
+                 <div className="checklist-batch-section">
+                   <div className="checklist-batch-icon">
+                     <Package className="w-16 h-16 text-white" />
+                   </div>
+                   <div className="checklist-batch-content">
+                     <div className="checklist-batch-label">BATCH PICKING NUMBER</div>
+                     <div className="checklist-batch-number">BATCH {selectedBatch.batchNumber}</div>
+                   </div>
+                 </div>
 
-  <div className="checklist-batch-content">
-    <div className="checklist-batch-label">
-      BATCH PICKING NUMBER
-    </div>
+                 <div className="border-t-[3px] border-dashed border-slate-400 mx-10 my-4"></div>
 
-    <div className="checklist-batch-number">
-      BATCH {selectedBatch.batchNumber}
-    </div>
-  </div>
-</div>
-
-<div className="border-t-[3px] border-dashed border-slate-400 mx-10 my-4"></div>
-
-<div className="flex items-center px-12 py-8 gap-8">
+                 <div className="flex items-center px-12 py-8 gap-8">
                    <div className="bg-[#16a34a] rounded-2xl p-6 flex-shrink-0 shadow-sm border-2 border-green-700">
                      <ClipboardList className="w-16 h-16 text-white" />
                    </div>
@@ -2352,7 +2054,6 @@ const preparePrintOrientation = (orientation) => {
                      CHECKLIST ROW – CENTANG JIKA SUDAH SELESAI
                    </div>
                    <div className="p-8 flex flex-col gap-6 flex-grow bg-slate-50">
-                     
                      <div className="bg-white p-6 rounded-xl border-2 border-slate-300 shadow-sm">
                        <div className="text-slate-800 font-bold text-xl mb-6 border-b-2 border-slate-200 pb-3">
                          Wing Kiri <span className="text-slate-500 font-semibold text-lg ml-2">(Row 01 - 18)</span>
@@ -2380,88 +2081,64 @@ const preparePrintOrientation = (orientation) => {
                          )) : <div className="text-slate-400 italic font-semibold">Tidak ada data picking di Wing Kanan</div>}
                        </div>
                      </div>
-
                    </div>
                  </div>
 
                  <div className="border-t-[3px] border-slate-400 bg-white p-8">
+                   <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-6">
+                       <div className="checklist-qr-box">
+                         <QRCodeSVG
+                           value={String(item.to)}
+                           size={90}
+                           level="M"
+                           includeMargin={false}
+                         />
+                       </div>
+                       <div className="flex flex-col">
+                         <div className="font-black text-lg text-slate-800 tracking-wide">
+                           SCAN UNTUK TRACEABILITY
+                         </div>
+                         <div className="text-sm text-slate-600 font-semibold mt-1">
+                           Lihat detail PTF / TO / Row
+                         </div>
+                         <div className="text-sm text-slate-600 font-semibold">
+                           & status proses
+                         </div>
+                       </div>
+                     </div>
 
-  <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-10 border-l-[3px] border-slate-300 pl-10">
+                       <div className="flex items-center gap-4">
+                         <Calendar className="w-10 h-10 text-[#1e3a8a]" />
+                         <div className="flex flex-col">
+                           <div className="text-sm text-slate-500 font-bold tracking-wider">
+                             TANGGAL
+                           </div>
+                           <div className="font-black text-xl text-slate-800">
+                             {dateStr}
+                           </div>
+                         </div>
+                       </div>
 
-    {/* QR + TRACEABILITY */}
-    <div className="flex items-center gap-6">
+                       <div className="flex items-center gap-4">
+                         <Clock className="w-10 h-10 text-[#1e3a8a]" />
+                         <div className="flex flex-col">
+                           <div className="text-sm text-slate-500 font-bold tracking-wider">
+                             WAKTU
+                           </div>
+                           <div className="font-black text-xl text-slate-800">
+                             {timeStr}
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
 
-      <div className="checklist-qr-box">
-        <QRCodeSVG
-          value={String(item.to)}
-          size={90}
-          level="M"
-          includeMargin={false}
-        />
-      </div>
-
-      <div className="flex flex-col">
-        <div className="font-black text-lg text-slate-800 tracking-wide">
-          SCAN UNTUK TRACEABILITY
-        </div>
-
-        <div className="text-sm text-slate-600 font-semibold mt-1">
-          Lihat detail PTF / TO / Row
-        </div>
-
-        <div className="text-sm text-slate-600 font-semibold">
-          & status proses
-        </div>
-      </div>
-
-    </div>
-
-
-    {/* TANGGAL + WAKTU */}
-    <div className="flex items-center gap-10 border-l-[3px] border-slate-300 pl-10">
-
-      <div className="flex items-center gap-4">
-        <Calendar className="w-10 h-10 text-[#1e3a8a]" />
-
-        <div className="flex flex-col">
-          <div className="text-sm text-slate-500 font-bold tracking-wider">
-            TANGGAL
-          </div>
-
-          <div className="font-black text-xl text-slate-800">
-            {dateStr}
-          </div>
-        </div>
-      </div>
-
-
-      <div className="flex items-center gap-4">
-        <Clock className="w-10 h-10 text-[#1e3a8a]" />
-
-        <div className="flex flex-col">
-          <div className="text-sm text-slate-500 font-bold tracking-wider">
-            WAKTU
-          </div>
-
-          <div className="font-black text-xl text-slate-800">
-            {timeStr}
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-
-
-  {/* PAGE NUMBER */}
-  <div className="checklist-page-number">
-    Page {pageIndex + 1} of {selectedBatch.codedTOs.length}
-  </div>
-
-</div>
+                   <div className="checklist-page-number">
+                     Page {pageIndex + 1} of {selectedBatch.codedTOs.length}
+                   </div>
                  </div>
-
                </div>
              );
           })}
