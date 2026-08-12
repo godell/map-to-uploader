@@ -1957,7 +1957,7 @@ const preparePrintOrientation = (orientation) => {
                <div key={item.to} className="checklist-a4-page" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
                  
                  <div className="bg-[#1e3a8a] text-white text-center py-4 font-bold text-2xl tracking-widest border-b-2 border-slate-800">
-                   KODE PTF (STATION)
+                   KODE TO (STATION)
                  </div>
                  <div className="text-center py-8">
                    <div className="text-[140px] font-black text-[#1e3a8a] leading-none tracking-tight">{item.code}</div>
