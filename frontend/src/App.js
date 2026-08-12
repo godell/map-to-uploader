@@ -11,11 +11,12 @@ import {
   FileSpreadsheet, Upload, Download, Copy, Check, Filter, 
   Layers, RefreshCw, Eye, ArrowRight, CheckCircle2, AlertCircle,
   Database, HelpCircle, Sparkles, SlidersHorizontal, Table as TableIcon,
-  Search, Loader2, Printer, Package, Users, AlertTriangle, X
+  Search, Loader2, Printer, Package, Users, AlertTriangle, X,
+  ClipboardList, CheckSquare, Calendar, Clock
 } from "lucide-react";
 import axios from "axios";
 import * as XLSX from "xlsx";
-import Barcode from "react-barcode"; // <-- IMPORT BARU UNTUK BARCODE
+import Barcode from "react-barcode";
 import { Button } from "./components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
@@ -27,7 +28,6 @@ import { toast } from "sonner";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Initial mock dataset from the user's uploaded Sourcedb.xlsx
 const INITIAL_RAW_DATA = [
   {
     id: 1,
@@ -303,8 +303,6 @@ const INITIAL_RAW_DATA = [
   }
 ];
 
-// Process a raw dataset row: extract 2 middle chars from Source Storage Bin starting at char 4
-// e.g., "M1-07-36A2" -> Row "07"
 const processDataset = (rawData) => {
   return rawData.map(item => {
     const bin = item["Source Storage Bin"] || "";
@@ -321,8 +319,6 @@ const processDataset = (rawData) => {
   });
 };
 
-// ... kode proses data di atasnya ...
-
 export default function App() {
   const [data, setData] = useState(INITIAL_RAW_DATA);
   const [isGenerated, setIsGenerated] = useState(true);
@@ -333,7 +329,6 @@ export default function App() {
   const [mixedSubFilter, setMixedSubFilter] = useState("all"); 
   const [copyPulse, setCopyPulse] = useState(false); 
 
-  // ── Batch Picking (Cross Wing) state ──
   const [batchPickingOpen, setBatchPickingOpen] = useState(false); 
   const [batchSize, setBatchSize] = useState(null); 
   const [customBatchSize, setCustomBatchSize] = useState("");
@@ -344,29 +339,25 @@ export default function App() {
   const [isPrinting, setIsPrinting] = useState(false);
   const printingRef = useRef(false); 
   
-  // MASUKKAN REPRINT COUNT DI SINI BRO:
   const [reprintCount, setReprintCount] = useState(0);
+  const [printType, setPrintType] = useState('ptf');
 
   const processedData = useMemo(() => {
-// ... lanjut ke kode lu yang di bawahnya ...
     return processDataset(data);
   }, [data]);
 
-  // Parse Row string as numeric (e.g. "07" -> 7). Returns null if not numeric.
   const parseRowNumeric = (r) => {
     if (r === null || r === undefined) return null;
     const n = parseInt(r, 10);
     return Number.isNaN(n) ? null : n;
   };
 
-  // Parse numeric qty helper (Source target qty could be number or string from XLSX)
   const parseQty = (q) => {
     if (q === null || q === undefined || q === "") return 0;
     const n = typeof q === "number" ? q : parseFloat(String(q).replace(/,/g, ""));
     return Number.isNaN(n) ? 0 : n;
   };
 
-  // Build map: Transfer Order Number -> { numericRows, rawRows, bins, articles, qty }
   const toRowInfo = useMemo(() => {
     const map = new Map();
     processedData.forEach(item => {
@@ -386,7 +377,6 @@ export default function App() {
     return map;
   }, [processedData]);
 
-  // Dataset-level summary used by the Legend box
   const datasetSummary = useMemo(() => {
     const articles = new Set();
     const rows = new Set();
@@ -407,10 +397,6 @@ export default function App() {
     };
   }, [processedData, toRowInfo]);
 
-  // ── Wing structure (fixed by user's business rule) ──
-  // Wing Kiri: Row 1..18 → sub-ranges [1-6, 7-12, 13-18]
-  // Wing Kanan: Row 19..36 → sub-ranges [19-24, 25-30, 31-36]
-  // Cross Wing: TOs whose numeric Rows span BOTH wings (or contain out-of-range rows)
   const WING_STRUCTURE = useMemo(() => ({
     left: {
       key: "left",
@@ -436,7 +422,6 @@ export default function App() {
     },
   }), []);
 
-  // Assign every unique TO into the wing/sub-range/mixed/cross buckets.
   const wingAssignments = useMemo(() => {
     const emptyRanges = (subs) => {
       const o = {};
@@ -452,7 +437,6 @@ export default function App() {
     toRowInfo.forEach((info, to) => {
       const rows = Array.from(info.numericRows);
       if (rows.length === 0) {
-        // No numeric row info — treat as Cross so the TO is not lost
         result.cross.push(to);
         return;
       }
@@ -478,7 +462,6 @@ export default function App() {
         const [key] = matched;
         result[wing].ranges[key].push(to);
       } else {
-        // Spans multiple sub-ranges within the same wing
         result[wing].mixed.push(to);
       }
     });
@@ -486,12 +469,9 @@ export default function App() {
     return result;
   }, [toRowInfo, WING_STRUCTURE]);
 
-  // Compute aggregate stats for any TO list. Returns:
-  //   toCount, totalQty, totalUniqueBins (across all TOs), avgBinPerTO (rounded),
-  //   avgQtyPerBin (Total Qty / total unique-bins-per-TO summed — matches user's rule)
   const computeBucketStats = (toList) => {
     let totalQty = 0;
-    let totalBinCount = 0; // sum of unique bins per TO
+    let totalBinCount = 0;
     toList.forEach(to => {
       const info = toRowInfo.get(to);
       if (!info) return;
@@ -508,7 +488,6 @@ export default function App() {
     };
   };
 
-  // Pre-computed stats for each wing top-level card (used to display Total TO, Qty, avg on the card)
   const wingLevelStats = useMemo(() => {
     const leftTOs = [
       ...Object.values(wingAssignments.left.ranges).flat(),
@@ -523,17 +502,12 @@ export default function App() {
       right: computeBucketStats(rightTOs),
       cross: computeBucketStats(wingAssignments.cross),
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [wingAssignments, toRowInfo]);
+  }, [wingAssignments, toRowInfo]);
 
-  // ── Batch Picking computation (only relevant when Cross Wing is selected + batchSize chosen) ──
-  // Deterministic sort of Cross Wing TOs by TO number ascending.
   const crossWingTOsSorted = useMemo(() => {
     return [...wingAssignments.cross].sort();
   }, [wingAssignments.cross]);
 
-  // Split into batches of `batchSize`. Each TO gets a running global unique code
-  // (Batch 1: codes 1..bs, Batch 2: codes bs+1..2bs, dst).
   const batches = useMemo(() => {
     if (!batchSize || batchSize <= 0) return [];
     const result = [];
@@ -543,8 +517,6 @@ export default function App() {
       const codedTOs = chunk.map((to, idx) => ({ code: running + idx, to }));
       running += chunk.length;
       const stats = computeBucketStats(chunk);
-      
-      // Generate a stable random 3-digit suffix for this specific batch during creation
       const randomSuffix = Math.floor(100 + Math.random() * 900); 
 
       result.push({
@@ -552,7 +524,7 @@ export default function App() {
         tos: chunk,
         codedTOs,
         stats,
-        randomSuffix // Store random suffix here
+        randomSuffix 
       });
     }
     return result;
@@ -563,8 +535,6 @@ export default function App() {
     return batches.find(b => b.batchNumber === selectedBatchNumber) || null;
   }, [batches, selectedBatchNumber]);
 
-  // Build per-Row pages for a given batch — each Row becomes its own printable page.
-  // Returns array of { rowKey, items, stats }
   const buildRowPages = (batch) => {
     if (!batch) return [];
     const toSet = new Set(batch.tos);
@@ -585,9 +555,7 @@ export default function App() {
     });
     return rows.map(rowKey => {
       const rowItems = groups.get(rowKey);
-      // Sort items in a Row by Source Storage Bin ascending
       rowItems.sort((a, b) => String(a["Source Storage Bin"] || "").localeCompare(String(b["Source Storage Bin"] || "")));
-      // Compute per-page stats
       const toUniq = new Set();
       const artUniq = new Set();
       let qtySum = 0;
@@ -604,18 +572,15 @@ export default function App() {
     });
   };
 
-  // Resolve which list of TOs corresponds to the current wing + subcard selection.
   const currentTOList = useMemo(() => {
     if (!selectedWing) return Array.from(toRowInfo.keys());
     if (selectedWing === "cross") {
-      // Cross Wing: default is all cross TOs. If a batch is selected, narrow to that batch.
       if (selectedBatch) return selectedBatch.tos;
       return wingAssignments.cross;
     }
 
     const wingBucket = wingAssignments[selectedWing];
     if (!selectedSubCard) {
-      // Wing selected without subcard → all TOs in this wing
       return [
         ...Object.values(wingBucket.ranges).flat(),
         ...wingBucket.mixed,
@@ -642,7 +607,6 @@ export default function App() {
     return [];
   }, [selectedWing, selectedSubCard, wingAssignments, mixedSubFilter, toRowInfo, selectedBatch]);
 
-  // Unique TOs (sorted) applied with search filter — used by the table & copy.
   const uniqueTransferOrders = useMemo(() => {
     let list = currentTOList;
     if (searchQuery.trim()) {
@@ -652,11 +616,8 @@ export default function App() {
     return [...list].sort();
   }, [currentTOList, searchQuery]);
 
-  // Convenience flag: is any card-level selection active? (turns on the extra columns)
   const isFiltered = selectedWing !== null;
 
-  // ── Batch Picking helpers ──
-  // UPDATE: formatBatchCode now takes a random suffix to make it completely unique per batch
   const formatBatchCode = (batchNumber, randomSuffix) => {
     const d = new Date();
     const yy = String(d.getFullYear()).slice(-2);
@@ -666,90 +627,89 @@ export default function App() {
     return `PTF-Batch-${batchNumber}-${yy}${mm}${dd}-${suffixStr}`;
   };
 
-  // Entry point when Print button is clicked. Checks history first — if any TO printed before,
-  // opens warning modal; otherwise proceeds directly to print.
   const handleRequestPrint = async () => {
-  if (!selectedBatch) return;
-  try {
-    const toNumbers = selectedBatch.tos;
+    if (!selectedBatch) return;
+    setPrintType('ptf'); 
+    try {
+      const toNumbers = selectedBatch.tos;
+      const { data: prev, error } = await supabase
+        .from('print_history')
+        .select('*')
+        .in('to_number', toNumbers);
 
-    const { data: prev, error } = await supabase
-      .from('print_history')
-      .select('*')
-      .in('to_number', toNumbers);
+      if (error) throw error;
 
-    if (error) throw error;
-
-    if (prev && prev.length > 0) {
-      // LOGIKA BARU: Hitung maksimal TO ini udah diprint berapa kali
-      const counts = {};
-      prev.forEach(p => {
-        counts[p.to_number] = (counts[p.to_number] || 0) + 1;
-      });
-      // Cari angka re-print tertinggi di batch ini
-      const maxReprint = Math.max(...Object.values(counts));
-      
-      setReprintCount(maxReprint); // Simpan angka RE-PRINT
-      setPrintWarning({ previousPrints: prev });
-      setPrintModalOpen(true);
-    } else {
-      setReprintCount(0); // Belum pernah diprint, reset ke 0
-      setPrintWarning(null);
+      if (prev && prev.length > 0) {
+        const counts = {};
+        prev.forEach(p => {
+          counts[p.to_number] = (counts[p.to_number] || 0) + 1;
+        });
+        const maxReprint = Math.max(...Object.values(counts));
+        
+        setReprintCount(maxReprint);
+        setPrintWarning({ previousPrints: prev });
+        setPrintModalOpen(true);
+      } else {
+        setReprintCount(0); 
+        setPrintWarning(null);
+        setPrintModalOpen(false);
+        proceedWithPrint();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal memeriksa riwayat print. Melanjutkan tanpa cek duplikat.");
+      setReprintCount(0);
       setPrintModalOpen(false);
       proceedWithPrint();
     }
-  } catch (err) {
-    console.error(err);
-    toast.error("Gagal memeriksa riwayat print. Melanjutkan tanpa cek duplikat.");
-    setReprintCount(0);
-    setPrintModalOpen(false);
-    proceedWithPrint();
-  }
-};
+  };
 
-  // Actually render the print view + trigger browser print + save to backend
-  const proceedWithPrint = async () => {
-  if (!selectedBatch) return;
-  if (printingRef.current) return;
-  printingRef.current = true;
-  setPrintWarning(null);
-  setIsPrinting(true);
-
-  setTimeout(async () => {
-    try {
+  const handlePrintChecklist = () => {
+    if (!selectedBatch) return;
+    setPrintType('checklist'); 
+    
+    setTimeout(() => {
       window.print();
-    } finally {
+    }, 300);
+  };
+
+  const proceedWithPrint = async () => {
+    if (!selectedBatch) return;
+    if (printingRef.current) return;
+    printingRef.current = true;
+    setPrintWarning(null);
+    setIsPrinting(true);
+
+    setTimeout(async () => {
       try {
-        // Siapkan data untuk dimasukkan ke Supabase
-        const recordsToInsert = selectedBatch.tos.map(to => ({
-          to_number: to,
-          batch_code: formatBatchCode(selectedBatch.batchNumber, selectedBatch.randomSuffix),
-        }));
+        window.print();
+      } finally {
+        try {
+          const recordsToInsert = selectedBatch.tos.map(to => ({
+            to_number: to,
+            batch_code: formatBatchCode(selectedBatch.batchNumber, selectedBatch.randomSuffix),
+          }));
 
-        // Simpan ke tabel print_history di Supabase
-        const { error } = await supabase
-          .from('print_history')
-          .insert(recordsToInsert);
+          const { error } = await supabase
+            .from('print_history')
+            .insert(recordsToInsert);
 
-        if (error) throw error;
-
-        toast.success(`Pick ticket Batch ${selectedBatch.batchNumber} berhasil disimpan di database.`);
-      } catch (e) {
-        console.error(e);
-        toast.error("Print sukses, tetapi gagal menyimpan history ke Supabase.");
+          if (error) throw error;
+          toast.success(`Pick ticket Batch ${selectedBatch.batchNumber} berhasil disimpan di database.`);
+        } catch (e) {
+          console.error(e);
+          toast.error("Print sukses, tetapi gagal menyimpan history ke Supabase.");
+        }
+        setIsPrinting(false);
+        printingRef.current = false;
       }
-      setIsPrinting(false);
-      printingRef.current = false;
-    }
-  }, 200);
-};
+    }, 200);
+  };
 
-  // Reset the mixed sub-filter whenever the sub-card or wing changes
   useEffect(() => {
     setMixedSubFilter("all");
   }, [selectedWing, selectedSubCard]);
 
-  // Reset batch picking state whenever the wing changes
   useEffect(() => {
     setBatchPickingOpen(false);
     setBatchSize(null);
@@ -757,17 +717,14 @@ export default function App() {
     setSelectedBatchNumber(null);
   }, [selectedWing]);
 
-  // Reset selected batch when batch size changes
   useEffect(() => {
     setSelectedBatchNumber(null);
   }, [batchSize]);
 
-  // When switching wings, clear any sub-card selection
   useEffect(() => {
     setSelectedSubCard(null);
   }, [selectedWing]);
 
-  // Handle file upload — supports both CSV and XLSX/XLS via SheetJS
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -783,7 +740,6 @@ export default function App() {
     };
 
     reader.onload = (event) => {
-      // Yield to the browser so the loading UI can paint before heavy parsing
       setTimeout(() => {
         try {
           setUploadStatus(s => ({ ...s, phase: "parsing" }));
@@ -824,7 +780,6 @@ export default function App() {
             return;
           }
 
-          // Sanity check that mandatory columns exist
           const sample = parsedRows[0];
           if (!("Source Storage Bin" in sample) || !("Transfer Order Number" in sample)) {
             setUploadStatus({ active: false, phase: "", fileName: "", rowsParsed: 0 });
@@ -834,7 +789,6 @@ export default function App() {
 
           setUploadStatus(s => ({ ...s, phase: "generating", rowsParsed: parsedRows.length }));
 
-          // Give the loading UI another tick before committing state (heavy re-render)
           setTimeout(() => {
             setData(parsedRows);
             setIsGenerated(true);
@@ -857,12 +811,9 @@ export default function App() {
     } else {
       reader.readAsText(file);
     }
-
-    // Reset input so re-selecting the same file still triggers onChange
     e.target.value = "";
   };
 
-  // SAP TSV Copy helper — copies ONLY unique Transfer Order Numbers (1 column)
   const handleCopyToSAP = () => {
     if (uniqueTransferOrders.length === 0) {
       toast.error("Tidak ada Transfer Order Number untuk disalin.");
@@ -872,7 +823,6 @@ export default function App() {
     const tsvContent = uniqueTransferOrders.join("\n");
 
     navigator.clipboard.writeText(tsvContent).then(() => {
-      // Enhanced feedback: pulse the button + rich toast with checkmark badge
       setCopyPulse(true);
       setTimeout(() => setCopyPulse(false), 1400);
       toast.success(
@@ -888,7 +838,6 @@ export default function App() {
     });
   };
 
-  // Reset Data — clear all loaded data (empty state, no records)
   const handleResetData = () => {
     setData([]);
     setIsGenerated(false);
@@ -900,7 +849,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-rose-50/20 text-slate-900 pb-20">
-      {/* Header Banner */}
       <header className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -936,13 +884,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
-        
-        {/* Step 1: Upload & Generator Control */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Upload Card */}
           <Card className="border-slate-200/80 shadow-sm bg-white/90 backdrop-blur-sm lg:col-span-1">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -990,7 +933,6 @@ export default function App() {
             </CardContent>
           </Card>
 
-          {/* Configuration & Rule Info Card */}
           <Card className="border-slate-200/80 shadow-sm bg-white/90 backdrop-blur-sm lg:col-span-2">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -1007,7 +949,6 @@ export default function App() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Dataset Legend / Summary (full width) */}
               <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4 space-y-3" data-testid="dataset-summary">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-semibold text-indigo-900 flex items-center">
@@ -1042,7 +983,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Wing structure info */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px]" data-testid="wing-structure-info">
                 <div className="bg-teal-50/70 border border-teal-100 rounded-lg px-3 py-2">
                   <div className="text-teal-800 font-semibold">Wing Kiri</div>
@@ -1062,7 +1002,6 @@ export default function App() {
 
         </div>
 
-        {/* Step 3: Card Menu Section for Transfer Order Filtering */}
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
             <div>
@@ -1118,7 +1057,6 @@ export default function App() {
             </div>
           ) : (
           <>
-          {/* Top-level Wing Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="wing-cards-grid">
             {[
               { key: "left", label: "Wing Kiri", range: "Row 01 - 18", color: "teal", stats: wingLevelStats.left },
@@ -1186,7 +1124,6 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Wing metric chips: Total Qty, Avg Bin/TO, Avg Qty/Bin */}
                     <div className="grid grid-cols-3 gap-1.5 mb-1" data-testid={`wing-metrics-${wing.key}`}>
                       <div className="bg-emerald-50/70 border border-emerald-100 rounded-md px-2 py-1">
                         <div className="text-[9px] uppercase font-semibold tracking-wider text-emerald-700">Total Qty</div>
@@ -1216,7 +1153,6 @@ export default function App() {
             })}
           </div>
 
-          {/* Sub-cards panel for selected Wing (Kiri/Kanan only). Cross Wing filters directly. */}
           {selectedWing && selectedWing !== "cross" && (() => {
             const wingDef = WING_STRUCTURE[selectedWing];
             const wingBucket = wingAssignments[selectedWing];
@@ -1236,7 +1172,6 @@ export default function App() {
                   Sub-card {wingDef.label} — pilih rentang atau Mixed:
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {/* Range sub-cards */}
                   {wingDef.subRanges.map(sr => {
                     const tos = wingBucket.ranges[sr.key] || [];
                     const stats = computeBucketStats(tos);
@@ -1281,7 +1216,6 @@ export default function App() {
                     );
                   })}
 
-                  {/* Mixed Wing sub-card */}
                   {(() => {
                     const tos = wingBucket.mixed;
                     const stats = computeBucketStats(tos);
@@ -1334,7 +1268,6 @@ export default function App() {
             );
           })()}
 
-          {/* Cross Wing → Batch Picking Sub-Card */}
           {selectedWing === "cross" && (
             <div className="p-4 rounded-2xl border bg-rose-50/40 border-rose-200/60" data-testid="cross-wing-panel">
               <div className="text-xs font-semibold text-slate-700 mb-3 flex items-center">
@@ -1449,8 +1382,6 @@ export default function App() {
             </div>
           )}
 
-
-          {/* Mixed sub-filter chips (only when Mixed sub-card is selected) */}
           {selectedSubCard && selectedSubCard.type === "mixed" && (() => {
             const wingBucket = wingAssignments[selectedSubCard.wing];
             const mixed = wingBucket.mixed;
@@ -1531,7 +1462,6 @@ export default function App() {
           )}
         </div>
 
-        {/* Step 4: SAP Transfer Order Table & Copy-Paste Section */}
         <Card className="border-slate-200/80 shadow-sm bg-white overflow-hidden" data-testid="sap-table-section">
           <CardHeader className="bg-slate-50/80 border-b border-slate-200 py-4 px-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1579,14 +1509,25 @@ export default function App() {
 
               <div className="flex items-center space-x-3">
                 {selectedWing === "cross" && selectedBatch && (
-                  <Button
-                    onClick={handleRequestPrint}
-                    data-testid="print-pick-ticket-btn"
-                    className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs flex items-center"
-                  >
-                    <Printer className="w-3.5 h-3.5 mr-1.5" />
-                    Print Pick Ticket Batch {selectedBatch.batchNumber}
-                  </Button>
+                  <>
+                    <Button
+                      onClick={handleRequestPrint}
+                      data-testid="print-pick-ticket-btn"
+                      className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs flex items-center"
+                    >
+                      <Printer className="w-3.5 h-3.5 mr-1.5" />
+                      Print Pick Ticket Batch {selectedBatch.batchNumber}
+                    </Button>
+                    
+                    <Button
+                      onClick={handlePrintChecklist}
+                      data-testid="print-checklist-btn"
+                      className="bg-[#1e3a8a] hover:bg-blue-900 text-white text-xs font-semibold shadow-xs flex items-center"
+                    >
+                      <CheckSquare className="w-3.5 h-3.5 mr-1.5" />
+                      Print Form TO Checklist
+                    </Button>
+                  </>
                 )}
                 <Button
                   onClick={handleCopyToSAP}
@@ -1667,7 +1608,6 @@ export default function App() {
               </table>
             </div>
 
-            {/* Footer helper for SAP paste */}
             <div className="bg-slate-50 border-t border-slate-200 py-3 px-6 flex items-center justify-between text-xs text-slate-500">
               <div className="flex items-center space-x-2">
                 <Check className="w-4 h-4 text-emerald-600" />
@@ -1679,10 +1619,8 @@ export default function App() {
             </div>
           </CardContent>
         </Card>
-
       </main>
 
-      {/* Print Warning Modal — shown only when duplicate print detected */}
       {printModalOpen && selectedBatch && printWarning && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm no-print"
@@ -1757,8 +1695,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Printable pick ticket (hidden on screen, shown only in @media print) — one page per Row */}
-      {selectedBatch && (
+      {selectedBatch && printType === 'ptf' && (
         <div className="print-only pick-ticket-print" data-testid="pick-ticket-print" aria-hidden="true">
           {(() => {
             const rowPages = buildRowPages(selectedBatch);
@@ -1785,14 +1722,12 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Highlighted Row circle */}
                     <div className="pt-row-badge">
                       <div className="pt-row-label">ROW</div>
                       <div className="pt-row-value">{rowLabel}</div>
                     </div>
 
                     <div className="pt-code-box">
-                      {/* UI BARU: Munculin highlight tebal kalau ini Re-Print */}
                       {reprintCount > 0 && (
                         <div style={{
                           fontSize: '22px',
@@ -1814,7 +1749,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Per-page summary */}
                   <div className="pt-summary">
                     <div className="pt-summary-item">
                       <span className="pt-sm-label">Total TO</span>
@@ -1828,7 +1762,7 @@ export default function App() {
                       <span className="pt-sm-label">Total Qty</span>
                       <span className="pt-sm-value">{page.stats.totalQty.toLocaleString("id-ID")}</span>
                     </div>
-                    </div>
+                  </div>
 
                   <table className="pt-table">
                     <thead>
@@ -1850,8 +1784,8 @@ export default function App() {
                         <tr key={idx}>
                           <td>{String(idx + 1).padStart(4, "0")}</td>
                           <td style={{ fontWeight: 'bold', color: '#000000', fontSize: '14px' }}>
-  {codeMap.get(it["Transfer Order Number"]) || ""}
-</td>
+                            {codeMap.get(it["Transfer Order Number"]) || ""}
+                          </td>
                           <td>{it["Transfer order item"] || ""}</td>
                           <td className="pt-nowrap">{it["Transfer Order Number"]}</td>
                           <td className="pt-article">{it["Article"] || ""}</td>
@@ -1882,7 +1816,114 @@ export default function App() {
         </div>
       )}
 
-      {/* Global Upload Loading Overlay */}
+      {selectedBatch && printType === 'checklist' && (
+        <div className="print-only" aria-hidden="true">
+          {selectedBatch.codedTOs.map((item) => {
+             const info = toRowInfo.get(item.to);
+             const rows = info ? Array.from(info.numericRows).sort((a,b)=>a-b) : [];
+             
+             const leftRows = rows.filter(r => r >= 1 && r <= 18);
+             const rightRows = rows.filter(r => r >= 19 && r <= 36);
+             
+             const today = new Date();
+             const dateStr = today.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+             const timeStr = today.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+             return (
+               <div key={item.to} style={{ pageBreakAfter: 'always' }} className="mb-8 border-2 border-slate-300 rounded-xl overflow-hidden font-sans bg-white h-[98vh] flex flex-col">
+                 
+                 <div className="bg-[#1e3a8a] text-white text-center py-4 font-bold text-2xl tracking-widest border-b-2 border-slate-800">
+                   KODE PTF (STATION)
+                 </div>
+                 <div className="text-center py-8">
+                   <div className="text-[140px] font-black text-[#1e3a8a] leading-none tracking-tight">{item.code}</div>
+                 </div>
+
+                 <div className="border-t-[3px] border-dashed border-slate-400 mx-10 my-4"></div>
+
+                 <div className="flex items-center px-12 py-8 gap-8">
+                   <div className="bg-[#16a34a] rounded-2xl p-6 flex-shrink-0 shadow-sm border-2 border-green-700">
+                     <ClipboardList className="w-16 h-16 text-white" />
+                   </div>
+                   <div className="flex flex-col">
+                     <div className="text-[#16a34a] font-bold text-3xl mb-2 tracking-wide">TO / ORDER</div>
+                     <div className="text-[#16a34a] font-black text-[80px] leading-none mb-3">{item.to}</div>
+                     <div className="text-slate-800 font-bold text-xl">Masukkan ke carton sesuai TO ini</div>
+                   </div>
+                 </div>
+
+                 <div className="flex-grow flex flex-col border-t-4 border-[#1e3a8a]">
+                   <div className="bg-[#1e3a8a] text-white text-center py-3 font-bold text-xl tracking-wider">
+                     CHECKLIST ROW – CENTANG JIKA SUDAH SELESAI
+                   </div>
+                   <div className="p-8 flex flex-col gap-6 flex-grow bg-slate-50">
+                     
+                     <div className="bg-white p-6 rounded-xl border-2 border-slate-300 shadow-sm">
+                       <div className="text-slate-800 font-bold text-xl mb-6 border-b-2 border-slate-200 pb-3">
+                         Wing Kiri <span className="text-slate-500 font-semibold text-lg ml-2">(Row 01 - 18)</span>
+                       </div>
+                       <div className="flex flex-wrap gap-8">
+                         {leftRows.length > 0 ? leftRows.map(r => (
+                           <div key={r} className="flex flex-col items-center gap-3">
+                             <div className="text-[#1e3a8a] font-bold text-2xl">ROW {r}</div>
+                             <div className="w-14 h-14 border-[3px] border-slate-800 rounded-md bg-white"></div>
+                           </div>
+                         )) : <div className="text-slate-400 italic font-semibold">Tidak ada data picking di Wing Kiri</div>}
+                       </div>
+                     </div>
+
+                     <div className="bg-white p-6 rounded-xl border-2 border-slate-300 shadow-sm">
+                       <div className="text-slate-800 font-bold text-xl mb-6 border-b-2 border-slate-200 pb-3">
+                         Wing Kanan <span className="text-slate-500 font-semibold text-lg ml-2">(Row 19 - 36)</span>
+                       </div>
+                       <div className="flex flex-wrap gap-8">
+                         {rightRows.length > 0 ? rightRows.map(r => (
+                           <div key={r} className="flex flex-col items-center gap-3">
+                             <div className="text-[#1e3a8a] font-bold text-2xl">ROW {r}</div>
+                             <div className="w-14 h-14 border-[3px] border-slate-800 rounded-md bg-white"></div>
+                           </div>
+                         )) : <div className="text-slate-400 italic font-semibold">Tidak ada data picking di Wing Kanan</div>}
+                       </div>
+                     </div>
+
+                   </div>
+                 </div>
+
+                 <div className="border-t-[3px] border-slate-400 flex items-center justify-between p-8 bg-white">
+                   <div className="flex items-center gap-6">
+                     <div className="w-24 h-24 bg-white flex items-center justify-center">
+                       <Barcode value={item.to} width={1.5} height={60} displayValue={false} margin={0} />
+                     </div>
+                     <div className="flex flex-col">
+                       <div className="font-black text-lg text-slate-800 tracking-wide">SCAN UNTUK TRACEABILITY</div>
+                       <div className="text-sm text-slate-600 font-semibold mt-1">Lihat detail PTF / TO / Row</div>
+                       <div className="text-sm text-slate-600 font-semibold">& status proses</div>
+                     </div>
+                   </div>
+                   <div className="flex items-center gap-10 border-l-[3px] border-slate-300 pl-10">
+                     <div className="flex items-center gap-4">
+                       <Calendar className="w-10 h-10 text-[#1e3a8a]" />
+                       <div className="flex flex-col">
+                         <div className="text-sm text-slate-500 font-bold tracking-wider">TANGGAL</div>
+                         <div className="font-black text-xl text-slate-800">{dateStr}</div>
+                       </div>
+                     </div>
+                     <div className="flex items-center gap-4">
+                       <Clock className="w-10 h-10 text-[#1e3a8a]" />
+                       <div className="flex flex-col">
+                         <div className="text-sm text-slate-500 font-bold tracking-wider">WAKTU</div>
+                         <div className="font-black text-xl text-slate-800">{timeStr}</div>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+
+               </div>
+             );
+          })}
+        </div>
+      )}
+
       {uploadStatus.active && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
@@ -1911,11 +1952,7 @@ export default function App() {
                 )}
               </div>
             </div>
-
-            {/* Indeterminate progress bar */}
-            <div className="mt-5 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-              <div className="h-full w-1/3 bg-gradient-to-r from-teal-500 via-teal-400 to-indigo-500 rounded-full animate-upload-bar" />
-            </div>
+            
             <p className="mt-3 text-[11px] text-slate-400 text-center">
               Jangan tutup tab ini sampai selesai ya, bro.
             </p>
