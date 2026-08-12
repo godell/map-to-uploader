@@ -1,7 +1,18 @@
 /* ============================================================
-   ============================================================
-   GLOBAL PRINT CSS
-   ============================================================
+   SCREEN
+   ============================================================ */
+
+/*
+   IMPORTANT:
+   Semua element print-only TIDAK BOLEH muncul di landing page.
+*/
+.print-only {
+    display: none !important;
+}
+
+
+/* ============================================================
+   PRINT
    ============================================================ */
 
 @media print {
@@ -11,12 +22,13 @@
        ======================================================== */
 
     /*
-       IMPORTANT:
-       Default print = A4 PORTRAIT
+       DEFAULT:
+       A4 PORTRAIT
 
-       Jadi Checklist otomatis Portrait.
-       Pick Ticket akan override menggunakan page:
-       pt-landscape.
+       Checklist akan menggunakan Portrait.
+
+       Pick Ticket menggunakan named page:
+       pt-landscape
     */
 
     @page {
@@ -29,9 +41,14 @@
         margin: 10mm;
     }
 
+    @page checklist-portrait {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+
 
     /* ========================================================
-       2. BODY / HTML
+       2. GLOBAL PRINT
        ======================================================== */
 
     html,
@@ -48,9 +65,9 @@
     }
 
 
-    /* ========================================================
-       3. HIDE NORMAL APP
-       ======================================================== */
+    /*
+       Hide normal landing-page elements.
+    */
 
     .no-print,
     header,
@@ -62,13 +79,19 @@
     }
 
 
-    /* ========================================================
-       4. VISIBILITY CONTROL
-       ======================================================== */
+    /*
+       Hide everything first.
+       print-only akan diaktifkan kembali di bawah.
+    */
 
     body * {
         visibility: hidden;
     }
+
+
+    /*
+       Hanya print content yang visible.
+    */
 
     .print-only,
     .print-only * {
@@ -76,9 +99,11 @@
     }
 
 
-    /* ========================================================
-       5. PRINT CONTAINER
-       ======================================================== */
+    /*
+       IMPORTANT:
+       Print container harus kembali display:block
+       karena di screen kita set display:none.
+    */
 
     .print-only {
         display: block !important;
@@ -90,6 +115,9 @@
 
         width: 100% !important;
 
+        margin: 0 !important;
+        padding: 0 !important;
+
         color: #000;
 
         font-family:
@@ -98,6 +126,16 @@
             sans-serif;
 
         font-size: 9.5pt;
+    }
+
+
+    /*
+       Semua print element menggunakan box-sizing border-box.
+    */
+
+    .print-only *,
+    .print-only {
+        box-sizing: border-box !important;
     }
 
 
@@ -116,16 +154,38 @@
 
         box-sizing: border-box !important;
 
-        page-break-before: always !important;
-        break-before: page !important;
+        padding: 2mm !important;
+
+        margin: 0 !important;
 
         page-break-after: always !important;
+
         break-after: page !important;
 
         page-break-inside: avoid !important;
-        break-inside: avoid !important;
 
-        padding: 2mm !important;
+        break-inside: avoid !important;
+    }
+
+
+    /*
+       Jangan paksa page-break-before pada halaman pertama.
+       Kalau tidak, browser tertentu bisa membuat blank page.
+    */
+
+    .pick-page:first-child {
+
+        page-break-before: auto !important;
+
+        break-before: auto !important;
+    }
+
+
+    .pick-page:not(:first-child) {
+
+        page-break-before: always !important;
+
+        break-before: page !important;
     }
 
 
@@ -133,40 +193,42 @@
        ========================================================
        FORM TO CHECKLIST
        A4 PORTRAIT
+       1 TO = 1 PAGE
        ========================================================
        ======================================================== */
-
-    /*
-       A4 printable area:
-
-       A4 width  = 210mm
-       margin     = 10mm left + 10mm right
-       printable  = 190mm
-
-       A4 height = 297mm
-       margin     = 10mm top + 10mm bottom
-       printable = 277mm
-    */
 
     .checklist-a4-page {
 
         /*
-           IMPORTANT:
-           Jangan menggunakan named page di sini.
-
-           Default @page sudah Portrait.
-           Ini membuat Chromium jauh lebih konsisten.
+           Explicit named page.
+           Default @page juga sudah Portrait.
         */
 
-        page: auto !important;
+        page: checklist-portrait;
+
 
         /*
-           FIXED A4 PRINT AREA
+           A4:
+
+           210mm x 297mm
+
+           Margin:
+           10mm kiri
+           10mm kanan
+           10mm atas
+           10mm bawah
+
+           Printable:
+           190mm x 277mm
         */
 
         width: 190mm !important;
 
         height: 277mm !important;
+
+        min-width: 190mm !important;
+
+        max-width: 190mm !important;
 
         min-height: 277mm !important;
 
@@ -174,21 +236,14 @@
 
 
         /*
-           BOX MODEL
+           Fixed page.
         */
 
         box-sizing: border-box !important;
 
 
         /*
-           POSITION
-        */
-
-        position: relative !important;
-
-
-        /*
-           FLEX LAYOUT
+           Layout.
         */
 
         display: flex !important;
@@ -197,15 +252,17 @@
 
 
         /*
-           BACKGROUND
+           Position.
         */
 
-        background: #ffffff !important;
+        position: relative !important;
 
 
         /*
-           BORDER
+           Visual.
         */
+
+        background: #ffffff !important;
 
         border: 1px solid #cbd5e1 !important;
 
@@ -213,14 +270,14 @@
 
 
         /*
-           CENTER HORIZONTALLY
+           Center.
         */
 
         margin: 0 auto !important;
 
 
         /*
-           COMPACT PRINT PADDING
+           Compact padding.
         */
 
         padding: 4mm !important;
@@ -228,25 +285,19 @@
 
         /*
            CRITICAL:
-           Jangan biarkan isi membuat page
-           menjadi lebih tinggi dari A4.
+           Jangan biarkan content memperpanjang page.
         */
 
         overflow: hidden !important;
 
 
         /*
-           PAGE BREAK
+           1 TO = 1 PAGE
         */
-
-        page-break-before: always !important;
-
-        break-before: page !important;
 
         page-break-after: always !important;
 
         break-after: page !important;
-
 
         page-break-inside: avoid !important;
 
@@ -254,23 +305,60 @@
     }
 
 
+    /*
+       First checklist page:
+       jangan membuat blank page sebelum halaman pertama.
+    */
+
+    .checklist-a4-page:first-child {
+
+        page-break-before: auto !important;
+
+        break-before: auto !important;
+    }
+
+
+    /*
+       Checklist berikutnya:
+       selalu mulai page baru.
+    */
+
+    .checklist-a4-page:not(:first-child) {
+
+        page-break-before: always !important;
+
+        break-before: page !important;
+    }
+
+
     /* ========================================================
-       CHECKLIST - FORCE BOX SIZING
+       CHECKLIST - GENERAL CHILD SAFETY
        ======================================================== */
 
-    .checklist-a4-page,
+    .checklist-a4-page > * {
+
+        max-width: 100% !important;
+
+        box-sizing: border-box !important;
+    }
+
+
     .checklist-a4-page * {
+
         box-sizing: border-box !important;
     }
 
 
     /* ========================================================
        ========================================================
-       PTF HEADER
+       PTF / STATION HEADER
        ========================================================
        ======================================================== */
 
-    .checklist-a4-page > .bg-\[\#1e3a8a\] {
+    .checklist-a4-page
+    > .bg-\[\#1e3a8a\] {
+
+        flex-shrink: 0 !important;
 
         padding-top: 2mm !important;
 
@@ -278,40 +366,38 @@
 
         min-height: auto !important;
 
-        font-size: 11pt !important;
+        font-size: 10pt !important;
 
-        line-height: 1.2 !important;
+        line-height: 1.1 !important;
 
         border-bottom-width: 1px !important;
     }
 
 
     /* ========================================================
-       STATION CODE AREA
+       STATION CODE
        ======================================================== */
 
     /*
-       Original:
+       App.js original:
        text-[140px]
 
-       Untuk A4 portrait kita turunkan.
+       Kita kecilkan supaya proporsional dengan A4 Portrait.
     */
 
-    .checklist-a4-page .text-\[140px\] {
+    .checklist-a4-page
+    .text-\[140px\] {
 
-        font-size: 62px !important;
+        font-size: 60px !important;
 
-        line-height: 0.95 !important;
+        line-height: 0.9 !important;
 
         margin: 0 !important;
     }
 
 
-    /*
-       Original py-8 terlalu tinggi.
-    */
-
-    .checklist-a4-page > .text-center.py-8 {
+    .checklist-a4-page
+    .text-center.py-8 {
 
         padding-top: 3mm !important;
 
@@ -323,7 +409,8 @@
        DIVIDER
        ======================================================== */
 
-    .checklist-a4-page .border-dashed {
+    .checklist-a4-page
+    .border-t-\[3px\].border-dashed {
 
         margin-top: 2mm !important;
 
@@ -343,11 +430,14 @@
        ========================================================
        ======================================================== */
 
-    .checklist-a4-page .flex.items-center.px-12.py-8 {
+    .checklist-a4-page
+    .flex.items-center.px-12.py-8 {
 
-        padding-left: 5mm !important;
+        flex-shrink: 0 !important;
 
-        padding-right: 5mm !important;
+        padding-left: 4mm !important;
+
+        padding-right: 4mm !important;
 
         padding-top: 3mm !important;
 
@@ -358,32 +448,37 @@
 
 
     /*
-       Green icon
+       Green icon box.
     */
 
-    .checklist-a4-page .bg-\[\#16a34a\] {
+    .checklist-a4-page
+    .bg-\[\#16a34a\] {
 
         padding: 3mm !important;
 
-        border-radius: 5px !important;
+        border-radius: 4px !important;
+
+        flex-shrink: 0 !important;
     }
 
 
-    .checklist-a4-page .bg-\[\#16a34a\] svg {
+    .checklist-a4-page
+    .bg-\[\#16a34a\] svg {
 
-        width: 10mm !important;
+        width: 9mm !important;
 
-        height: 10mm !important;
+        height: 9mm !important;
     }
 
 
     /*
-       TO / ORDER title
+       TO / ORDER
     */
 
-    .checklist-a4-page .text-3xl {
+    .checklist-a4-page
+    .text-3xl {
 
-        font-size: 13pt !important;
+        font-size: 12pt !important;
 
         line-height: 1.1 !important;
 
@@ -392,12 +487,13 @@
 
 
     /*
-       TO number
+       TO number.
     */
 
-    .checklist-a4-page .text-\[80px\] {
+    .checklist-a4-page
+    .text-\[80px\] {
 
-        font-size: 36px !important;
+        font-size: 34px !important;
 
         line-height: 0.95 !important;
 
@@ -406,29 +502,33 @@
 
 
     /*
-       Instruction
+       Instruction.
     */
 
-    .checklist-a4-page .text-slate-800.font-bold.text-xl {
+    .checklist-a4-page
+    .text-slate-800.font-bold.text-xl {
 
-        font-size: 8pt !important;
+        font-size: 7.5pt !important;
 
-        line-height: 1.15 !important;
+        line-height: 1.1 !important;
     }
 
 
     /* ========================================================
        ========================================================
-       CHECKLIST SECTION
+       CHECKLIST MAIN SECTION
        ========================================================
        ======================================================== */
 
     /*
-       flex-grow tetap boleh digunakan,
-       tetapi jangan sampai memaksa page lebih tinggi.
+       App.js:
+       <div className="flex-grow flex flex-col ...">
+
+       Kita pastikan section ini boleh mengecil.
     */
 
-    .checklist-a4-page > .flex-grow {
+    .checklist-a4-page
+    .flex-grow {
 
         min-height: 0 !important;
 
@@ -437,35 +537,37 @@
 
 
     /*
-       Blue checklist title
+       Blue checklist title.
     */
 
     .checklist-a4-page
     .border-t-4.border-\[\#1e3a8a\] {
 
         border-top-width: 2px !important;
+
+        flex-shrink: 0 !important;
     }
 
 
     .checklist-a4-page
     .text-xl.tracking-wider {
 
-        font-size: 8.5pt !important;
+        font-size: 8pt !important;
 
         line-height: 1.1 !important;
 
-        padding-top: 2mm !important;
+        padding-top: 1.5mm !important;
 
-        padding-bottom: 2mm !important;
+        padding-bottom: 1.5mm !important;
     }
 
 
     /* ========================================================
-       CHECKLIST CONTENT CONTAINER
+       CHECKLIST CONTENT
        ======================================================== */
 
     .checklist-a4-page
-    .p-8.flex.flex-col {
+    .p-8.flex.flex-col.gap-6 {
 
         padding: 2.5mm !important;
 
@@ -474,6 +576,8 @@
         min-height: 0 !important;
 
         overflow: hidden !important;
+
+        flex: 1 1 auto !important;
     }
 
 
@@ -494,18 +598,20 @@
 
         box-shadow: none !important;
 
-        flex-shrink: 1 !important;
-
         min-height: 0 !important;
+
+        overflow: hidden !important;
+
+        flex: 1 1 0 !important;
     }
 
 
     /*
-       Wing title
+       Wing title.
     */
 
     .checklist-a4-page
-    .bg-white.p-6
+    .bg-white.p-6.rounded-xl
     .text-slate-800.font-bold.text-xl {
 
         font-size: 8pt !important;
@@ -519,10 +625,10 @@
 
 
     .checklist-a4-page
-    .bg-white.p-6
+    .bg-white.p-6.rounded-xl
     .text-slate-500 {
 
-        font-size: 7pt !important;
+        font-size: 6.5pt !important;
     }
 
 
@@ -533,20 +639,19 @@
        ======================================================== */
 
     /*
-       INI BAGIAN PALING PENTING.
+       APP.JS ASLI:
 
-       Sebelumnya:
+       <div className="flex flex-wrap gap-8">
 
-           flex flex-wrap gap-8
+       Kita override menjadi GRID.
 
-       menyebabkan row menjadi banyak baris
-       dan akhirnya overflow.
+       18 Row maksimal:
 
-       Sekarang:
+       01 02 03 04 05 06
+       07 08 09 10 11 12
+       13 14 15 16 17 18
 
-           6 kolom x 3 baris
-
-       18 row akan selalu muat.
+       Begitu juga Wing Kanan.
     */
 
     .checklist-a4-page
@@ -557,9 +662,12 @@
         grid-template-columns:
             repeat(6, minmax(0, 1fr)) !important;
 
-        grid-auto-rows: minmax(0, 1fr) !important;
+        grid-template-rows:
+            repeat(3, minmax(0, 1fr)) !important;
 
-        column-gap: 2mm !important;
+        grid-auto-flow: row !important;
+
+        column-gap: 1.5mm !important;
 
         row-gap: 1.5mm !important;
 
@@ -570,6 +678,28 @@
         min-height: 0 !important;
 
         flex: 1 1 auto !important;
+
+        align-items: stretch !important;
+
+        justify-items: stretch !important;
+    }
+
+
+    /*
+       Kalau row yang tersedia cuma sedikit,
+       grid tetap compact.
+    */
+
+    .checklist-a4-page
+    .flex.flex-wrap.gap-8 > div {
+
+        min-width: 0 !important;
+
+        min-height: 0 !important;
+
+        width: 100% !important;
+
+        height: 100% !important;
     }
 
 
@@ -597,72 +727,96 @@
         width: 100% !important;
 
         height: 100% !important;
+
+        flex: none !important;
     }
 
 
     /* ========================================================
-       ROW NUMBER
+       ROW LABEL
        ======================================================== */
 
     .checklist-a4-page
-    .flex.flex-col.items-center
+    .flex.flex-col.items-center.gap-3
     .text-2xl {
 
-        font-size: 7pt !important;
+        font-size: 6.5pt !important;
 
         line-height: 1 !important;
 
         white-space: nowrap !important;
+
+        margin: 0 !important;
+    }
+
+
+    /*
+       Row number text.
+       Karena App.js menggunakan:
+       ROW {r}
+    */
+
+    .checklist-a4-page
+    .flex.flex-col.items-center.gap-3
+    .text-\[\#1e3a8a\] {
+
+        font-size: 6.5pt !important;
+
+        line-height: 1 !important;
     }
 
 
     /* ========================================================
+       ========================================================
        CHECKBOX
+       ========================================================
        ======================================================== */
 
     /*
-       Original:
+       APP.JS ASLI:
 
        w-14 h-14
+       border-[3px]
 
-       terlalu besar untuk 18 item.
-
-       Sekarang kira-kira 7.5mm x 7.5mm.
+       Kita kecilkan untuk memastikan
+       semua Row muat dalam A4.
     */
 
     .checklist-a4-page
     .w-14.h-14 {
 
-        width: 7.5mm !important;
+        width: 7mm !important;
 
-        height: 7.5mm !important;
+        height: 7mm !important;
 
-        min-width: 7.5mm !important;
+        min-width: 7mm !important;
 
-        min-height: 7.5mm !important;
+        min-height: 7mm !important;
 
-        max-width: 7.5mm !important;
+        max-width: 7mm !important;
 
-        max-height: 7.5mm !important;
+        max-height: 7mm !important;
 
         border-width: 1.2px !important;
 
         border-radius: 2px !important;
 
-        flex-shrink: 0 !important;
+        background: #ffffff !important;
 
-        background: white !important;
+        flex-shrink: 0 !important;
     }
 
 
     /* ========================================================
-       EMPTY WING MESSAGE
+       EMPTY STATE
        ======================================================== */
 
     .checklist-a4-page
     .text-slate-400 {
 
-        font-size: 7pt !important;
+        font-size: 6.5pt !important;
+
+        line-height: 1.1 !important;
     }
 
 
@@ -673,7 +827,7 @@
        ======================================================== */
 
     .checklist-a4-page
-    > .border-t-\[3px\] {
+    .border-t-\[3px\].border-slate-400 {
 
         border-top-width: 1px !important;
 
@@ -682,13 +836,15 @@
 
 
     .checklist-a4-page
-    > .border-t-\[3px\].flex {
+    .border-t-\[3px\].border-slate-400.flex {
 
         padding: 2.5mm !important;
 
         gap: 3mm !important;
 
         min-height: 0 !important;
+
+        flex-shrink: 0 !important;
     }
 
 
@@ -701,11 +857,17 @@
 
         width: 24mm !important;
 
-        height: 16mm !important;
+        height: 15mm !important;
 
         min-width: 24mm !important;
 
-        min-height: 16mm !important;
+        min-height: 15mm !important;
+
+        max-width: 24mm !important;
+
+        max-height: 15mm !important;
+
+        flex-shrink: 0 !important;
     }
 
 
@@ -716,9 +878,9 @@
 
         max-width: 22mm !important;
 
-        height: 13mm !important;
+        height: 12mm !important;
 
-        max-height: 13mm !important;
+        max-height: 12mm !important;
     }
 
 
@@ -729,7 +891,7 @@
     .checklist-a4-page
     .font-black.text-lg {
 
-        font-size: 7.5pt !important;
+        font-size: 7pt !important;
 
         line-height: 1.1 !important;
     }
@@ -797,7 +959,7 @@
 
 
     /* ========================================================
-       DATE/TIME LABEL
+       TRACKING
        ======================================================== */
 
     .checklist-a4-page
@@ -809,64 +971,36 @@
 
     /* ========================================================
        ========================================================
-       HARD SAFETY LIMIT
+       FINAL CHECKLIST SAFETY
        ========================================================
-       ======================================================== */
-
-    /*
-       Jangan biarkan child element membuat
-       page menjadi lebih tinggi.
-    */
-
-    .checklist-a4-page > * {
-
-        max-width: 100% !important;
-
-        box-sizing: border-box !important;
-    }
-
-
-    /*
-       Semua section utama harus tetap berada
-       dalam halaman.
-    */
-
-    .checklist-a4-page
-    .flex-grow {
-
-        min-height: 0 !important;
-    }
-
-
-    /*
-       Pastikan tidak ada child yang memaksa
-       vertical overflow.
-    */
-
-    .checklist-a4-page
-    .flex-wrap {
-
-        min-height: 0 !important;
-    }
-
-
-    /* ========================================================
-       PAGE BREAK SAFETY
        ======================================================== */
 
     .checklist-a4-page,
     .checklist-a4-page > *,
     .checklist-a4-page .bg-white {
 
-        break-inside: avoid !important;
-
         page-break-inside: avoid !important;
+
+        break-inside: avoid !important;
     }
 
 
-    /* ========================================================
-       END CHECKLIST
-       ======================================================== */
+    /*
+       Jangan biarkan child tertentu membuat
+       horizontal overflow.
+    */
+
+    .checklist-a4-page
+    table,
+    .checklist-a4-page
+    svg,
+    .checklist-a4-page
+    canvas,
+    .checklist-a4-page
+    img {
+
+        max-width: 100% !important;
+    }
 
 
 
@@ -1232,9 +1366,7 @@
 
 
     /* ========================================================
-       ========================================================
        FINAL PRINT SAFETY
-       ========================================================
        ======================================================== */
 
     img,
@@ -1251,10 +1383,9 @@
     }
 
 
-    /* Prevent accidental horizontal overflow */
-
     .print-only {
 
         overflow-x: hidden !important;
     }
+
 }
