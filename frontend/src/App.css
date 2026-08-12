@@ -65,35 +65,82 @@
     }
 
     /* ========================================================
-       PICK TICKET
-       ======================================================== */
+   PICK TICKET - FIXED PAGE LAYOUT
+   A4 LANDSCAPE PRINTABLE HEIGHT
+   ======================================================== */
 
-    .pick-page {
+.pick-page {
 
-        width: 100% !important;
+    display: flex !important;
 
-        box-sizing: border-box !important;
+    flex-direction: column !important;
 
-        padding: 2mm !important;
+    width: 100% !important;
 
-        margin: 0 !important;
+    height: 190mm !important;
 
-        page-break-after: always !important;
-        break-after: page !important;
+    min-height: 190mm !important;
 
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-    }
+    max-height: 190mm !important;
 
-    .pick-page:first-child {
-        page-break-before: auto !important;
-        break-before: auto !important;
-    }
+    box-sizing: border-box !important;
 
-    .pick-page:not(:first-child) {
-        page-break-before: always !important;
-        break-before: page !important;
-    }
+    overflow: hidden !important;
+}
+
+
+/* ========================================================
+   HEADER / SUMMARY
+   ======================================================== */
+
+.pick-page .pt-header {
+    flex-shrink: 0 !important;
+}
+
+.pick-page .pt-summary {
+    flex-shrink: 0 !important;
+}
+
+
+/* ========================================================
+   TABLE
+   ======================================================== */
+
+.pick-page .pt-table {
+
+    flex-shrink: 0 !important;
+
+    width: 100% !important;
+}
+
+
+/* ========================================================
+   FOOTER
+   SELALU TURUN KE BOTTOM
+   ======================================================== */
+
+.pick-page .pt-footer {
+
+    margin-top: auto !important;
+
+    flex-shrink: 0 !important;
+
+    width: 100% !important;
+
+    box-sizing: border-box !important;
+}
+
+
+/* ========================================================
+   SIGNATURE
+   ======================================================== */
+
+.pick-page .pt-signature {
+
+    margin-top: 5mm !important;
+
+    flex-shrink: 0 !important;
+}
 
     /* ========================================================
        CHECKLIST

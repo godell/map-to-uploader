@@ -536,41 +536,185 @@ export default function App() {
   }, [batches, selectedBatchNumber]);
 
   const buildRowPages = (batch) => {
-    if (!batch) return [];
-    const toSet = new Set(batch.tos);
-    const items = processedData.filter(item => toSet.has(item["Transfer Order Number"]));
-    const groups = new Map();
-    items.forEach(it => {
-      const row = it.Row || "??";
-      if (!groups.has(row)) groups.set(row, []);
-      groups.get(row).push(it);
+  if (!batch) return [];
+
+  /*
+   * ==========================================================
+   * PICK TICKET PAGINATION
+   *
+   * 1 ROW = 1 GROUP
+   * Maksimal 10 item per physical page.
+   *
+   * Contoh:
+   * ROW 07 = 25 items
+   *
+   * Page 1 → item 01 - 10
+   * Page 2 → item 11 - 20
+   * Page 3 → item 21 - 25
+   *
+   * Page number dihitung PER ROW, bukan PER BATCH.
+   * ==========================================================
+   */
+
+  const ITEMS_PER_PAGE = 10;
+
+  const toSet = new Set(batch.tos);
+
+  const items = processedData.filter(item =>
+    toSet.has(item["Transfer Order Number"])
+  );
+
+  /*
+   * Group data berdasarkan Row
+   */
+  const groups = new Map();
+
+  items.forEach(it => {
+    const row = it.Row || "??";
+
+    if (!groups.has(row)) {
+      groups.set(row, []);
+    }
+
+    groups.get(row).push(it);
+  });
+
+  /*
+   * Sort Row
+   */
+  const rows = Array.from(groups.keys()).sort((a, b) => {
+    const na = parseInt(a, 10);
+    const nb = parseInt(b, 10);
+
+    if (Number.isNaN(na) && Number.isNaN(nb)) {
+      return String(a).localeCompare(String(b));
+    }
+
+    if (Number.isNaN(na)) return 1;
+    if (Number.isNaN(nb)) return -1;
+
+    return na - nb;
+  });
+
+  /*
+   * ==========================================================
+   * BUILD PHYSICAL PAGES
+   * ==========================================================
+   */
+
+  const result = [];
+
+  rows.forEach(rowKey => {
+
+    /*
+     * Jangan modify array asli.
+     */
+    const rowItems = [...groups.get(rowKey)].sort((a, b) =>
+      String(a["Source Storage Bin"] || "")
+        .localeCompare(
+          String(b["Source Storage Bin"] || "")
+        )
+    );
+
+    /*
+     * Statistik TOTAL untuk seluruh Row.
+     *
+     * Ini penting:
+     * Footer Page 1, 2, 3 semuanya tetap menunjukkan
+     * Total Items = TOTAL seluruh item Row.
+     */
+
+    const toUniq = new Set();
+    const artUniq = new Set();
+
+    let qtySum = 0;
+
+    rowItems.forEach(it => {
+
+      if (it["Transfer Order Number"]) {
+        toUniq.add(it["Transfer Order Number"]);
+      }
+
+      if (it["Article"]) {
+        artUniq.add(it["Article"]);
+      }
+
+      qtySum += parseQty(
+        it["Source target qty"]
+      );
     });
-    const rows = Array.from(groups.keys()).sort((a, b) => {
-      const na = parseInt(a, 10);
-      const nb = parseInt(b, 10);
-      if (Number.isNaN(na) && Number.isNaN(nb)) return String(a).localeCompare(String(b));
-      if (Number.isNaN(na)) return 1;
-      if (Number.isNaN(nb)) return -1;
-      return na - nb;
-    });
-    return rows.map(rowKey => {
-      const rowItems = groups.get(rowKey);
-      rowItems.sort((a, b) => String(a["Source Storage Bin"] || "").localeCompare(String(b["Source Storage Bin"] || "")));
-      const toUniq = new Set();
-      const artUniq = new Set();
-      let qtySum = 0;
-      rowItems.forEach(it => {
-        if (it["Transfer Order Number"]) toUniq.add(it["Transfer Order Number"]);
-        if (it["Article"]) artUniq.add(it["Article"]);
-        qtySum += parseQty(it["Source target qty"]);
-      });
-      return {
+
+    const stats = {
+      totalTO: toUniq.size,
+      totalArticle: artUniq.size,
+      totalQty: qtySum,
+    };
+
+    /*
+     * Berapa physical page yang dibutuhkan Row ini?
+     */
+
+    const totalRowPages = Math.max(
+      1,
+      Math.ceil(
+        rowItems.length / ITEMS_PER_PAGE
+      )
+    );
+
+    /*
+     * Pecah Row menjadi beberapa page.
+     */
+
+    for (
+      let start = 0;
+      start < rowItems.length;
+      start += ITEMS_PER_PAGE
+    ) {
+
+      const pageItems = rowItems.slice(
+        start,
+        start + ITEMS_PER_PAGE
+      );
+
+      const rowPageNumber =
+        Math.floor(start / ITEMS_PER_PAGE) + 1;
+
+      result.push({
         rowKey,
-        items: rowItems,
-        stats: { totalTO: toUniq.size, totalArticle: artUniq.size, totalQty: qtySum },
-      };
-    });
-  };
+
+        /*
+         * Item untuk physical page ini
+         */
+        items: pageItems,
+
+        /*
+         * Statistik seluruh Row
+         */
+        stats,
+
+        /*
+         * Total item seluruh Row
+         */
+        totalRowItems: rowItems.length,
+
+        /*
+         * Pagination PER ROW
+         */
+        rowPageNumber,
+
+        rowTotalPages: totalRowPages,
+
+        /*
+         * Hanya page pertama yang menampilkan
+         * Header besar + Summary.
+         */
+        isFirstPage: rowPageNumber === 1,
+      });
+    }
+  });
+
+  return result;
+};
 
   const currentTOList = useMemo(() => {
     if (!selectedWing) return Array.from(toRowInfo.keys());
@@ -1823,7 +1967,6 @@ const preparePrintOrientation = (orientation) => {
         <div className="print-only pick-ticket-print pick-page" data-testid="pick-ticket-print" aria-hidden="true">
           {(() => {
             const rowPages = buildRowPages(selectedBatch);
-            const totalPages = rowPages.length;
             const batchCode = formatBatchCode(selectedBatch.batchNumber, selectedBatch.randomSuffix);
             const printedAt = new Date().toLocaleString("id-ID", { dateStyle: "short", timeStyle: "medium" });
             const codeMap = new Map(selectedBatch.codedTOs.map(c => [c.to, c.code]));
@@ -1835,110 +1978,310 @@ const preparePrintOrientation = (orientation) => {
               })();
 
               return (
-                <div key={page.rowKey} className="pick-page">
-                  <div className="pt-header">
-                    <div className="pt-title">
-                      <div className="pt-h1">TRANSFER ORDER PICKING</div>
-                      <div className="pt-batch-badge">
-                        <span className="pt-batch-label">Batch</span>
-                        <span className="pt-batch-num">{selectedBatch.batchNumber}</span>
-                        <span className="pt-batch-meta">· {selectedBatch.tos.length} TO in batch</span>
-                      </div>
-                    </div>
+  <div
+    key={`${page.rowKey}-${page.rowPageNumber}`}
+    className="pick-page"
+  >
 
-                    <div className="pt-row-badge">
-                      <div className="pt-row-label">ROW</div>
-                      <div className="pt-row-value">{rowLabel}</div>
-                    </div>
+    {/* =====================================================
+        HEADER BESAR
+        HANYA PAGE PERTAMA ROW
+       ===================================================== */}
 
-                    <div className="pt-code-box">
-                      {reprintCount > 0 && (
-                        <div style={{
-                          fontSize: '22px',
-                          fontWeight: '900',
-                          border: '3px solid black',
-                          padding: '4px 10px',
-                          marginBottom: '8px',
-                          textAlign: 'center',
-                          letterSpacing: '1px',
-                          backgroundColor: '#ffffff'
-                        }}>
-                          RE-PRINT {reprintCount}
-                        </div>
-                      )}
-                      
-                      <Barcode value={batchCode} width={1.2} height={35} displayValue={false} margin={0} />
-                      <div className="pt-code-num" style={{ marginTop: '4px' }}>{batchCode}</div>
-                      <div className="pt-code-meta">Printed: {printedAt}</div>
-                    </div>
-                  </div>
+    {page.isFirstPage && (
+      <>
+        <div className="pt-header">
 
-                  <div className="pt-summary">
-                    <div className="pt-summary-item">
-                      <span className="pt-sm-label">Total TO</span>
-                      <span className="pt-sm-value">{page.stats.totalTO}</span>
-                    </div>
-                    <div className="pt-summary-item">
-                      <span className="pt-sm-label">Total Article</span>
-                      <span className="pt-sm-value">{page.stats.totalArticle}</span>
-                    </div>
-                    <div className="pt-summary-item">
-                      <span className="pt-sm-label">Total Qty</span>
-                      <span className="pt-sm-value">{page.stats.totalQty.toLocaleString("id-ID")}</span>
-                    </div>
-                  </div>
+          <div className="pt-title">
 
-                  <table className="pt-table">
-                    <thead>
-                      <tr>
-                        <th style={{width: "36px"}}>No. Urut</th>
-                        <th style={{width: "48px"}}>Kode</th>
-                        <th style={{width: "47px"}}>TO Line</th>
-                        <th style={{width: "78px"}}>TO Number</th>
-                        <th style={{width: "150px"}}>Article</th>
-                        <th>Article Description</th>
-                        <th style={{width: "42px"}}>Qty</th>
-                        <th style={{width: "37px"}}>UoM</th>
-                        <th style={{width: "78px"}}>Source Bin</th>
-                        <th style={{width: "78px"}}>Dest. Bin</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {page.items.map((it, idx) => (
-                        <tr key={idx}>
-                          <td>{String(idx + 1).padStart(4, "0")}</td>
-                          <td style={{ fontWeight: 'bold', color: '#000000', fontSize: '14px' }}>
-                            {codeMap.get(it["Transfer Order Number"]) || ""}
-                          </td>
-                          <td>{it["Transfer order item"] || ""}</td>
-                          <td className="pt-nowrap">{it["Transfer Order Number"]}</td>
-                          <td className="pt-article">{it["Article"] || ""}</td>
-                          <td className="pt-desc">{it["Article Description"] || ""}</td>
-                          <td>{it["Source target qty"] || ""}</td>
-                          <td>EA</td>
-                          <td className="pt-nowrap">{it["Source Storage Bin"] || ""}</td>
-                          <td className="pt-nowrap">{it["Dest.Storage Bin"] || ""}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            <div className="pt-h1">
+              TRANSFER ORDER PICKING
+            </div>
 
-                  <div className="pt-footer">
-                    <div className="pt-footer-row">
-                      <div>Total Items in this Row: <strong>{page.items.length}</strong> · Row <strong>{rowLabel}</strong></div>
-                      <div className="pt-page-num">Page {pIdx + 1} of {totalPages}</div>
-                    </div>
-                    <div className="pt-signature">
-                      <div>Picker: ____________________</div>
-                      <div>Checker: ____________________</div>
-                    </div>
-                  </div>
-                </div>
-              );
-            });
-          })()}
+            <div className="pt-batch-badge">
+              <span className="pt-batch-label">
+                Batch
+              </span>
+
+              <span className="pt-batch-num">
+                {selectedBatch.batchNumber}
+              </span>
+
+              <span className="pt-batch-meta">
+                · {selectedBatch.tos.length} TO in batch
+              </span>
+            </div>
+
+          </div>
+
+
+          <div className="pt-row-badge">
+
+            <div className="pt-row-label">
+              ROW
+            </div>
+
+            <div className="pt-row-value">
+              {rowLabel}
+            </div>
+
+          </div>
+
+
+          <div className="pt-code-box">
+
+            {reprintCount > 0 && (
+              <div
+                style={{
+                  fontSize: '22px',
+                  fontWeight: '900',
+                  border: '3px solid black',
+                  padding: '4px 10px',
+                  marginBottom: '8px',
+                  textAlign: 'center',
+                  letterSpacing: '1px',
+                  backgroundColor: '#ffffff'
+                }}
+              >
+                RE-PRINT {reprintCount}
+              </div>
+            )}
+
+            <Barcode
+              value={batchCode}
+              width={1.2}
+              height={35}
+              displayValue={false}
+              margin={0}
+            />
+
+            <div
+              className="pt-code-num"
+              style={{ marginTop: '4px' }}
+            >
+              {batchCode}
+            </div>
+
+            <div className="pt-code-meta">
+              Printed: {printedAt}
+            </div>
+
+          </div>
+
         </div>
-      )}
+
+
+        {/* =================================================
+            SUMMARY
+            HANYA PAGE PERTAMA ROW
+           ================================================= */}
+
+        <div className="pt-summary">
+
+          <div className="pt-summary-item">
+            <span className="pt-sm-label">
+              Total TO
+            </span>
+
+            <span className="pt-sm-value">
+              {page.stats.totalTO}
+            </span>
+          </div>
+
+
+          <div className="pt-summary-item">
+            <span className="pt-sm-label">
+              Total Article
+            </span>
+
+            <span className="pt-sm-value">
+              {page.stats.totalArticle}
+            </span>
+          </div>
+
+
+          <div className="pt-summary-item">
+            <span className="pt-sm-label">
+              Total Qty
+            </span>
+
+            <span className="pt-sm-value">
+              {page.stats.totalQty.toLocaleString("id-ID")}
+            </span>
+          </div>
+
+        </div>
+      </>
+    )}
+
+
+    {/* =====================================================
+        TABLE
+        SELALU ADA DI SETIAP PHYSICAL PAGE
+       ===================================================== */}
+
+    <table className="pt-table">
+
+      <thead>
+        <tr>
+
+          <th style={{ width: "36px" }}>
+            No. Urut
+          </th>
+
+          <th style={{ width: "48px" }}>
+            Kode
+          </th>
+
+          <th style={{ width: "47px" }}>
+            TO Line
+          </th>
+
+          <th style={{ width: "78px" }}>
+            TO Number
+          </th>
+
+          <th style={{ width: "150px" }}>
+            Article
+          </th>
+
+          <th>
+            Article Description
+          </th>
+
+          <th style={{ width: "42px" }}>
+            Qty
+          </th>
+
+          <th style={{ width: "37px" }}>
+            UoM
+          </th>
+
+          <th style={{ width: "78px" }}>
+            Source Bin
+          </th>
+
+          <th style={{ width: "78px" }}>
+            Dest. Bin
+          </th>
+
+        </tr>
+      </thead>
+
+
+      <tbody>
+
+        {page.items.map((it, idx) => (
+
+          <tr key={idx}>
+
+            <td>
+              {String(idx + 1).padStart(4, "0")}
+            </td>
+
+            <td
+              style={{
+                fontWeight: 'bold',
+                color: '#000000',
+                fontSize: '14px'
+              }}
+            >
+              {codeMap.get(
+                it["Transfer Order Number"]
+              ) || ""}
+            </td>
+
+            <td>
+              {it["Transfer order item"] || ""}
+            </td>
+
+            <td className="pt-nowrap">
+              {it["Transfer Order Number"]}
+            </td>
+
+            <td className="pt-article">
+              {it["Article"] || ""}
+            </td>
+
+            <td className="pt-desc">
+              {it["Article Description"] || ""}
+            </td>
+
+            <td>
+              {it["Source target qty"] || ""}
+            </td>
+
+            <td>
+              EA
+            </td>
+
+            <td className="pt-nowrap">
+              {it["Source Storage Bin"] || ""}
+            </td>
+
+            <td className="pt-nowrap">
+              {it["Dest.Storage Bin"] || ""}
+            </td>
+
+          </tr>
+
+        ))}
+
+      </tbody>
+
+    </table>
+
+
+    {/* =====================================================
+        FOOTER
+        SELALU ADA DI BOTTOM PAGE
+       ===================================================== */}
+
+    <div className="pt-footer">
+
+      <div className="pt-footer-row">
+
+        <div>
+          Total Items in this Row:
+          <strong>
+            {page.totalRowItems}
+          </strong>
+
+          {" · "}
+
+          Row
+          {" "}
+          <strong>
+            {rowLabel}
+          </strong>
+        </div>
+
+
+        <div className="pt-page-num">
+
+          Page {page.rowPageNumber} of {page.rowTotalPages}
+
+        </div>
+
+      </div>
+
+
+      <div className="pt-signature">
+
+        <div>
+          Picker: ____________________
+        </div>
+
+        <div>
+          Checker: ____________________
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+);
 
       {selectedBatch && printType === 'checklist' && (
         <div className="print-only" aria-hidden="true">
