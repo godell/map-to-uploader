@@ -502,11 +502,11 @@
 
     flex: 0 0 auto !important;
 
-    height: auto !important;
+    height: 70 !important;
 
-    min-height: auto !important;
+    min-height: 70 !important;
 
-    max-height: auto !important;
+    max-height: 70 !important;
 
     overflow: hidden !important;
 }
