@@ -1,8 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Masukkan Project URL dan anon key dari Langkah 2 di sini
-const SUPABASE_URL = "https://dxfmqsrxoidpqyawxytu.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4Zm1xc3J4b2lkcHF5YXd4eXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NjkwNjgsImV4cCI6MjEwMjA0NTA2OH0.0OQSkLqm-VB3hquHRKgY6t-qrvm4chbD-Dijb1n2Pjs";
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -322,28 +321,34 @@ const processDataset = (rawData) => {
   });
 };
 
+// ... kode proses data di atasnya ...
+
 export default function App() {
   const [data, setData] = useState(INITIAL_RAW_DATA);
   const [isGenerated, setIsGenerated] = useState(true);
-  const [selectedWing, setSelectedWing] = useState(null); // "left" | "right" | "cross" | null
-  const [selectedSubCard, setSelectedSubCard] = useState(null); // {type:"range"|"mixed", wing, key} | null
+  const [selectedWing, setSelectedWing] = useState(null); 
+  const [selectedSubCard, setSelectedSubCard] = useState(null); 
   const [searchQuery, setSearchQuery] = useState("");
   const [uploadStatus, setUploadStatus] = useState({ active: false, phase: "", fileName: "", rowsParsed: 0 });
-  const [mixedSubFilter, setMixedSubFilter] = useState("all"); // "all" | "2" | "3" | "4" | "5" | ">5"
-  const [copyPulse, setCopyPulse] = useState(false); // ephemeral flag for enhanced copy feedback
+  const [mixedSubFilter, setMixedSubFilter] = useState("all"); 
+  const [copyPulse, setCopyPulse] = useState(false); 
 
   // ── Batch Picking (Cross Wing) state ──
-  const [batchPickingOpen, setBatchPickingOpen] = useState(false); // true if BP sub-card selected
-  const [batchSize, setBatchSize] = useState(null); // null | 10 | 15 | 20 | 25 | 30 | custom number
+  const [batchPickingOpen, setBatchPickingOpen] = useState(false); 
+  const [batchSize, setBatchSize] = useState(null); 
   const [customBatchSize, setCustomBatchSize] = useState("");
-  const [selectedBatchNumber, setSelectedBatchNumber] = useState(null); // 1..N
+  const [selectedBatchNumber, setSelectedBatchNumber] = useState(null); 
   const [pickerCount, setPickerCount] = useState(3);
   const [printModalOpen, setPrintModalOpen] = useState(false);
-  const [printWarning, setPrintWarning] = useState(null); // { previousPrints: [] } | null
+  const [printWarning, setPrintWarning] = useState(null); 
   const [isPrinting, setIsPrinting] = useState(false);
-  const printingRef = useRef(false); // re-entry guard for print flow
+  const printingRef = useRef(false); 
+  
+  // MASUKKAN REPRINT COUNT DI SINI BRO:
+  const [reprintCount, setReprintCount] = useState(0);
 
   const processedData = useMemo(() => {
+// ... lanjut ke kode lu yang di bawahnya ...
     return processDataset(data);
   }, [data]);
 
@@ -666,10 +671,8 @@ export default function App() {
   const handleRequestPrint = async () => {
   if (!selectedBatch) return;
   try {
-    // Ambil daftar TO dalam batch saat ini
     const toNumbers = selectedBatch.tos;
 
-    // Cek ke database Supabase apakah TO ini sudah pernah diprint
     const { data: prev, error } = await supabase
       .from('print_history')
       .select('*')
@@ -678,9 +681,19 @@ export default function App() {
     if (error) throw error;
 
     if (prev && prev.length > 0) {
+      // LOGIKA BARU: Hitung maksimal TO ini udah diprint berapa kali
+      const counts = {};
+      prev.forEach(p => {
+        counts[p.to_number] = (counts[p.to_number] || 0) + 1;
+      });
+      // Cari angka re-print tertinggi di batch ini
+      const maxReprint = Math.max(...Object.values(counts));
+      
+      setReprintCount(maxReprint); // Simpan angka RE-PRINT
       setPrintWarning({ previousPrints: prev });
       setPrintModalOpen(true);
     } else {
+      setReprintCount(0); // Belum pernah diprint, reset ke 0
       setPrintWarning(null);
       setPrintModalOpen(false);
       proceedWithPrint();
@@ -688,6 +701,7 @@ export default function App() {
   } catch (err) {
     console.error(err);
     toast.error("Gagal memeriksa riwayat print. Melanjutkan tanpa cek duplikat.");
+    setReprintCount(0);
     setPrintModalOpen(false);
     proceedWithPrint();
   }
@@ -1778,6 +1792,22 @@ export default function App() {
                     </div>
 
                     <div className="pt-code-box">
+                      {/* UI BARU: Munculin highlight tebal kalau ini Re-Print */}
+                      {reprintCount > 0 && (
+                        <div style={{
+                          fontSize: '22px',
+                          fontWeight: '900',
+                          border: '3px solid black',
+                          padding: '4px 10px',
+                          marginBottom: '8px',
+                          textAlign: 'center',
+                          letterSpacing: '1px',
+                          backgroundColor: '#ffffff'
+                        }}>
+                          RE-PRINT {reprintCount}
+                        </div>
+                      )}
+                      
                       <Barcode value={batchCode} width={1.2} height={35} displayValue={false} margin={0} />
                       <div className="pt-code-num" style={{ marginTop: '4px' }}>{batchCode}</div>
                       <div className="pt-code-meta">Printed: {printedAt}</div>
