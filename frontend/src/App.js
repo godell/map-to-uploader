@@ -1964,7 +1964,7 @@ const preparePrintOrientation = (orientation) => {
       )}
 
       {selectedBatch && printType === 'ptf' && (
-        <div className="print-only pick-ticket-print pick-page" data-testid="pick-ticket-print" aria-hidden="true">
+        <div className="print-only pick-ticket-print" data-testid="pick-ticket-print" aria-hidden="true">
           {(() => {
             const rowPages = buildRowPages(selectedBatch);
             const batchCode = formatBatchCode(selectedBatch.batchNumber, selectedBatch.randomSuffix);
