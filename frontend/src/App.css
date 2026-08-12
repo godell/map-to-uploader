@@ -47,7 +47,6 @@
     }
 }
 
-
 /* Indeterminate progress bar animation used by upload loading overlay */
 @keyframes upload-bar {
     0% {
@@ -62,16 +61,15 @@
     animation: upload-bar 1.2s linear infinite;
 }
 
-
-/* ── Print styles for Pick Ticket (LANDSCAPE A4, page per Row) ── */
+/* ── Print styles for Checklist & Pick Ticket ── */
 .print-only {
     display: none;
 }
 
 @media print {
     @page {
-        size: A4 landscape;
-        margin: 10mm 10mm 12mm 10mm;
+        size: A4 portrait;
+        margin: 8mm;
     }
 
     body * {
@@ -104,6 +102,29 @@
     }
     .pick-page:last-child {
         page-break-after: auto;
+    }
+
+    /* Format Halaman A4 untuk Checklist (Dikunci agar pas 1 halaman penuh per item) */
+    .checklist-a4-page {
+        width: 194mm !important;
+        height: 275mm !important;
+        max-height: 275mm !important;
+        box-sizing: border-box !important;
+        background: white !important;
+        border: 2px solid #cbd5e1 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        
+        /* KUNCI UTAMA: Cegah konten terpotong atau terbelah di tengah halaman */
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        
+        /* Pindah ke halaman baru untuk TO / checklist berikutnya */
+        page-break-after: always !important;
+        break-after: page !important;
+        margin: 0 auto !important;
     }
 
     /* Header row: Title | Row badge | Batch code */
@@ -185,23 +206,6 @@
         line-height: 1;
         margin-top: 1mm;
     }
-
-/* Format halaman A4 untuk Checklist */
-  .checklist-a4-page {
-    width: 194mm !important;
-    height: 281mm !important;
-    max-height: 281mm !important;
-    box-sizing: border-box !important;
-    background: white !important;
-    border: 2px solid #cbd5e1 !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-    page-break-after: always !important;
-    break-after: page !important;
-    margin: 0 auto !important;
-  }
 
     .pt-code-box {
         text-align: right;
