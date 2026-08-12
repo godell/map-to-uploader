@@ -168,6 +168,19 @@
     flex-shrink: 0 !important;
 }
 
+/* ========================================================
+   CHECKLIST - STATION / BATCH SEPARATOR
+   ======================================================== */
+
+.checklist-station-separator {
+    width: calc(100% - 8mm) !important;
+
+    margin: 0 auto 2mm auto !important;
+
+    border-top: 1px dashed #94a3b8 !important;
+
+    flex-shrink: 0 !important;
+}
 
 /* ========================================================
    BATCH ICON
@@ -473,6 +486,25 @@
 
         font-size: 6.5pt !important;
     }
+
+/* ========================================================
+   CHECKLIST - COMPACT WING CARDS
+   Max 18 checklist = 6 columns x 3 rows
+   ======================================================== */
+
+.checklist-a4-page
+.bg-white.p-6.rounded-xl {
+
+    flex: 0 0 auto !important;
+
+    height: 58mm !important;
+
+    min-height: 58mm !important;
+
+    max-height: 58mm !important;
+
+    overflow: hidden !important;
+}
 
     /* ========================================================
        ROW GRID

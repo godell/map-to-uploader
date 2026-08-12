@@ -1965,6 +1965,8 @@ const preparePrintOrientation = (orientation) => {
   </div>
 </div>
 
+<div className="checklist-station-separator"></div>
+
 {/* =====================================================
     BATCH PICKING NUMBER
     ===================================================== */}
