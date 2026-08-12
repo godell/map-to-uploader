@@ -2278,10 +2278,14 @@ const preparePrintOrientation = (orientation) => {
 
       </div>
 
-    </div>
+        </div>
 
-  </div>
-);
+              </div>
+            );
+          });
+        })()}
+      </div>
+    )}
 
       {selectedBatch && printType === 'checklist' && (
         <div className="print-only" aria-hidden="true">
