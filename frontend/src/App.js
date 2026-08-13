@@ -1943,39 +1943,39 @@ export default function App() {
                   )}
 
                   <table className="pt-table">
-                    <thead>
-                      <tr>
-                        <th style={{ width: "36px" }}>No. Urut</th>
-                        <th style={{ width: "48px" }}>Kode</th>
-                        <th style={{ width: "47px" }}>TO Line</th>
-                        <th style={{ width: "78px" }}>TO Number</th>
-                        <th style={{ width: "150px" }}>Article</th>
-                        <th>Article Description</th>
-                        <th style={{ width: "42px" }}>Qty</th>
-                        <th style={{ width: "37px" }}>UoM</th>
-                        <th style={{ width: "78px" }}>Source Bin</th>
-                        <th style={{ width: "78px" }}>Dest. Bin</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {page.items.map((it, idx) => (
-                        <tr key={idx}>
-                          <td>{String(idx + 1).padStart(4, "0")}</td>
-                          <td style={{ fontWeight: 'bold', color: '#000000', fontSize: '14px' }}>
-                            {codeMap.get(it["Transfer Order Number"]) || ""}
-                          </td>
-                          <td>{it["Transfer order item"] || ""}</td>
-                          <td className="pt-nowrap">{it["Transfer Order Number"]}</td>
-                          <td className="pt-article">{it["Article"] || ""}</td>
-                          <td className="pt-desc">{it["Article Description"] || ""}</td>
-                          <td>{it["Source target qty"] || ""}</td>
-                          <td>EA</td>
-                          <td className="pt-nowrap">{it["Source Storage Bin"] || ""}</td>
-                          <td className="pt-nowrap">{it["Dest.Storage Bin"] || ""}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+  <thead>
+    <tr>
+      <th style={{ width: "36px" }}>No. Urut</th>
+      <th style={{ width: "78px" }}>Source Bin</th>
+      <th style={{ width: "150px" }}>Article</th>
+      <th>Article Description</th>
+      <th style={{ width: "42px" }}>Qty</th>
+      <th style={{ width: "37px" }}>UoM</th>
+      <th style={{ width: "48px" }}>Kode</th>
+      <th style={{ width: "47px" }}>TO Line</th>
+      <th style={{ width: "78px" }}>TO Number</th>
+      <th style={{ width: "78px" }}>Dest. Bin</th>
+    </tr>
+  </thead>
+  <tbody>
+    {page.items.map((it, idx) => (
+      <tr key={idx}>
+        <td>{String(idx + 1).padStart(4, "0")}</td>
+        <td className="pt-nowrap">{it["Source Storage Bin"] || ""}</td>
+        <td className="pt-article">{it["Article"] || ""}</td>
+        <td className="pt-desc">{it["Article Description"] || ""}</td>
+        <td>{it["Source target qty"] || ""}</td>
+        <td>EA</td>
+        <td style={{ fontWeight: 'bold', color: '#000000', fontSize: '14px' }}>
+          {codeMap.get(it["Transfer Order Number"]) || ""}
+        </td>
+        <td>{it["Transfer order item"] || ""}</td>
+        <td className="pt-nowrap">{it["Transfer Order Number"]}</td>
+        <td className="pt-nowrap">{it["Dest.Storage Bin"] || ""}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
 
                   <div className="pt-footer">
                     <div className="pt-footer-row">
