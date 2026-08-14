@@ -320,6 +320,32 @@
         letter-spacing: 0.5px !important;
     }
 
+/* ========================================================
+   CHECKLIST - PTF NUMBER
+   ======================================================== */
+
+.checklist-ptf-number {
+
+    margin-top: 0.8mm !important;
+
+    color: #64748b !important;
+
+    font-size: 5.5pt !important;
+
+    font-weight: 700 !important;
+
+    line-height: 1 !important;
+
+    letter-spacing: 0.25px !important;
+
+    white-space: nowrap !important;
+
+    overflow: hidden !important;
+
+    text-overflow: ellipsis !important;
+
+    font-family: "Courier New", monospace !important;
+}
 
     /* ========================================================
        CHECKLIST CHILD SAFETY
@@ -825,6 +851,71 @@
         font-family: "Courier New", monospace !important;
 
         font-size: 5.5pt !important;
+    }
+
+
+    /* ========================================================
+       CHECKLIST - EAN VALUE
+       ======================================================== */
+
+    .checklist-a4-page
+    .checklist-ean-value {
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 5.5pt !important;
+
+        font-weight: 600 !important;
+
+        line-height: 1 !important;
+
+        white-space: nowrap !important;
+
+        overflow: hidden !important;
+
+        text-overflow: ellipsis !important;
+
+        text-align: center !important;
+    }
+
+
+    /* ========================================================
+       CHECKLIST - EAN BARCODE
+       SUPER COMPACT
+       ======================================================== */
+
+    .checklist-a4-page
+    .checklist-ean-barcode {
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: center !important;
+
+        width: 100% !important;
+
+        height: 4mm !important;
+
+        margin-top: 0.4mm !important;
+
+        overflow: hidden !important;
+
+        flex-shrink: 0 !important;
+    }
+
+    .checklist-a4-page
+    .checklist-ean-barcode svg {
+
+        width: 20mm !important;
+
+        height: 3.5mm !important;
+
+        max-width: 20mm !important;
+
+        max-height: 3.5mm !important;
+
+        display: block !important;
     }
 
 
