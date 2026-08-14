@@ -660,6 +660,18 @@
     width: 9% !important;
 }
 
+.checklist-col-source-bin {
+    width: 22mm;
+    min-width: 22mm;
+    max-width: 22mm;
+}
+
+.checklist-col-dest-bin {
+    width: 22mm;
+    min-width: 22mm;
+    max-width: 22mm;
+}
+
 
 /* ============================================================
    HEADER CELLS

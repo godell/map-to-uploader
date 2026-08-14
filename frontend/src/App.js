@@ -2097,6 +2097,7 @@ export default function App() {
 
       const sortedRows = Object.keys(groupedByRow).sort(
         (a, b) => {
+
           const na = Number(a);
           const nb = Number(b);
 
@@ -2123,11 +2124,6 @@ export default function App() {
       // PAGING
       //
       // 20 ITEM / PAGE
-      //
-      // 50 ARTICLE:
-      // Page 1 = 20
-      // Page 2 = 20
-      // Page 3 = 10
       // ============================================================
 
       const CHECKLIST_ITEMS_PER_PAGE = 20;
@@ -2139,6 +2135,7 @@ export default function App() {
         i < checklistItems.length;
         i += CHECKLIST_ITEMS_PER_PAGE
       ) {
+
         checklistPages.push(
           checklistItems.slice(
             i,
@@ -2208,6 +2205,7 @@ export default function App() {
               const pageSortedRows =
                 Object.keys(pageGroupedByRow).sort(
                   (a, b) => {
+
                     const na = Number(a);
                     const nb = Number(b);
 
@@ -2309,6 +2307,7 @@ export default function App() {
                       </div>
 
                       <div className="checklist-to-barcode">
+
                         <Barcode
                           value={String(item.to)}
                           width={1.2}
@@ -2316,6 +2315,7 @@ export default function App() {
                           displayValue={false}
                           margin={0}
                         />
+
                       </div>
 
                     </div>
@@ -2388,6 +2388,16 @@ export default function App() {
                             EAN
                           </th>
 
+                          {/* SOURCE BIN */}
+                          <th className="checklist-col-source-bin">
+                            SOURCE BIN
+                          </th>
+
+                          {/* DEST BIN */}
+                          <th className="checklist-col-dest-bin">
+                            DEST. BIN
+                          </th>
+
                           <th className="checklist-col-qty">
                             QTY
                           </th>
@@ -2421,6 +2431,19 @@ export default function App() {
                                 detail.ean_code ||
                                 "-";
 
+                              const sourceBinDisplay =
+                                detail["Source Storage Bin"] ||
+                                detail["source storage bin"] ||
+                                detail.source_storage_bin ||
+                                "";
+
+                              const destBinDisplay =
+                                detail["Dest.Storage Bin"] ||
+                                detail["Dest. Storage Bin"] ||
+                                detail["dest.storage bin"] ||
+                                detail["dest_storage_bin"] ||
+                                "";
+
                               const qtyDisplay =
                                 Number(
                                   detail["Source target qty"] ||
@@ -2443,7 +2466,10 @@ export default function App() {
                                   className="checklist-data-row"
                                 >
 
-                                  {/* ROW */}
+                                  {/* ==================================================
+                                      ROW
+                                      ================================================== */}
+
                                   {idx === 0 && (
                                     <td
                                       rowSpan={rowItems.length}
@@ -2460,19 +2486,28 @@ export default function App() {
                                   )}
 
 
-                                  {/* TO LINE */}
+                                  {/* ==================================================
+                                      TO LINE
+                                      ================================================== */}
+
                                   <td className="checklist-toline-cell checklist-col-toline">
                                     {toLineDisplay}
                                   </td>
 
 
-                                  {/* ARTICLE */}
+                                  {/* ==================================================
+                                      ARTICLE
+                                      ================================================== */}
+
                                   <td className="checklist-article-cell checklist-col-article">
                                     {articleDisplay}
                                   </td>
 
 
-                                  {/* EAN */}
+                                  {/* ==================================================
+                                      EAN
+                                      ================================================== */}
+
                                   <td className="checklist-ean-cell checklist-col-ean">
 
                                     <div className="checklist-ean-value">
@@ -2481,6 +2516,7 @@ export default function App() {
 
                                     {eanDisplay &&
                                       eanDisplay !== "-" && (
+
                                         <div className="checklist-ean-barcode">
 
                                           <Barcode
@@ -2492,18 +2528,41 @@ export default function App() {
                                           />
 
                                         </div>
+
                                       )}
 
                                   </td>
 
 
-                                  {/* QTY */}
+                                  {/* ==================================================
+                                      SOURCE BIN
+                                      ================================================== */}
+
+                                  <td className="checklist-source-bin-cell checklist-col-source-bin">
+                                    {sourceBinDisplay}
+                                  </td>
+
+
+                                  {/* ==================================================
+                                      DEST BIN
+                                      ================================================== */}
+
+                                  <td className="checklist-dest-bin-cell checklist-col-dest-bin">
+                                    {destBinDisplay}
+                                  </td>
+
+
+                                  {/* ==================================================
+                                      QTY
+                                      ================================================== */}
+
                                   <td className="checklist-qty-cell checklist-col-qty">
                                     {qtyDisplay}
                                   </td>
 
                                 </tr>
                               );
+
                             }
                           );
 
