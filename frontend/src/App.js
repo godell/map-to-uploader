@@ -2058,7 +2058,7 @@ const totalToLine = new Set(
     row => groupedByRow[row]
 );
 
-const CHECKLIST_ITEMS_PER_PAGE = 25;
+const CHECKLIST_ITEMS_PER_PAGE = 20;
 
 const checklistPages = [];
 
@@ -2412,10 +2412,9 @@ const totalChecklistPages = Math.max(
                         ==================================================== */}
 
                     <div className="
-                        flex-grow
-                        w-full
-                        overflow-hidden
-                    ">
+    w-full
+    flex-shrink-0
+">
 
                         <table className="
                             w-full

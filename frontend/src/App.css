@@ -149,41 +149,20 @@
        ======================================================== */
 
     .checklist-a4-page {
+    height: 277mm !important;
+    min-height: 277mm !important;
+    max-height: 277mm !important;
 
-        width: 190mm !important;
-        height: 277mm !important;
+    overflow: visible !important;
 
-        min-width: 190mm !important;
-        max-width: 190mm !important;
+    box-sizing: border-box !important;
 
-        min-height: 277mm !important;
-        max-height: 277mm !important;
+    page-break-after: always !important;
+    break-after: page !important;
 
-        box-sizing: border-box !important;
-
-        display: flex !important;
-        flex-direction: column !important;
-
-        position: relative !important;
-
-        background: #ffffff !important;
-
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 2px !important;
-
-        margin: 0 auto !important;
-
-        /* COMPACT */
-        padding: 2.5mm !important;
-
-        overflow: hidden !important;
-
-        page-break-after: always !important;
-        break-after: page !important;
-
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-    }
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
 
     .checklist-a4-page:first-child {
         page-break-before: auto !important;
@@ -391,9 +370,7 @@
 }
 
 .checklist-a4-page tr {
-
     page-break-inside: avoid !important;
-
     break-inside: avoid !important;
 }
 
@@ -791,17 +768,13 @@
        ======================================================== */
 
     .checklist-a4-page table {
+    width: 100% !important;
 
-        width: 100% !important;
+    table-layout: fixed !important;
 
-        border-collapse: collapse !important;
-
-        table-layout: fixed !important;
-
-        font-size: 5.8pt !important;
-
-        line-height: 1 !important;
-    }
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
 
     .checklist-a4-page table th {
 
