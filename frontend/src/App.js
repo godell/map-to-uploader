@@ -2017,8 +2017,8 @@ export default function App() {
              return (
                <div key={item.to} className="checklist-a4-page flex flex-col" style={{ pageBreakAfter: 'always', breakAfter: 'page', minHeight: '100vh', backgroundColor: '#ffffff', padding: '40px' }}>
                  
-                 {/* HEADER */}
-                 <div className="flex border-b-[3px] border-slate-300 pb-4 mb-6">
+                 {/* HEADER - Jarak bawah dirapetin (pb-2 mb-3) */}
+                 <div className="flex border-b-[3px] border-slate-300 pb-2 mb-3">
                    <div className="w-1/2 flex items-center gap-4 pr-4">
                      <div className="bg-[#1e3a8a] p-3 rounded-xl shadow-sm border-2 border-blue-900">
                        <Package className="w-8 h-8 text-white" />
@@ -2029,7 +2029,6 @@ export default function App() {
                      </div>
                    </div>
                    
-                   {/* KODE TO (STATION) - Kotak tipis sesuai referensi */}
                    <div className="w-1/2 pl-4">
                      <div className="flex flex-col border border-[#1e3a8a] h-full rounded-sm overflow-hidden">
                        <div className="bg-[#1e3a8a] text-white text-center py-1.5 font-bold text-sm tracking-widest">
@@ -2044,13 +2043,12 @@ export default function App() {
                    </div>
                  </div>
 
-                 {/* TO NUMBER & QTY (Dikecilin 50%) */}
-                 <div className="flex border-b-[3px] border-slate-300 pb-6 mb-6 mt-2">
+                 {/* TO NUMBER & QTY - Jarak atas & bawah dirapetin (pb-3 mb-4 mt-1) */}
+                 <div className="flex border-b-[3px] border-slate-300 pb-3 mb-4 mt-1">
                    <div className="w-3/5 flex flex-col justify-center border-r-2 border-slate-200 pr-6">
                      <div className="text-[#16a34a] font-bold text-sm mb-1 tracking-wide">TO / ORDER</div>
                      <div className="text-[#16a34a] font-black text-[25px] leading-none mb-2">{item.to}</div>
                      
-                     {/* BARCODE */}
                      <div className="mt-1">
                        <Barcode 
                          value={String(item.to)} 
@@ -2072,13 +2070,15 @@ export default function App() {
 
                  {/* CHECKLIST ROW */}
                  <div className="flex-grow flex flex-col">
-                   <div className="bg-[#1e3a8a] text-white text-center py-3 font-bold text-xl tracking-wider mb-6 shadow-sm">
+                   {/* Jarak bawah judul checklist dirapetin (mb-3) */}
+                   <div className="bg-[#1e3a8a] text-white text-center py-3 font-bold text-xl tracking-wider mb-3 shadow-sm">
                      CHECKLIST ROW – CENTANG JIKA SUDAH SELESAI
                    </div>
-                   <div className="bg-white p-8 rounded-xl border-2 border-slate-300 shadow-sm flex-grow">
-                     <div className="flex flex-wrap gap-x-12 gap-y-10 justify-center">
+                   {/* Jarak antar kotak (gap-x-10 gap-y-8) sedikit dirapetin dari versi sebelumnya */}
+                   <div className="bg-white p-6 rounded-xl border-2 border-slate-300 shadow-sm flex-grow">
+                     <div className="flex flex-wrap gap-x-10 gap-y-8 justify-center">
                        {rows.length > 0 ? rows.map(r => (
-                         <div key={r} className="flex flex-col items-center gap-4">
+                         <div key={r} className="flex flex-col items-center gap-3">
                            <div className="text-[#1e3a8a] font-bold text-2xl">ROW {r}</div>
                            <div className="w-16 h-16 border-[4px] border-slate-800 rounded-lg bg-white shadow-inner"></div>
                          </div>
@@ -2089,8 +2089,8 @@ export default function App() {
                    </div>
                  </div>
 
-                 {/* FOOTER */}
-                 <div className="mt-8 border-t-[3px] border-slate-300 pt-6 flex items-center justify-end gap-12">
+                 {/* FOOTER - Jarak atas dirapetin (mt-4 pt-3) */}
+                 <div className="mt-4 border-t-[3px] border-slate-300 pt-3 flex items-center justify-end gap-12">
                    <div className="flex items-center gap-4">
                      <Calendar className="w-8 h-8 text-[#1e3a8a]" />
                      <div className="flex flex-col">
