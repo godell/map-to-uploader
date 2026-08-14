@@ -2613,7 +2613,7 @@ const totalChecklistPages = Math.max(
                                                         py-1
                                                         text-center
                                                         checklist-col-ean
-                                                    >
+                                                    ">
 
                                                         <div className="checklist-ean-value">
                                                             {eanDisplay}
