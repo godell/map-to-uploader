@@ -2006,8 +2006,7 @@ export default function App() {
              // Urutkan row dari rendah ke tinggi, tanpa pisah wing
              const rows = info ? Array.from(info.numericRows).sort((a,b)=>a-b) : [];
              
-             // Pastikan info.totalQty sudah dihitung di logic atas (saat build toRowInfo)
-             // Jika belum, kasih fallback angka 0
+             // Pastikan info.totalQty sudah dihitung di logic atas
              const totalQty = info?.totalQty || 0; 
              
              const today = new Date();
@@ -2017,8 +2016,8 @@ export default function App() {
              return (
                <div key={item.to} className="checklist-a4-page flex flex-col" style={{ pageBreakAfter: 'always', breakAfter: 'page', minHeight: '100vh', backgroundColor: '#ffffff', padding: '40px' }}>
                  
-                 {/* HEADER - Jarak bawah dirapetin (pb-2 mb-3) */}
-                 <div className="flex border-b-[3px] border-slate-300 pb-2 mb-3">
+                 {/* HEADER (Tetap pakai versi terakhir yang rapi) */}
+                 <div className="flex border-b-[2px] border-slate-300 pb-2 mb-3">
                    <div className="w-1/2 flex items-center gap-4 pr-4">
                      <div className="bg-[#1e3a8a] p-3 rounded-xl shadow-sm border-2 border-blue-900">
                        <Package className="w-8 h-8 text-white" />
@@ -2031,10 +2030,10 @@ export default function App() {
                    
                    <div className="w-1/2 pl-4">
                      <div className="flex flex-col border border-[#1e3a8a] h-full rounded-sm overflow-hidden">
-                       <div className="bg-[#1e3a8a] text-white text-center py-1.5 font-bold text-sm tracking-widest">
+                       <div className="bg-[#1e3a8a] text-white text-center py-1 font-bold text-xs tracking-widest">
                          KODE TO (STATION)
                        </div>
-                       <div className="text-center flex-grow flex items-center justify-center bg-white py-4">
+                       <div className="text-center flex-grow flex items-center justify-center bg-white py-2">
                          <div className="text-[#1e3a8a] font-black text-[60px] leading-none tracking-tight">
                            {item.code}
                          </div>
@@ -2043,11 +2042,11 @@ export default function App() {
                    </div>
                  </div>
 
-                 {/* TO NUMBER & QTY - Jarak atas & bawah dirapetin (pb-3 mb-4 mt-1) */}
-                 <div className="flex border-b-[3px] border-slate-300 pb-3 mb-4 mt-1">
+                 {/* TO NUMBER & QTY */}
+                 <div className="flex border-b-[2px] border-slate-300 pb-2 mb-3 mt-1">
                    <div className="w-3/5 flex flex-col justify-center border-r-2 border-slate-200 pr-6">
-                     <div className="text-[#16a34a] font-bold text-sm mb-1 tracking-wide">TO / ORDER</div>
-                     <div className="text-[#16a34a] font-black text-[25px] leading-none mb-2">{item.to}</div>
+                     <div className="text-[#16a34a] font-bold text-xs mb-1 tracking-wide">TO / ORDER</div>
+                     <div className="text-[#16a34a] font-black text-[25px] leading-none mb-1">{item.to}</div>
                      
                      <div className="mt-1">
                        <Barcode 
@@ -2061,53 +2060,81 @@ export default function App() {
                    </div>
                    
                    <div className="w-2/5 flex flex-col items-center justify-center pl-6">
-                     <div className="text-slate-800 font-bold text-lg mb-2 tracking-wider">QTY TO</div>
-                     <div className="text-black font-black text-[45px] leading-none">
+                     <div className="text-slate-800 font-bold text-sm mb-1 tracking-wider">QTY TO</div>
+                     <div className="text-black font-black text-[40px] leading-none">
                        {totalQty.toLocaleString("id-ID")}
                      </div>
                    </div>
                  </div>
 
-                 {/* CHECKLIST ROW */}
+                 {/* CHECKLIST ROW (Ubah jadi Tabel sesuai gambar) */}
                  <div className="flex-grow flex flex-col">
-                   {/* Jarak bawah judul checklist dirapetin (mb-3) */}
-                   <div className="bg-[#1e3a8a] text-white text-center py-3 font-bold text-xl tracking-wider mb-3 shadow-sm">
+                   <div className="bg-[#1e3a8a] text-white text-center py-1.5 font-bold text-xs tracking-wider mb-2">
                      CHECKLIST ROW – CENTANG JIKA SUDAH SELESAI
                    </div>
-                   {/* Jarak antar kotak (gap-x-10 gap-y-8) sedikit dirapetin dari versi sebelumnya */}
-                   <div className="bg-white p-6 rounded-xl border-2 border-slate-300 shadow-sm flex-grow">
-                     <div className="flex flex-wrap gap-x-10 gap-y-8 justify-center">
-                       {rows.length > 0 ? rows.map(r => (
-                         <div key={r} className="flex flex-col items-center gap-3">
-                           <div className="text-[#1e3a8a] font-bold text-2xl">ROW {r}</div>
-                           <div className="w-16 h-16 border-[4px] border-slate-800 rounded-lg bg-white shadow-inner"></div>
-                         </div>
-                       )) : (
-                         <div className="text-slate-400 italic font-semibold text-xl">Tidak ada data picking untuk TO ini</div>
-                       )}
-                     </div>
+                   
+                   <div className="flex-grow w-full">
+                     <table className="w-full border-collapse border-[2px] border-slate-800">
+                       <thead>
+                         <tr>
+                           <th className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm w-24">ROW</th>
+                           <th className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm">ARTICLE</th>
+                           <th className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm w-24">QTY</th>
+                         </tr>
+                       </thead>
+                       <tbody>
+                         {rows.length > 0 ? rows.map(r => (
+                           <React.Fragment key={r}>
+                             {/* Baris 1: Memuat rowspan untuk kotak ROW */}
+                             <tr>
+                               <td rowSpan={3} className="border-[2px] border-slate-800 text-center align-middle p-2 w-24">
+                                 <div className="text-[#1e3a8a] font-bold text-[11px] mb-1">ROW {r}</div>
+                                 <div className="w-7 h-7 border-[2px] border-slate-800 rounded mx-auto bg-white"></div>
+                               </td>
+                               <td className="border border-slate-600 h-6"></td>
+                               <td className="border border-slate-600 h-6 w-24"></td>
+                             </tr>
+                             {/* Baris 2 & 3: Garis kosong untuk Article dan QTY */}
+                             <tr>
+                               <td className="border border-slate-600 h-6"></td>
+                               <td className="border border-slate-600 h-6"></td>
+                             </tr>
+                             <tr>
+                               <td className="border border-slate-600 h-6"></td>
+                               <td className="border border-slate-600 h-6"></td>
+                             </tr>
+                           </React.Fragment>
+                         )) : (
+                           <tr>
+                             <td colSpan={3} className="text-center py-6 text-slate-400 italic font-semibold text-sm">
+                               Tidak ada data picking untuk TO ini
+                             </td>
+                           </tr>
+                         )}
+                       </tbody>
+                     </table>
                    </div>
                  </div>
 
-                 {/* FOOTER - Jarak atas dirapetin (mt-4 pt-3) */}
-                 <div className="mt-4 border-t-[3px] border-slate-300 pt-3 flex items-center justify-end gap-12">
-                   <div className="flex items-center gap-4">
-                     <Calendar className="w-8 h-8 text-[#1e3a8a]" />
+                 {/* FOOTER (Dikecilin ukurannya biar hemat space) */}
+                 <div className="mt-2 border-t-[2px] border-slate-300 pt-2 flex items-center justify-end gap-6">
+                   <div className="flex items-center gap-2">
+                     <Calendar className="w-4 h-4 text-[#1e3a8a]" />
                      <div className="flex flex-col">
-                       <div className="text-xs text-slate-500 font-bold tracking-wider">TANGGAL</div>
-                       <div className="font-black text-lg text-slate-800">{dateStr}</div>
+                       <div className="text-[9px] text-slate-500 font-bold tracking-wider leading-none">TANGGAL</div>
+                       <div className="font-black text-xs text-slate-800 leading-none mt-1">{dateStr}</div>
                      </div>
                    </div>
 
-                   <div className="flex items-center gap-4">
-                     <Clock className="w-8 h-8 text-[#1e3a8a]" />
+                   <div className="flex items-center gap-2">
+                     <Clock className="w-4 h-4 text-[#1e3a8a]" />
                      <div className="flex flex-col">
-                       <div className="text-xs text-slate-500 font-bold tracking-wider">WAKTU</div>
-                       <div className="font-black text-lg text-slate-800">{timeStr}</div>
+                       <div className="text-[9px] text-slate-500 font-bold tracking-wider leading-none">WAKTU</div>
+                       <div className="font-black text-xs text-slate-800 leading-none mt-1">{timeStr}</div>
                      </div>
                    </div>
 
-                   <div className="text-lg font-bold text-slate-500 border-l-[3px] border-slate-300 pl-12 py-2">
+                   <div className="text-xs font-bold text-slate-500 border-l-[2px] border-slate-300 pl-6 py-1">
                      Page {pageIndex + 1} of {selectedBatch.codedTOs.length}
                    </div>
                  </div>
