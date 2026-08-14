@@ -2084,6 +2084,7 @@ const totalToLine = new Set(
         )}
     </div>
 </div>
+</div> 
                    
                    <div className="w-1/2 pl-4">
                      <div className="flex flex-col border border-[#1e3a8a] h-full rounded-sm overflow-hidden">
