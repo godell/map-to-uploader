@@ -2003,142 +2003,118 @@ export default function App() {
         <div className="print-only" aria-hidden="true">
           {selectedBatch.codedTOs.map((item, pageIndex) => {
              const info = toRowInfo.get(item.to);
+             // Urutkan row dari rendah ke tinggi, tanpa pisah wing
              const rows = info ? Array.from(info.numericRows).sort((a,b)=>a-b) : [];
              
-             const leftRows = rows.filter(r => r >= 1 && r <= 18);
-             const rightRows = rows.filter(r => r >= 19 && r <= 36);
+             // Pastikan info.totalQty sudah dihitung di logic atas (saat build toRowInfo)
+             // Jika belum, kasih fallback angka 0
+             const totalQty = info?.totalQty || 0; 
              
              const today = new Date();
              const dateStr = today.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
              const timeStr = today.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
              return (
-               <div key={item.to} className="checklist-a4-page" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
-                 <div className="bg-[#1e3a8a] text-white text-center py-4 font-bold text-2xl tracking-widest border-b-2 border-slate-800">
-                   KODE TO (STATION)
-                 </div>
+               <div key={item.to} className="checklist-a4-page flex flex-col" style={{ pageBreakAfter: 'always', breakAfter: 'page', minHeight: '100vh', backgroundColor: '#ffffff', padding: '40px' }}>
                  
-                 <div className="text-center py-8">
-                   <div className="text-[140px] font-black text-[#1e3a8a] leading-none tracking-tight">
-                     {item.code}
-                   </div>
-                 </div>
-
-                 <div className="checklist-station-separator"></div>
-
-                 <div className="checklist-batch-section">
-                   <div className="checklist-batch-icon">
-                     <Package className="w-16 h-16 text-white" />
-                   </div>
-                   <div className="checklist-batch-content">
-                     <div className="checklist-batch-label">BATCH PICKING NUMBER</div>
-                     <div className="checklist-batch-number">BATCH {selectedBatch.batchNumber}</div>
-                   </div>
-                 </div>
-
-                 <div className="border-t-[3px] border-dashed border-slate-400 mx-10 my-4"></div>
-
-                 <div className="flex items-center px-12 py-8 gap-8">
-                   <div className="bg-[#16a34a] rounded-2xl p-6 flex-shrink-0 shadow-sm border-2 border-green-700">
-                     <ClipboardList className="w-16 h-16 text-white" />
-                   </div>
-                   <div className="flex flex-col">
-                     <div className="text-[#16a34a] font-bold text-3xl mb-2 tracking-wide">TO / ORDER</div>
-                     <div className="text-[#16a34a] font-black text-[80px] leading-none mb-3">{item.to}</div>
-                     <div className="text-slate-800 font-bold text-xl">Masukkan ke carton sesuai TO ini</div>
-                   </div>
-                 </div>
-
-                 <div className="flex-grow flex flex-col border-t-4 border-[#1e3a8a]">
-                   <div className="bg-[#1e3a8a] text-white text-center py-3 font-bold text-xl tracking-wider">
-                     CHECKLIST ROW – CENTANG JIKA SUDAH SELESAI
-                   </div>
-                   <div className="p-8 flex flex-col gap-6 flex-grow bg-slate-50">
-                     <div className="bg-white p-6 rounded-xl border-2 border-slate-300 shadow-sm">
-                       <div className="text-slate-800 font-bold text-xl mb-6 border-b-2 border-slate-200 pb-3">
-                         Wing Kiri <span className="text-slate-500 font-semibold text-lg ml-2">(Row 01 - 18)</span>
-                       </div>
-                       <div className="flex flex-wrap gap-8">
-                         {leftRows.length > 0 ? leftRows.map(r => (
-                           <div key={r} className="flex flex-col items-center gap-3">
-                             <div className="text-[#1e3a8a] font-bold text-2xl">ROW {r}</div>
-                             <div className="w-14 h-14 border-[3px] border-slate-800 rounded-md bg-white"></div>
-                           </div>
-                         )) : <div className="text-slate-400 italic font-semibold">Tidak ada data picking di Wing Kiri</div>}
-                       </div>
+                 {/* HEADER */}
+                 <div className="flex border-b-[3px] border-slate-300 pb-6 mb-6">
+                   <div className="w-1/2 flex items-center gap-6">
+                     <div className="bg-[#1e3a8a] p-4 rounded-xl shadow-sm border-2 border-blue-900">
+                       <Package className="w-16 h-16 text-white" />
                      </div>
-
-                     <div className="bg-white p-6 rounded-xl border-2 border-slate-300 shadow-sm">
-                       <div className="text-slate-800 font-bold text-xl mb-6 border-b-2 border-slate-200 pb-3">
-                         Wing Kanan <span className="text-slate-500 font-semibold text-lg ml-2">(Row 19 - 36)</span>
-                       </div>
-                       <div className="flex flex-wrap gap-8">
-                         {rightRows.length > 0 ? rightRows.map(r => (
-                           <div key={r} className="flex flex-col items-center gap-3">
-                             <div className="text-[#1e3a8a] font-bold text-2xl">ROW {r}</div>
-                             <div className="w-14 h-14 border-[3px] border-slate-800 rounded-md bg-white"></div>
-                           </div>
-                         )) : <div className="text-slate-400 italic font-semibold">Tidak ada data picking di Wing Kanan</div>}
+                     <div className="flex flex-col">
+                       <div className="text-[#1e3a8a] font-bold text-lg tracking-widest mb-1">BATCH PICKING NUMBER</div>
+                       <div className="text-[#1e3a8a] font-black text-[50px] leading-none">BATCH {selectedBatch.batchNumber}</div>
+                     </div>
+                   </div>
+                   
+                   <div className="w-1/2 flex flex-col">
+                     <div className="bg-[#1e3a8a] text-white text-center py-2 font-bold text-xl tracking-widest border-b-2 border-slate-800">
+                       KODE TO (STATION)
+                     </div>
+                     <div className="text-center py-4 flex-grow flex items-center justify-center">
+                       <div className="text-[#1e3a8a] font-black text-[100px] leading-none tracking-tight">
+                         {item.code}
                        </div>
                      </div>
                    </div>
                  </div>
 
-                 <div className="border-t-[3px] border-slate-400 bg-white p-8">
-                   <div className="flex items-center justify-between">
-                     <div className="flex items-center gap-6">
-                       <div className="checklist-qr-box">
-                         <QRCodeSVG
-                           value={String(item.to)}
-                           size={90}
-                           level="M"
-                           includeMargin={false}
+                 {/* TO NUMBER & QTY */}
+                 <div className="flex border-b-[3px] border-slate-300 pb-8 mb-8">
+                   <div className="w-3/5 flex items-start gap-6 border-r-2 border-slate-200 pr-6">
+                     <div className="bg-[#16a34a] rounded-xl p-5 flex-shrink-0 shadow-sm border-2 border-green-700 mt-2">
+                       <ClipboardList className="w-14 h-14 text-white" />
+                     </div>
+                     <div className="flex flex-col">
+                       <div className="text-[#16a34a] font-bold text-xl mb-1 tracking-wide">TO / ORDER</div>
+                       <div className="text-[#16a34a] font-black text-[50px] leading-none mb-2">{item.to}</div>
+                       <div className="text-slate-700 font-bold text-base mb-4">Masukkan ke carton sesuai TO ini</div>
+                       
+                       {/* DIGANTI JADI BARCODE BIASA (CODE 128) */}
+                       <div className="mt-2">
+                         <Barcode 
+                           value={String(item.to)} 
+                           width={2} 
+                           height={50} 
+                           displayValue={false} 
+                           margin={0} 
                          />
                        </div>
-                       <div className="flex flex-col">
-                         <div className="font-black text-lg text-slate-800 tracking-wide">
-                           SCAN UNTUK TRACEABILITY
-                         </div>
-                         <div className="text-sm text-slate-600 font-semibold mt-1">
-                           Lihat detail PTF / TO / Row
-                         </div>
-                         <div className="text-sm text-slate-600 font-semibold">
-                           & status proses
-                         </div>
-                       </div>
                      </div>
+                   </div>
+                   
+                   <div className="w-2/5 flex flex-col items-center justify-center pl-6">
+                     <div className="text-slate-800 font-bold text-3xl mb-4 tracking-wider">QTY TO</div>
+                     <div className="text-black font-black text-[80px] leading-none">
+                       {totalQty.toLocaleString("id-ID")}
+                     </div>
+                   </div>
+                 </div>
 
-                     <div className="flex items-center gap-10 border-l-[3px] border-slate-300 pl-10">
-                       <div className="flex items-center gap-4">
-                         <Calendar className="w-10 h-10 text-[#1e3a8a]" />
-                         <div className="flex flex-col">
-                           <div className="text-sm text-slate-500 font-bold tracking-wider">
-                             TANGGAL
-                           </div>
-                           <div className="font-black text-xl text-slate-800">
-                             {dateStr}
-                           </div>
+                 {/* CHECKLIST ROW */}
+                 <div className="flex-grow flex flex-col">
+                   <div className="bg-[#1e3a8a] text-white text-center py-3 font-bold text-xl tracking-wider mb-6 shadow-sm">
+                     CHECKLIST ROW – CENTANG JIKA SUDAH SELESAI
+                   </div>
+                   <div className="bg-white p-8 rounded-xl border-2 border-slate-300 shadow-sm flex-grow">
+                     <div className="flex flex-wrap gap-x-12 gap-y-10 justify-center">
+                       {rows.length > 0 ? rows.map(r => (
+                         <div key={r} className="flex flex-col items-center gap-4">
+                           <div className="text-[#1e3a8a] font-bold text-2xl">ROW {r}</div>
+                           <div className="w-16 h-16 border-[4px] border-slate-800 rounded-lg bg-white shadow-inner"></div>
                          </div>
-                       </div>
+                       )) : (
+                         <div className="text-slate-400 italic font-semibold text-xl">Tidak ada data picking untuk TO ini</div>
+                       )}
+                     </div>
+                   </div>
+                 </div>
 
-                       <div className="flex items-center gap-4">
-                         <Clock className="w-10 h-10 text-[#1e3a8a]" />
-                         <div className="flex flex-col">
-                           <div className="text-sm text-slate-500 font-bold tracking-wider">
-                             WAKTU
-                           </div>
-                           <div className="font-black text-xl text-slate-800">
-                             {timeStr}
-                           </div>
-                         </div>
-                       </div>
+                 {/* FOOTER */}
+                 <div className="mt-8 border-t-[3px] border-slate-300 pt-6 flex items-center justify-end gap-12">
+                   <div className="flex items-center gap-4">
+                     <Calendar className="w-8 h-8 text-[#1e3a8a]" />
+                     <div className="flex flex-col">
+                       <div className="text-xs text-slate-500 font-bold tracking-wider">TANGGAL</div>
+                       <div className="font-black text-lg text-slate-800">{dateStr}</div>
                      </div>
                    </div>
 
-                   <div className="checklist-page-number">
+                   <div className="flex items-center gap-4">
+                     <Clock className="w-8 h-8 text-[#1e3a8a]" />
+                     <div className="flex flex-col">
+                       <div className="text-xs text-slate-500 font-bold tracking-wider">WAKTU</div>
+                       <div className="font-black text-lg text-slate-800">{timeStr}</div>
+                     </div>
+                   </div>
+
+                   <div className="text-lg font-bold text-slate-500 border-l-[3px] border-slate-300 pl-12 py-2">
                      Page {pageIndex + 1} of {selectedBatch.codedTOs.length}
                    </div>
                  </div>
+                 
                </div>
              );
           })}
