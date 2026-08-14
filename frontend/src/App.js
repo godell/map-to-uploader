@@ -1861,7 +1861,6 @@ export default function App() {
             const batchCode = formatBatchCode(selectedBatch.batchNumber, selectedBatch.randomSuffix);
             const printedAt = new Date().toLocaleString("id-ID", { dateStyle: "short", timeStyle: "medium" });
             const codeMap = new Map(selectedBatch.codedTOs.map(c => [c.to, c.code]));
-            const CHECKLIST_ITEMS_PER_PAGE = 25;
 
             return rowPages.map((page, pIdx) => {
               const rowLabel = (() => {
@@ -2241,7 +2240,7 @@ const totalChecklistPages = Math.max(
                                     justify-center
                                     bg-white
                                     py-2
-                                >
+                                ">
 
                                     <div className="
                                         text-[#1e3a8a]
@@ -2283,7 +2282,7 @@ const totalChecklistPages = Math.max(
                             border-r-2
                             border-slate-200
                             pr-4
-                        >
+                        ">
 
                             <div className="
                                 text-[#16a34a]
@@ -2329,7 +2328,7 @@ const totalChecklistPages = Math.max(
                             px-2
                             border-r-2
                             border-slate-200
-                        >
+                        ">
 
                             <div className="
                                 text-slate-800
@@ -2361,7 +2360,7 @@ const totalChecklistPages = Math.max(
                             items-center
                             justify-center
                             pl-2
-                        >
+                        ">
 
                             <div className="
                                 text-slate-800
@@ -2752,6 +2751,10 @@ const totalChecklistPages = Math.max(
         })}
     </>
 );
+
+        })}
+    </div>
+)}
 
       {uploadStatus.active && (
         <div
