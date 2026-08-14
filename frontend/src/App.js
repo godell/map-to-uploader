@@ -2002,13 +2002,36 @@ export default function App() {
       {selectedBatch && printType === 'checklist' && (
         <div className="print-only" aria-hidden="true">
           {selectedBatch.codedTOs.map((item, pageIndex) => {
-             const info = toRowInfo.get(item.to);
-             // Urutkan row dari rendah ke tinggi, tanpa pisah wing
-             const rows = info ? Array.from(info.numericRows).sort((a,b)=>a-b) : [];
+             // ====================================================================
+             // 1. LOGIC GROUPING & SUMMING TOTAL QTY (DENGAN SAFE FALLBACK)
+             // ====================================================================
              
-             // Pastikan info.totalQty sudah dihitung di logic atas
-             const totalQty = info?.totalQty || 0; 
+             const itemsForThisTO = item.details || []; 
              
+             let totalQty = 0;
+             const groupedByRow = {};
+
+             itemsForThisTO.forEach(detail => {
+               // Antisipasi perbedaan huruf besar/kecil dari database Supabase
+               const rowName = detail.Row || detail.row || '-';
+               const itemQty = Number(
+                 detail["Source target qty"] || 
+                 detail["source target qty"] || 
+                 detail.source_target_qty || 
+                 detail.qty || 
+                 0
+               ); 
+               
+               if (!groupedByRow[rowName]) {
+                 groupedByRow[rowName] = [];
+               }
+               groupedByRow[rowName].push(detail);
+               
+               totalQty += itemQty; 
+             });
+
+             const sortedRows = Object.keys(groupedByRow).sort((a, b) => Number(a) - Number(b));
+
              const today = new Date();
              const dateStr = today.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
              const timeStr = today.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -2016,7 +2039,7 @@ export default function App() {
              return (
                <div key={item.to} className="checklist-a4-page flex flex-col" style={{ pageBreakAfter: 'always', breakAfter: 'page', minHeight: '100vh', backgroundColor: '#ffffff', padding: '40px' }}>
                  
-                 {/* HEADER (Tetap pakai versi terakhir yang rapi) */}
+                 {/* HEADER */}
                  <div className="flex border-b-[2px] border-slate-300 pb-2 mb-3">
                    <div className="w-1/2 flex items-center gap-4 pr-4">
                      <div className="bg-[#1e3a8a] p-3 rounded-xl shadow-sm border-2 border-blue-900">
@@ -2042,7 +2065,7 @@ export default function App() {
                    </div>
                  </div>
 
-                 {/* TO NUMBER & QTY */}
+                 {/* TO NUMBER & TOTAL QTY */}
                  <div className="flex border-b-[2px] border-slate-300 pb-2 mb-3 mt-1">
                    <div className="w-3/5 flex flex-col justify-center border-r-2 border-slate-200 pr-6">
                      <div className="text-[#16a34a] font-bold text-xs mb-1 tracking-wide">TO / ORDER</div>
@@ -2067,7 +2090,7 @@ export default function App() {
                    </div>
                  </div>
 
-                 {/* CHECKLIST ROW (Ubah jadi Tabel sesuai gambar) */}
+                 {/* CHECKLIST ROW TABLE */}
                  <div className="flex-grow flex flex-col">
                    <div className="bg-[#1e3a8a] text-white text-center py-1.5 font-bold text-xs tracking-wider mb-2">
                      CHECKLIST ROW – CENTANG JIKA SUDAH SELESAI
@@ -2083,28 +2106,31 @@ export default function App() {
                          </tr>
                        </thead>
                        <tbody>
-                         {rows.length > 0 ? rows.map(r => (
-                           <React.Fragment key={r}>
-                             {/* Baris 1: Memuat rowspan untuk kotak ROW */}
-                             <tr>
-                               <td rowSpan={3} className="border-[2px] border-slate-800 text-center align-middle p-2 w-24">
-                                 <div className="text-[#1e3a8a] font-bold text-[11px] mb-1">ROW {r}</div>
-                                 <div className="w-7 h-7 border-[2px] border-slate-800 rounded mx-auto bg-white"></div>
-                               </td>
-                               <td className="border border-slate-600 h-6"></td>
-                               <td className="border border-slate-600 h-6 w-24"></td>
-                             </tr>
-                             {/* Baris 2 & 3: Garis kosong untuk Article dan QTY */}
-                             <tr>
-                               <td className="border border-slate-600 h-6"></td>
-                               <td className="border border-slate-600 h-6"></td>
-                             </tr>
-                             <tr>
-                               <td className="border border-slate-600 h-6"></td>
-                               <td className="border border-slate-600 h-6"></td>
-                             </tr>
-                           </React.Fragment>
-                         )) : (
+                         {sortedRows.length > 0 ? sortedRows.map(r => {
+                           const rowItems = groupedByRow[r];
+                           return rowItems.map((detail, idx) => {
+                             // Variabel aman untuk render data
+                             const articleDisplay = detail.Article || detail.article || detail.Material || detail.material || '-';
+                             const qtyDisplay = Number(detail["Source target qty"] || detail["source target qty"] || detail.source_target_qty || detail.qty) || 0;
+
+                             return (
+                               <tr key={`${r}-${idx}`}>
+                                 {idx === 0 && (
+                                   <td rowSpan={rowItems.length} className="border-[2px] border-slate-800 text-center align-middle p-2 w-24">
+                                     <div className="text-[#1e3a8a] font-bold text-[11px] mb-1">ROW {r}</div>
+                                     <div className="w-7 h-7 border-[2px] border-slate-800 rounded mx-auto bg-white"></div>
+                                   </td>
+                                 )}
+                                 <td className="border border-slate-600 px-3 py-1 text-sm font-semibold text-slate-700">
+                                   {articleDisplay} 
+                                 </td>
+                                 <td className="border border-slate-600 px-3 py-1 text-sm font-bold text-center text-slate-800 w-24">
+                                   {qtyDisplay}
+                                 </td>
+                               </tr>
+                             );
+                           });
+                         }) : (
                            <tr>
                              <td colSpan={3} className="text-center py-6 text-slate-400 italic font-semibold text-sm">
                                Tidak ada data picking untuk TO ini
@@ -2116,7 +2142,7 @@ export default function App() {
                    </div>
                  </div>
 
-                 {/* FOOTER (Dikecilin ukurannya biar hemat space) */}
+                 {/* FOOTER */}
                  <div className="mt-2 border-t-[2px] border-slate-300 pt-2 flex items-center justify-end gap-6">
                    <div className="flex items-center gap-2">
                      <Calendar className="w-4 h-4 text-[#1e3a8a]" />
