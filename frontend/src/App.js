@@ -2069,10 +2069,21 @@ const totalToLine = new Set(
                        <Package className="w-8 h-8 text-white" />
                      </div>
                      <div className="flex flex-col">
-                       <div className="text-[#1e3a8a] font-bold text-sm tracking-widest mb-1">BATCH PICKING NUMBER</div>
-                       <div className="text-[#1e3a8a] font-black text-[25px] leading-none">BATCH {selectedBatch.batchNumber}</div>
-                     </div>
-                   </div>
+    <div className="text-[#1e3a8a] font-bold text-sm tracking-widest mb-1">
+        BATCH PICKING NUMBER
+    </div>
+
+    <div className="text-[#1e3a8a] font-black text-[25px] leading-none">
+        BATCH {selectedBatch.batchNumber}
+    </div>
+
+    <div className="checklist-ptf-number">
+        {formatBatchCode(
+            selectedBatch.batchNumber,
+            selectedBatch.randomSuffix
+        )}
+    </div>
+</div>
                    
                    <div className="w-1/2 pl-4">
                      <div className="flex flex-col border border-[#1e3a8a] h-full rounded-sm overflow-hidden">
@@ -2317,18 +2328,25 @@ const qtyDisplay =
         </td>
 
         {/* EAN */}
-        <td className="
-            border
-            border-slate-600
-            px-1
-            py-1
-            text-center
-            font-semibold
-            text-slate-700
-            checklist-col-ean
-        ">
-            {eanDisplay}
-        </td>
+        <td className="checklist-col-ean">
+
+    <div className="checklist-ean-value">
+        {eanDisplay}
+    </div>
+
+    {eanDisplay && eanDisplay !== "-" && (
+        <div className="checklist-ean-barcode">
+            <Barcode
+                value={String(eanDisplay)}
+                width={0.65}
+                height={10}
+                displayValue={false}
+                margin={0}
+            />
+        </div>
+    )}
+
+</td>
 
         {/* QTY */}
         <td className="
