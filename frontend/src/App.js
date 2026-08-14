@@ -2017,9 +2017,9 @@ export default function App() {
              return (
                <div key={item.to} className="checklist-a4-page flex flex-col" style={{ pageBreakAfter: 'always', breakAfter: 'page', minHeight: '100vh', backgroundColor: '#ffffff', padding: '40px' }}>
                  
-                 {/* HEADER (Font dikurangi ~50%) */}
+                 {/* HEADER */}
                  <div className="flex border-b-[3px] border-slate-300 pb-4 mb-6">
-                   <div className="w-1/2 flex items-center gap-4">
+                   <div className="w-1/2 flex items-center gap-4 pr-4">
                      <div className="bg-[#1e3a8a] p-3 rounded-xl shadow-sm border-2 border-blue-900">
                        <Package className="w-8 h-8 text-white" />
                      </div>
@@ -2029,14 +2029,14 @@ export default function App() {
                      </div>
                    </div>
                    
-                   <div className="w-1/2 flex flex-col">
-                     <div className="bg-[#1e3a8a] text-white text-center py-1.5 font-bold text-sm tracking-widest border-b-2 border-slate-800">
-                       KODE TO (STATION)
-                     </div>
-                     <div className="text-center py-3 flex-grow flex items-center justify-center">
-                       {/* Ditambahin kotak (border) mengelilingi Kode TO */}
-                       <div className="border-[4px] border-[#1e3a8a] rounded-xl px-10 py-2 inline-block bg-slate-50">
-                         <div className="text-[#1e3a8a] font-black text-[50px] leading-none tracking-tight">
+                   {/* KODE TO (STATION) - Kotak tipis sesuai referensi */}
+                   <div className="w-1/2 pl-4">
+                     <div className="flex flex-col border border-[#1e3a8a] h-full rounded-sm overflow-hidden">
+                       <div className="bg-[#1e3a8a] text-white text-center py-1.5 font-bold text-sm tracking-widest">
+                         KODE TO (STATION)
+                       </div>
+                       <div className="text-center flex-grow flex items-center justify-center bg-white py-4">
+                         <div className="text-[#1e3a8a] font-black text-[60px] leading-none tracking-tight">
                            {item.code}
                          </div>
                        </div>
@@ -2044,18 +2044,18 @@ export default function App() {
                    </div>
                  </div>
 
-                 {/* TO NUMBER & QTY (Icon & Teks dihilangkan) */}
-                 <div className="flex border-b-[3px] border-slate-300 pb-8 mb-8 mt-2">
+                 {/* TO NUMBER & QTY (Dikecilin 50%) */}
+                 <div className="flex border-b-[3px] border-slate-300 pb-6 mb-6 mt-2">
                    <div className="w-3/5 flex flex-col justify-center border-r-2 border-slate-200 pr-6">
-                     <div className="text-[#16a34a] font-bold text-xl mb-1 tracking-wide">TO / ORDER</div>
-                     <div className="text-[#16a34a] font-black text-[50px] leading-none mb-3">{item.to}</div>
+                     <div className="text-[#16a34a] font-bold text-sm mb-1 tracking-wide">TO / ORDER</div>
+                     <div className="text-[#16a34a] font-black text-[25px] leading-none mb-2">{item.to}</div>
                      
-                     {/* BARCODE (CODE 128) */}
-                     <div className="mt-2">
+                     {/* BARCODE */}
+                     <div className="mt-1">
                        <Barcode 
                          value={String(item.to)} 
-                         width={2.5} 
-                         height={55} 
+                         width={1.5} 
+                         height={35} 
                          displayValue={false} 
                          margin={0} 
                        />
@@ -2063,8 +2063,8 @@ export default function App() {
                    </div>
                    
                    <div className="w-2/5 flex flex-col items-center justify-center pl-6">
-                     <div className="text-slate-800 font-bold text-2xl mb-4 tracking-wider">QTY TO</div>
-                     <div className="text-black font-black text-[70px] leading-none">
+                     <div className="text-slate-800 font-bold text-lg mb-2 tracking-wider">QTY TO</div>
+                     <div className="text-black font-black text-[45px] leading-none">
                        {totalQty.toLocaleString("id-ID")}
                      </div>
                    </div>
