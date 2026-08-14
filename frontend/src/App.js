@@ -2415,7 +2415,7 @@ const totalChecklistPages = Math.max(
                         flex-grow
                         w-full
                         overflow-hidden
-                    >
+                    ">
 
                         <table className="
                             w-full
@@ -2681,7 +2681,7 @@ const totalChecklistPages = Math.max(
                         justify-end
                         gap-6
                         flex-shrink-0
-                    >
+                    ">
 
                         <div className="flex items-center gap-2">
 
