@@ -347,6 +347,64 @@
     font-family: "Courier New", monospace !important;
 }
 
+/* ========================================================
+   CHECKLIST - PAGE X OF Y
+   Tepat di bawah PTF
+   ======================================================== */
+
+.checklist-page-of {
+
+    color: #64748b !important;
+
+    font-size: 5.5pt !important;
+
+    font-weight: 700 !important;
+
+    line-height: 1 !important;
+
+    letter-spacing: 0.2px !important;
+
+    white-space: nowrap !important;
+
+    font-family: "Courier New", monospace !important;
+}
+
+/* ========================================================
+   CHECKLIST - NO TABLE SPLIT
+   ======================================================== */
+
+.checklist-a4-page table {
+
+    page-break-inside: avoid !important;
+
+    break-inside: avoid !important;
+}
+
+.checklist-a4-page thead {
+
+    display: table-header-group !important;
+}
+
+.checklist-a4-page tbody {
+
+    display: table-row-group !important;
+}
+
+.checklist-a4-page tr {
+
+    page-break-inside: avoid !important;
+
+    break-inside: avoid !important;
+}
+
+.checklist-a4-page td,
+.checklist-a4-page th {
+
+    page-break-inside: avoid !important;
+
+    break-inside: avoid !important;
+}
+
     /* ========================================================
        CHECKLIST CHILD SAFETY
        ======================================================== */

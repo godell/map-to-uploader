@@ -1861,6 +1861,7 @@ export default function App() {
             const batchCode = formatBatchCode(selectedBatch.batchNumber, selectedBatch.randomSuffix);
             const printedAt = new Date().toLocaleString("id-ID", { dateStyle: "short", timeStyle: "medium" });
             const codeMap = new Map(selectedBatch.codedTOs.map(c => [c.to, c.code]));
+            const CHECKLIST_ITEMS_PER_PAGE = 25;
 
             return rowPages.map((page, pIdx) => {
               const rowLabel = (() => {
@@ -2054,369 +2055,703 @@ const totalToLine = new Set(
              });
 
              const sortedRows = Object.keys(groupedByRow).sort((a, b) => Number(a) - Number(b));
+             const checklistItems = sortedRows.flatMap(
+    row => groupedByRow[row]
+);
 
+const CHECKLIST_ITEMS_PER_PAGE = 25;
+
+const checklistPages = [];
+
+for (
+    let i = 0;
+    i < checklistItems.length;
+    i += CHECKLIST_ITEMS_PER_PAGE
+) {
+    checklistPages.push(
+        checklistItems.slice(
+            i,
+            i + CHECKLIST_ITEMS_PER_PAGE
+        )
+    );
+}
+
+const totalChecklistPages = Math.max(
+    1,
+    checklistPages.length
+);
              const today = new Date();
              const dateStr = today.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
              const timeStr = today.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
              return (
-               <div key={item.to} className="checklist-a4-page flex flex-col" style={{ pageBreakAfter: 'always', breakAfter: 'page', minHeight: '100vh', backgroundColor: '#ffffff', padding: '40px' }}>
-                 
-                 {/* HEADER */}
-                 <div className="flex border-b-[2px] border-slate-300 pb-2 mb-3">
-                   <div className="w-1/2 flex items-center gap-4 pr-4">
-                     <div className="bg-[#1e3a8a] p-3 rounded-xl shadow-sm border-2 border-blue-900">
-                       <Package className="w-8 h-8 text-white" />
-                     </div>
-                     <div className="flex flex-col">
-    <div className="text-[#1e3a8a] font-bold text-sm tracking-widest mb-1">
-        BATCH PICKING NUMBER
-    </div>
+    <>
+        {checklistPages.map((pageItems, checklistPageIndex) => {
 
-    <div className="text-[#1e3a8a] font-black text-[25px] leading-none">
-        BATCH {selectedBatch.batchNumber}
-    </div>
+            const pageGroupedByRow = {};
 
-    <div className="checklist-ptf-number">
-        {formatBatchCode(
-            selectedBatch.batchNumber,
-            selectedBatch.randomSuffix
-        )}
-    </div>
-</div>
-</div> 
-                   
-                   <div className="w-1/2 pl-4">
-                     <div className="flex flex-col border border-[#1e3a8a] h-full rounded-sm overflow-hidden">
-                       <div className="bg-[#1e3a8a] text-white text-center py-1 font-bold text-xs tracking-widest">
-                         KODE TO (STATION)
-                       </div>
-                       <div className="text-center flex-grow flex items-center justify-center bg-white py-2">
-                         <div className="text-[#1e3a8a] font-black text-[60px] leading-none tracking-tight">
-                           {item.code}
-                         </div>
-                       </div>
-                     </div>
-                   </div>
-                 </div>
+            pageItems.forEach(detail => {
+                const rowName =
+                    detail.Row ||
+                    detail.row ||
+                    "-";
 
-                 {/* ========================================================
-    TO NUMBER + TOTAL TO LINE + TOTAL QTY
-    ======================================================== */}
-<div className="flex border-b-[2px] border-slate-300 pb-2 mb-2 mt-1">
+                if (!pageGroupedByRow[rowName]) {
+                    pageGroupedByRow[rowName] = [];
+                }
 
-    {/* TO / ORDER */}
-    <div className="w-3/5 flex flex-col justify-center border-r-2 border-slate-200 pr-4">
+                pageGroupedByRow[rowName].push(detail);
+            });
 
-        <div className="text-[#16a34a] font-bold text-xs mb-1 tracking-wide">
-            TO / ORDER
-        </div>
+            const pageSortedRows = Object.keys(
+                pageGroupedByRow
+            ).sort((a, b) => Number(a) - Number(b));
 
-        <div className="text-[#16a34a] font-black text-[25px] leading-none mb-1">
-            {item.to}
-        </div>
+            return (
+                <div
+                    key={`${item.to}-page-${checklistPageIndex + 1}`}
+                    className="checklist-a4-page flex flex-col"
+                    style={{
+                        pageBreakAfter:
+                            checklistPageIndex <
+                            totalChecklistPages - 1
+                                ? "always"
+                                : "always",
 
-        <div className="mt-1">
-            <Barcode 
-                value={String(item.to)} 
-                width={1.5} 
-                height={30} 
-                displayValue={false} 
-                margin={0} 
-            />
-        </div>
+                        breakAfter:
+                            checklistPageIndex <
+                            totalChecklistPages - 1
+                                ? "page"
+                                : "page",
 
-    </div>
+                        minHeight: "100vh",
+
+                        backgroundColor: "#ffffff",
+
+                        padding: "40px"
+                    }}
+                >
+
+                    {/* ====================================================
+                        HEADER
+                        ==================================================== */}
+
+                    <div className="
+                        flex
+                        border-b-[2px]
+                        border-slate-300
+                        pb-2
+                        mb-3
+                    ">
+
+                        {/* LEFT */}
+                        <div className="
+                            w-1/2
+                            flex
+                            items-center
+                            gap-4
+                            pr-4
+                        ">
+
+                            <div className="
+                                bg-[#1e3a8a]
+                                p-3
+                                rounded-xl
+                                shadow-sm
+                                border-2
+                                border-blue-900
+                            ">
+                                <Package className="w-8 h-8 text-white" />
+                            </div>
+
+                            <div className="flex flex-col">
+
+                                <div className="
+                                    text-[#1e3a8a]
+                                    font-bold
+                                    text-sm
+                                    tracking-widest
+                                    mb-1
+                                ">
+                                    BATCH PICKING NUMBER
+                                </div>
+
+                                <div className="
+                                    text-[#1e3a8a]
+                                    font-black
+                                    text-[25px]
+                                    leading-none
+                                ">
+                                    BATCH {selectedBatch.batchNumber}
+                                </div>
+
+                                <div className="checklist-ptf-number">
+                                    {formatBatchCode(
+                                        selectedBatch.batchNumber,
+                                        selectedBatch.randomSuffix
+                                    )}
+                                </div>
+
+                                {/* PAGE NUMBER */}
+                                <div className="
+                                    checklist-page-of
+                                    mt-1
+                                ">
+                                    Page {checklistPageIndex + 1} of {totalChecklistPages}
+                                </div>
+
+                            </div>
+
+                        </div>
 
 
-    {/* TOTAL TO LINE */}
-    <div className="w-1/5 flex flex-col items-center justify-center px-2 border-r-2 border-slate-200">
+                        {/* RIGHT */}
+                        <div className="
+                            w-1/2
+                            pl-4
+                        ">
 
-        <div className="text-slate-800 font-bold text-[9px] mb-1 tracking-wider text-center">
-            TOTAL TO LINE
-        </div>
+                            <div className="
+                                flex
+                                flex-col
+                                border
+                                border-[#1e3a8a]
+                                h-full
+                                rounded-sm
+                                overflow-hidden
+                            ">
 
-        <div className="text-black font-black text-[28px] leading-none">
-            {totalToLine.toLocaleString("id-ID")}
-        </div>
+                                <div className="
+                                    bg-[#1e3a8a]
+                                    text-white
+                                    text-center
+                                    py-1
+                                    font-bold
+                                    text-xs
+                                    tracking-widest
+                                ">
+                                    KODE TO (STATION)
+                                </div>
 
-    </div>
+                                <div className="
+                                    text-center
+                                    flex-grow
+                                    flex
+                                    items-center
+                                    justify-center
+                                    bg-white
+                                    py-2
+                                >
+
+                                    <div className="
+                                        text-[#1e3a8a]
+                                        font-black
+                                        text-[60px]
+                                        leading-none
+                                        tracking-tight
+                                    ">
+                                        {item.code}
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
 
 
-    {/* TOTAL QTY */}
-    <div className="w-1/5 flex flex-col items-center justify-center pl-2">
+                    {/* ====================================================
+                        TO / ORDER + TOTAL TO LINE + QTY
+                        ==================================================== */}
 
-        <div className="text-slate-800 font-bold text-[9px] mb-1 tracking-wider text-center">
-            QTY TO
-        </div>
+                    <div className="
+                        flex
+                        border-b-[2px]
+                        border-slate-300
+                        pb-2
+                        mb-2
+                        mt-1
+                    ">
 
-        <div className="text-black font-black text-[28px] leading-none">
-            {totalQty.toLocaleString("id-ID")}
-        </div>
+                        <div className="
+                            w-3/5
+                            flex
+                            flex-col
+                            justify-center
+                            border-r-2
+                            border-slate-200
+                            pr-4
+                        >
 
-    </div>
+                            <div className="
+                                text-[#16a34a]
+                                font-bold
+                                text-xs
+                                mb-1
+                                tracking-wide
+                            ">
+                                TO / ORDER
+                            </div>
 
-</div>
+                            <div className="
+                                text-[#16a34a]
+                                font-black
+                                text-[25px]
+                                leading-none
+                                mb-1
+                            ">
+                                {item.to}
+                            </div>
 
-                 {/* CHECKLIST ROW TABLE */}
-                 <div className="flex-grow flex flex-col">
-                   <div className="bg-[#1e3a8a] text-white text-center py-1.5 font-bold text-xs tracking-wider mb-2">
-                     CHECKLIST ROW – CENTANG JIKA SUDAH SELESAI
-                   </div>
-                   
-                   <div className="flex-grow w-full">
-                     <table className="w-full border-collapse border-[2px] border-slate-800">
-                       <thead>
-    <tr>
+                            <div className="mt-1">
 
-        <th className="
-            border-[2px]
-            border-slate-800
-            py-1
-            text-center
-            font-semibold
-            text-sm
-            checklist-col-row
-        ">
-            ROW
-        </th>
+                                <Barcode
+                                    value={String(item.to)}
+                                    width={1.5}
+                                    height={30}
+                                    displayValue={false}
+                                    margin={0}
+                                />
 
-        <th className="
-            border-[2px]
-            border-slate-800
-            py-1
-            text-center
-            font-semibold
-            text-sm
-            checklist-col-toline
-        ">
-            TO LINE
-        </th>
+                            </div>
 
-        <th className="
-            border-[2px]
-            border-slate-800
-            py-1
-            text-center
-            font-semibold
-            text-sm
-            checklist-col-article
-        ">
-            ARTICLE
-        </th>
+                        </div>
 
-        <th className="
-            border-[2px]
-            border-slate-800
-            py-1
-            text-center
-            font-semibold
-            text-sm
-            checklist-col-ean
-        ">
-            EAN
-        </th>
 
-        <th className="
-            border-[2px]
-            border-slate-800
-            py-1
-            text-center
-            font-semibold
-            text-sm
-            checklist-col-qty
-        ">
-            QTY
-        </th>
+                        <div className="
+                            w-1/5
+                            flex
+                            flex-col
+                            items-center
+                            justify-center
+                            px-2
+                            border-r-2
+                            border-slate-200
+                        >
 
-    </tr>
-</thead>
-                       <tbody>
-                         {sortedRows.length > 0 ? sortedRows.map(r => {
-                           const rowItems = groupedByRow[r];
-                           return rowItems.map((detail, idx) => {
-                             // Variabel aman untuk render data
-                             const articleDisplay =
-    detail.Article ||
-    detail.article ||
-    detail.Material ||
-    detail.material ||
-    '-';
+                            <div className="
+                                text-slate-800
+                                font-bold
+                                text-[9px]
+                                mb-1
+                                tracking-wider
+                                text-center
+                            ">
+                                TOTAL TO LINE
+                            </div>
 
-const eanDisplay =
-    detail.EAN ||
-    detail.ean ||
-    detail["EAN Code"] ||
-    detail.ean_code ||
-    '-';
+                            <div className="
+                                text-black
+                                font-black
+                                text-[28px]
+                                leading-none
+                            ">
+                                {totalToLine.toLocaleString("id-ID")}
+                            </div>
 
-const qtyDisplay =
-    Number(
-        detail["Source target qty"] ||
-        detail["source target qty"] ||
-        detail.source_target_qty ||
-        detail.qty
-    ) || 0;
-                             return (
-    <tr key={`${r}-${idx}`}>
+                        </div>
 
-        {/* ROW */}
-        {idx === 0 && (
-            <td
-                rowSpan={rowItems.length}
-                className="
-                    border-[2px]
-                    border-slate-800
-                    text-center
-                    align-middle
-                    p-1
-                    checklist-col-row
-                "
-            >
-                <div className="
-                    text-[#1e3a8a]
-                    font-bold
-                    text-[11px]
-                    mb-1
-                ">
-                    ROW {r}
+
+                        <div className="
+                            w-1/5
+                            flex
+                            flex-col
+                            items-center
+                            justify-center
+                            pl-2
+                        >
+
+                            <div className="
+                                text-slate-800
+                                font-bold
+                                text-[9px]
+                                mb-1
+                                tracking-wider
+                                text-center
+                            ">
+                                QTY TO
+                            </div>
+
+                            <div className="
+                                text-black
+                                font-black
+                                text-[28px]
+                                leading-none
+                            ">
+                                {totalQty.toLocaleString("id-ID")}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    {/* ====================================================
+                        CHECKLIST TITLE
+                        ==================================================== */}
+
+                    <div className="
+                        bg-[#1e3a8a]
+                        text-white
+                        text-center
+                        py-1.5
+                        font-bold
+                        text-xs
+                        tracking-wider
+                        mb-2
+                        flex-shrink-0
+                    ">
+                        CHECKLIST ROW – CENTANG JIKA SUDAH SELESAI
+                    </div>
+
+
+                    {/* ====================================================
+                        TABLE
+                        Setiap page punya table sendiri
+                        ==================================================== */}
+
+                    <div className="
+                        flex-grow
+                        w-full
+                        overflow-hidden
+                    >
+
+                        <table className="
+                            w-full
+                            border-collapse
+                            border-[2px]
+                            border-slate-800
+                        ">
+
+                            <thead>
+                                <tr>
+
+                                    <th className="
+                                        border-[2px]
+                                        border-slate-800
+                                        py-1
+                                        text-center
+                                        font-semibold
+                                        text-sm
+                                        checklist-col-row
+                                    ">
+                                        ROW
+                                    </th>
+
+                                    <th className="
+                                        border-[2px]
+                                        border-slate-800
+                                        py-1
+                                        text-center
+                                        font-semibold
+                                        text-sm
+                                        checklist-col-toline
+                                    ">
+                                        TO LINE
+                                    </th>
+
+                                    <th className="
+                                        border-[2px]
+                                        border-slate-800
+                                        py-1
+                                        text-center
+                                        font-semibold
+                                        text-sm
+                                        checklist-col-article
+                                    ">
+                                        ARTICLE
+                                    </th>
+
+                                    <th className="
+                                        border-[2px]
+                                        border-slate-800
+                                        py-1
+                                        text-center
+                                        font-semibold
+                                        text-sm
+                                        checklist-col-ean
+                                    ">
+                                        EAN
+                                    </th>
+
+                                    <th className="
+                                        border-[2px]
+                                        border-slate-800
+                                        py-1
+                                        text-center
+                                        font-semibold
+                                        text-sm
+                                        checklist-col-qty
+                                    ">
+                                        QTY
+                                    </th>
+
+                                </tr>
+                            </thead>
+
+
+                            <tbody>
+
+                                {pageSortedRows.map(rowName => {
+
+                                    const rowItems =
+                                        pageGroupedByRow[rowName];
+
+                                    return rowItems.map(
+                                        (detail, idx) => {
+
+                                            const articleDisplay =
+                                                detail.Article ||
+                                                detail.article ||
+                                                detail.Material ||
+                                                detail.material ||
+                                                "-";
+
+                                            const eanDisplay =
+                                                detail.EAN ||
+                                                detail.ean ||
+                                                detail["EAN Code"] ||
+                                                detail.ean_code ||
+                                                "-";
+
+                                            const qtyDisplay =
+                                                Number(
+                                                    detail["Source target qty"] ||
+                                                    detail["source target qty"] ||
+                                                    detail.source_target_qty ||
+                                                    detail.qty
+                                                ) || 0;
+
+                                            return (
+                                                <tr
+                                                    key={`${item.to}-${checklistPageIndex}-${rowName}-${idx}`}
+                                                    style={{
+                                                        breakInside: "avoid",
+                                                        pageBreakInside: "avoid"
+                                                    }}
+                                                >
+
+                                                    {/* ROW */}
+                                                    {idx === 0 && (
+                                                        <td
+                                                            rowSpan={rowItems.length}
+                                                            className="
+                                                                border-[2px]
+                                                                border-slate-800
+                                                                text-center
+                                                                align-middle
+                                                                p-1
+                                                                checklist-col-row
+                                                            "
+                                                        >
+
+                                                            <div className="
+                                                                text-[#1e3a8a]
+                                                                font-bold
+                                                                text-[11px]
+                                                                mb-1
+                                                            ">
+                                                                ROW {rowName}
+                                                            </div>
+
+                                                            <div className="
+                                                                w-5
+                                                                h-5
+                                                                border-[2px]
+                                                                border-slate-800
+                                                                rounded
+                                                                mx-auto
+                                                                bg-white
+                                                            " />
+
+                                                        </td>
+                                                    )}
+
+
+                                                    {/* TO LINE */}
+                                                    <td className="
+                                                        border
+                                                        border-slate-600
+                                                        px-1
+                                                        py-1
+                                                        text-center
+                                                        font-bold
+                                                        text-slate-800
+                                                        checklist-col-toline
+                                                    ">
+                                                        {
+                                                            detail["Transfer order item"] ??
+                                                            detail["transfer order item"] ??
+                                                            detail.transfer_order_item ??
+                                                            detail.to_line ??
+                                                            "-"
+                                                        }
+                                                    </td>
+
+
+                                                    {/* ARTICLE */}
+                                                    <td className="
+                                                        border
+                                                        border-slate-600
+                                                        px-2
+                                                        py-1
+                                                        text-sm
+                                                        font-semibold
+                                                        text-slate-700
+                                                        checklist-col-article
+                                                    ">
+                                                        {articleDisplay}
+                                                    </td>
+
+
+                                                    {/* EAN */}
+                                                    <td className="
+                                                        border
+                                                        border-slate-600
+                                                        px-1
+                                                        py-1
+                                                        text-center
+                                                        checklist-col-ean
+                                                    >
+
+                                                        <div className="checklist-ean-value">
+                                                            {eanDisplay}
+                                                        </div>
+
+                                                        {eanDisplay &&
+                                                        eanDisplay !== "-" && (
+                                                            <div className="checklist-ean-barcode">
+
+                                                                <Barcode
+                                                                    value={String(eanDisplay)}
+                                                                    width={0.65}
+                                                                    height={10}
+                                                                    displayValue={false}
+                                                                    margin={0}
+                                                                />
+
+                                                            </div>
+                                                        )}
+
+                                                    </td>
+
+
+                                                    {/* QTY */}
+                                                    <td className="
+                                                        border
+                                                        border-slate-600
+                                                        px-1
+                                                        py-1
+                                                        text-sm
+                                                        font-bold
+                                                        text-center
+                                                        text-slate-800
+                                                        checklist-col-qty
+                                                    ">
+                                                        {qtyDisplay}
+                                                    </td>
+
+                                                </tr>
+                                            );
+
+                                        }
+                                    );
+
+                                })}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    {/* ====================================================
+                        FOOTER
+                        ==================================================== */}
+
+                    <div className="
+                        mt-2
+                        border-t-[2px]
+                        border-slate-300
+                        pt-2
+                        flex
+                        items-center
+                        justify-end
+                        gap-6
+                        flex-shrink-0
+                    >
+
+                        <div className="flex items-center gap-2">
+
+                            <Calendar className="w-4 h-4 text-[#1e3a8a]" />
+
+                            <div className="flex flex-col">
+
+                                <div className="
+                                    text-[9px]
+                                    text-slate-500
+                                    font-bold
+                                    tracking-wider
+                                    leading-none
+                                ">
+                                    TANGGAL
+                                </div>
+
+                                <div className="
+                                    font-black
+                                    text-xs
+                                    text-slate-800
+                                    leading-none
+                                    mt-1
+                                ">
+                                    {dateStr}
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div className="flex items-center gap-2">
+
+                            <Clock className="w-4 h-4 text-[#1e3a8a]" />
+
+                            <div className="flex flex-col">
+
+                                <div className="
+                                    text-[9px]
+                                    text-slate-500
+                                    font-bold
+                                    tracking-wider
+                                    leading-none
+                                ">
+                                    WAKTU
+                                </div>
+
+                                <div className="
+                                    font-black
+                                    text-xs
+                                    text-slate-800
+                                    leading-none
+                                    mt-1
+                                ">
+                                    {timeStr}
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
                 </div>
-
-                <div className="
-                    w-5
-                    h-5
-                    border-[2px]
-                    border-slate-800
-                    rounded
-                    mx-auto
-                    bg-white
-                "></div>
-            </td>
-        )}
-
-        {/* TO LINE */}
-        <td className="
-            border
-            border-slate-600
-            px-1
-            py-1
-            text-center
-            font-bold
-            text-slate-800
-            checklist-col-toline
-        ">
-            {
-                detail["Transfer order item"] ??
-                detail["transfer order item"] ??
-                detail.transfer_order_item ??
-                detail.to_line ??
-                "-"
-            }
-        </td>
-
-        {/* ARTICLE */}
-        <td className="
-            border
-            border-slate-600
-            px-2
-            py-1
-            text-sm
-            font-semibold
-            text-slate-700
-            checklist-col-article
-        ">
-            {articleDisplay}
-        </td>
-
-        {/* EAN */}
-        <td className="checklist-col-ean">
-
-    <div className="checklist-ean-value">
-        {eanDisplay}
-    </div>
-
-    {eanDisplay && eanDisplay !== "-" && (
-        <div className="checklist-ean-barcode">
-            <Barcode
-                value={String(eanDisplay)}
-                width={0.65}
-                height={10}
-                displayValue={false}
-                margin={0}
-            />
-        </div>
-    )}
-
-</td>
-
-        {/* QTY */}
-        <td className="
-            border
-            border-slate-600
-            px-1
-            py-1
-            text-sm
-            font-bold
-            text-center
-            text-slate-800
-            checklist-col-qty
-        ">
-            {qtyDisplay}
-        </td>
-
-    </tr>
+            );
+        })}
+    </>
 );
-                           });
-                         }) : (
-                           <tr>
-    <td
-    colSpan={5}
-    className="
-        text-center
-        py-6
-        text-slate-400
-        italic
-        font-semibold
-        text-sm
-    "
->
-    Tidak ada data picking untuk TO ini
-</td>
-</tr>
-                         )}
-                       </tbody>
-                     </table>
-                   </div>
-                 </div>
-
-                 {/* FOOTER */}
-                 <div className="mt-2 border-t-[2px] border-slate-300 pt-2 flex items-center justify-end gap-6">
-                   <div className="flex items-center gap-2">
-                     <Calendar className="w-4 h-4 text-[#1e3a8a]" />
-                     <div className="flex flex-col">
-                       <div className="text-[9px] text-slate-500 font-bold tracking-wider leading-none">TANGGAL</div>
-                       <div className="font-black text-xs text-slate-800 leading-none mt-1">{dateStr}</div>
-                     </div>
-                   </div>
-
-                   <div className="flex items-center gap-2">
-                     <Clock className="w-4 h-4 text-[#1e3a8a]" />
-                     <div className="flex flex-col">
-                       <div className="text-[9px] text-slate-500 font-bold tracking-wider leading-none">WAKTU</div>
-                       <div className="font-black text-xs text-slate-800 leading-none mt-1">{timeStr}</div>
-                     </div>
-                   </div>
-
-                   <div className="text-xs font-bold text-slate-500 border-l-[2px] border-slate-300 pl-6 py-1">
-                     Page {pageIndex + 1} of {selectedBatch.codedTOs.length}
-                   </div>
-                 </div>
-                 
-               </div>
-             );
-          })}
-        </div>
-      )}
 
       {uploadStatus.active && (
         <div
