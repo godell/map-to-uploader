@@ -71,21 +71,16 @@
        ======================================================== */
 
     .pick-page {
-
         display: flex !important;
-
         flex-direction: column !important;
 
         width: 100% !important;
 
         height: 190mm !important;
-
         min-height: 190mm !important;
-
         max-height: 190mm !important;
 
         box-sizing: border-box !important;
-
         overflow: hidden !important;
     }
 
@@ -108,20 +103,16 @@
        ======================================================== */
 
     .pick-page .pt-table {
-
         flex-shrink: 0 !important;
-
         width: 100% !important;
     }
 
 
     /* ========================================================
        FOOTER
-       SELALU TURUN KE BOTTOM
        ======================================================== */
 
     .pick-page .pt-footer {
-
         margin-top: auto !important;
 
         flex-shrink: 0 !important;
@@ -137,898 +128,44 @@
        ======================================================== */
 
     .pick-page .pt-signature {
-
         margin-top: 5mm !important;
-
         flex-shrink: 0 !important;
     }
 
 
-/* ============================================================
-   CHECKLIST PRINT ROOT
-   ============================================================ */
-
-.checklist-print-root {
-    display: none;
-}
-
-
-/* ============================================================
-   A4 CHECKLIST PAGE
-   ============================================================ */
-
-.checklist-a4-page {
-
-    width: 194mm !important;
-    height: 277mm !important;
-    min-height: 277mm !important;
-    max-height: 277mm !important;
-
-    margin: 0 auto !important;
-    padding: 5mm !important;
-
-    box-sizing: border-box !important;
-
-    background: #ffffff !important;
-
-    display: flex !important;
-    flex-direction: column !important;
-
-    overflow: hidden !important;
-
-    page-break-after: always !important;
-    break-after: page !important;
-
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-}
-
-
-/* ============================================================
-   HEADER
-   ============================================================ */
-
-.checklist-header {
-
-    width: 100% !important;
-
-    display: flex !important;
-    align-items: stretch !important;
-
-    border-bottom: 1px solid #cbd5e1 !important;
-
-    padding-bottom: 2.5mm !important;
-    margin-bottom: 2.5mm !important;
-
-    flex-shrink: 0 !important;
-}
-
-
-.checklist-header-left {
-
-    width: 55% !important;
-
-    display: flex !important;
-    align-items: center !important;
-
-    gap: 2.5mm !important;
-    padding-right: 2.5mm !important;
-
-    box-sizing: border-box !important;
-}
-
-
-.checklist-header-right {
-
-    width: 45% !important;
-
-    padding-left: 2.5mm !important;
-
-    box-sizing: border-box !important;
-}
-
-
-.checklist-logo {
-
-    width: 11mm !important;
-    height: 11mm !important;
-
-    min-width: 11mm !important;
-
-    background: #1e3a8a !important;
-
-    border: 1px solid #172554 !important;
-    border-radius: 2mm !important;
-
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-
-    box-sizing: border-box !important;
-}
-
-
-.checklist-header-info {
-
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-
-    min-width: 0 !important;
-}
-
-
-.checklist-header-title {
-
-    font-size: 6.5pt !important;
-    font-weight: 800 !important;
-
-    letter-spacing: 1px !important;
-
-    color: #1e3a8a !important;
-
-    line-height: 1 !important;
-
-    margin-bottom: 1mm !important;
-
-    white-space: nowrap !important;
-}
-
-
-.checklist-batch-number {
-
-    font-size: 15pt !important;
-    font-weight: 900 !important;
-
-    line-height: 1 !important;
-
-    color: #1e3a8a !important;
-
-    white-space: nowrap !important;
-}
-
-
-.checklist-ptf-number {
-
-    margin-top: 1mm !important;
-
-    font-family: "Courier New", monospace !important;
-
-    font-size: 5.5pt !important;
-    font-weight: 700 !important;
-
-    line-height: 1 !important;
-
-    color: #475569 !important;
-
-    white-space: nowrap !important;
-}
-
-
-.checklist-page-of {
-
-    margin-top: 0.8mm !important;
-
-    font-family: "Courier New", monospace !important;
-
-    font-size: 5.5pt !important;
-    font-weight: 800 !important;
-
-    color: #64748b !important;
-
-    line-height: 1 !important;
-
-    white-space: nowrap !important;
-}
-
-
-/* ============================================================
-   STATION
-   ============================================================ */
-
-.checklist-station-box {
-
-    width: 100% !important;
-    height: 100% !important;
-
-    min-height: 23mm !important;
-
-    border: 1px solid #1e3a8a !important;
-    border-radius: 1mm !important;
-
-    overflow: hidden !important;
-
-    display: flex !important;
-    flex-direction: column !important;
-
-    box-sizing: border-box !important;
-}
-
-
-.checklist-station-title {
-
-    background: #1e3a8a !important;
-    color: #ffffff !important;
-
-    text-align: center !important;
-
-    font-size: 6pt !important;
-    font-weight: 800 !important;
-
-    letter-spacing: 1px !important;
-
-    line-height: 1 !important;
-
-    padding: 1.3mm 1mm !important;
-}
-
-
-.checklist-station-code {
-
-    flex: 1 !important;
-
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-
-    font-family: "Arial Black", Arial, sans-serif !important;
-
-    font-size: 30pt !important;
-    line-height: 1 !important;
-
-    font-weight: 900 !important;
-
-    color: #1e3a8a !important;
-
-    padding: 1mm !important;
-}
-
-
-/* ============================================================
-   SUMMARY
-   ============================================================ */
-
-.checklist-summary {
-
-    width: 100% !important;
-
-    display: flex !important;
-
-    border-bottom: 1px solid #cbd5e1 !important;
-
-    padding-bottom: 2mm !important;
-    margin-bottom: 2mm !important;
-
-    flex-shrink: 0 !important;
-}
-
-
-.checklist-summary-to {
-
-    width: 60% !important;
-
-    padding-right: 3mm !important;
-
-    border-right: 1px solid #e2e8f0 !important;
-
-    box-sizing: border-box !important;
-}
-
-
-.checklist-summary-metric {
-
-    width: 20% !important;
-
-    padding: 0 2mm !important;
-
-    display: flex !important;
-    flex-direction: column !important;
-
-    align-items: center !important;
-    justify-content: center !important;
-
-    border-right: 1px solid #e2e8f0 !important;
-
-    box-sizing: border-box !important;
-}
-
-
-.checklist-summary-metric-last {
-    border-right: none !important;
-}
-
-
-.checklist-summary-label {
-
-    font-size: 6pt !important;
-    font-weight: 800 !important;
-
-    color: #16a34a !important;
-
-    line-height: 1 !important;
-
-    margin-bottom: 1mm !important;
-}
-
-
-.checklist-summary-to-number {
-
-    font-family: "Courier New", monospace !important;
-
-    font-size: 14pt !important;
-    font-weight: 900 !important;
-
-    color: #16a34a !important;
-
-    line-height: 1 !important;
-}
-
-
-.checklist-to-barcode {
-
-    margin-top: 1mm !important;
-
-    line-height: 0 !important;
-
-    height: 6mm !important;
-
-    overflow: hidden !important;
-}
-
-
-.checklist-to-barcode svg {
-
-    max-height: 6mm !important;
-
-    width: auto !important;
-}
-
-
-.checklist-summary-metric-label {
-
-    font-size: 5.5pt !important;
-
-    font-weight: 800 !important;
-
-    letter-spacing: 0.4px !important;
-
-    color: #475569 !important;
-
-    line-height: 1 !important;
-
-    text-align: center !important;
-}
-
-
-.checklist-summary-metric-value {
-
-    margin-top: 1mm !important;
-
-    font-family: "Courier New", monospace !important;
-
-    font-size: 17pt !important;
-    font-weight: 900 !important;
-
-    line-height: 1 !important;
-
-    color: #000000 !important;
-}
-
-
-/* ============================================================
-   SECTION TITLE
-   ============================================================ */
-
-.checklist-section-title {
-
-    width: 100% !important;
-
-    flex-shrink: 0 !important;
-
-    background: #1e3a8a !important;
-    color: #ffffff !important;
-
-    text-align: center !important;
-
-    font-size: 6pt !important;
-    font-weight: 800 !important;
-
-    letter-spacing: 0.7px !important;
-
-    line-height: 1 !important;
-
-    padding: 1.6mm 1mm !important;
-    margin-bottom: 1.5mm !important;
-
-    box-sizing: border-box !important;
-}
-
-
-/* ============================================================
-   CHECKLIST TABLE WRAPPER
-   ============================================================ */
-
-.checklist-table-wrap {
-
-    width: 100% !important;
-
-    flex: 1 1 auto !important;
-
-    min-height: 0 !important;
-
-    box-sizing: border-box !important;
-
-    overflow: hidden !important;
-
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-
-/* ============================================================
-   CHECKLIST TABLE
-   ============================================================ */
-
-.checklist-table {
-
-    width: 100% !important;
-
-    table-layout: fixed !important;
-
-    border-collapse: collapse !important;
-
-    border: 1px solid #1e293b !important;
-
-    margin: 0 !important;
-    padding: 0 !important;
-
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-}
-
-
-/* ============================================================
-   COLUMN WIDTH
-   TOTAL = 100%
-   
-   ROW       10%
-   TO LINE    8%
-   ARTICLE   22%
-   EAN       15%
-   SRC BIN   20%
-   DEST BIN  20%
-   QTY        5%
-   ============================================================ */
-
-.checklist-col-row {
-    width: 10% !important;
-}
-
-
-.checklist-col-toline {
-    width: 8% !important;
-}
-
-
-.checklist-col-article {
-    width: 22% !important;
-}
-
-
-.checklist-col-ean {
-    width: 15% !important;
-}
-
-
-.checklist-col-source-bin {
-    width: 20% !important;
-}
-
-
-.checklist-col-dest-bin {
-    width: 20% !important;
-}
-
-
-.checklist-col-qty {
-    width: 5% !important;
-}
-
-
-/* ============================================================
-   HEADER CELLS
-   ============================================================ */
-
-.checklist-table thead th {
-
-    border: 1px solid #1e293b !important;
-
-    background: #ffffff !important;
-
-    color: #0f172a !important;
-
-    font-size: 6.5pt !important;
-
-    font-weight: 800 !important;
-
-    line-height: 1 !important;
-
-    text-align: center !important;
-
-    padding: 1.4mm 1mm !important;
-
-    box-sizing: border-box !important;
-
-    white-space: nowrap !important;
-
-    vertical-align: middle !important;
-
-    overflow: hidden !important;
-}
-
-
-/* ============================================================
-   DATA ROW
-   ============================================================ */
-
-.checklist-data-row {
-
-    height: 8.5mm !important;
-
-    min-height: 8.5mm !important;
-
-    max-height: 8.5mm !important;
-
-    page-break-inside: avoid !important;
-
-    break-inside: avoid !important;
-}
-
-
-/* ============================================================
-   ALL DATA CELLS
-   ============================================================ */
-
-.checklist-table tbody td {
-
-    border: 1px solid #475569 !important;
-
-    box-sizing: border-box !important;
-
-    vertical-align: middle !important;
-
-    height: 8.5mm !important;
-
-    min-height: 8.5mm !important;
-
-    max-height: 8.5mm !important;
-
-    padding: 0.7mm 1mm !important;
-
-    line-height: 1 !important;
-
-    overflow: hidden !important;
-
-    white-space: nowrap !important;
-}
-
-
-/* ============================================================
-   ROW
-   ============================================================ */
-
-.checklist-row-cell {
-
-    text-align: center !important;
-
-    vertical-align: middle !important;
-
-    padding: 0.5mm !important;
-
-    overflow: hidden !important;
-}
-
-
-.checklist-row-label {
-
-    color: #1e3a8a !important;
-
-    font-size: 5.5pt !important;
-
-    font-weight: 800 !important;
-
-    line-height: 1 !important;
-
-    white-space: nowrap !important;
-
-    margin-bottom: 0.8mm !important;
-}
-
-
-.checklist-box {
-
-    width: 5mm !important;
-    height: 5mm !important;
-
-    margin: 0 auto !important;
-
-    border: 0.7mm solid #334155 !important;
-
-    border-radius: 1mm !important;
-
-    background: #ffffff !important;
-
-    box-sizing: border-box !important;
-}
-
-
-/* ============================================================
-   TO LINE
-   ============================================================ */
-
-.checklist-toline-cell {
-
-    text-align: center !important;
-
-    font-family: "Courier New", monospace !important;
-
-    font-size: 6.5pt !important;
-    font-weight: 800 !important;
-
-    color: #0f172a !important;
-
-    white-space: nowrap !important;
-}
-
-
-/* ============================================================
-   ARTICLE
-   ============================================================ */
-
-.checklist-article-cell {
-
-    font-family: "Courier New", monospace !important;
-
-    font-size: 6.5pt !important;
-    font-weight: 700 !important;
-
-    color: #334155 !important;
-
-    white-space: nowrap !important;
-
-    overflow: hidden !important;
-
-    text-overflow: ellipsis !important;
-}
-
-
-/* ============================================================
-   EAN
-   ============================================================ */
-
-.checklist-ean-cell {
-
-    text-align: center !important;
-
-    vertical-align: middle !important;
-
-    overflow: hidden !important;
-
-    padding: 0.4mm 0.5mm !important;
-}
-
-
-.checklist-ean-value {
-
-    font-family: "Courier New", monospace !important;
-
-    font-size: 5.2pt !important;
-    font-weight: 700 !important;
-
-    line-height: 1 !important;
-
-    color: #0f172a !important;
-
-    white-space: nowrap !important;
-
-    overflow: hidden !important;
-
-    text-overflow: ellipsis !important;
-}
-
-
-.checklist-ean-barcode {
-
-    height: 2.8mm !important;
-
-    max-height: 2.8mm !important;
-
-    margin-top: 0.4mm !important;
-
-    overflow: hidden !important;
-
-    display: flex !important;
-
-    align-items: center !important;
-    justify-content: center !important;
-}
-
-
-.checklist-ean-barcode svg {
-
-    display: block !important;
-
-    width: auto !important;
-
-    max-width: 100% !important;
-
-    height: 2.8mm !important;
-
-    max-height: 2.8mm !important;
-}
-
-
-/* ============================================================
-   SOURCE BIN
-   ============================================================ */
-
-.checklist-source-bin-cell {
-
-    font-family: "Courier New", monospace !important;
-
-    font-size: 6pt !important;
-
-    font-weight: 700 !important;
-
-    color: #0f172a !important;
-
-    text-align: center !important;
-
-    white-space: nowrap !important;
-
-    overflow: hidden !important;
-
-    text-overflow: ellipsis !important;
-}
-
-
-/* ============================================================
-   DEST BIN
-   ============================================================ */
-
-.checklist-dest-bin-cell {
-
-    font-family: "Courier New", monospace !important;
-
-    font-size: 6pt !important;
-
-    font-weight: 700 !important;
-
-    color: #0f172a !important;
-
-    text-align: center !important;
-
-    white-space: nowrap !important;
-
-    overflow: hidden !important;
-
-    text-overflow: ellipsis !important;
-}
-
-
-/* ============================================================
-   QTY
-   ============================================================ */
-
-.checklist-qty-cell {
-
-    text-align: center !important;
-
-    font-family: "Courier New", monospace !important;
-
-    font-size: 7pt !important;
-
-    font-weight: 900 !important;
-
-    color: #0f172a !important;
-
-    white-space: nowrap !important;
-}
-
-
-/* ============================================================
-   FOOTER
-   ============================================================ */
-
-.checklist-footer {
-
-    width: 100% !important;
-
-    height: 7mm !important;
-
-    min-height: 7mm !important;
-
-    max-height: 7mm !important;
-
-    box-sizing: border-box !important;
-
-    margin-top: auto !important;
-
-    padding-top: 1.2mm !important;
-    padding-bottom: 0 !important;
-
-    border-top: 1px solid #cbd5e1 !important;
-
-    display: flex !important;
-
-    align-items: center !important;
-
-    justify-content: flex-end !important;
-
-    gap: 8mm !important;
-
-    flex-shrink: 0 !important;
-
-    font-size: 5.5pt !important;
-
-    line-height: 1 !important;
-
-    color: #64748b !important;
-}
-
-
-.checklist-footer-date,
-.checklist-footer-time {
-
-    display: flex !important;
-
-    align-items: baseline !important;
-
-    gap: 1.5mm !important;
-
-    white-space: nowrap !important;
-}
-
-
-.checklist-footer-label {
-
-    font-size: 5pt !important;
-
-    font-weight: 800 !important;
-
-    letter-spacing: 0.4px !important;
-
-    color: #64748b !important;
-}
-
-
-.checklist-footer-value {
-
-    font-family: "Courier New", monospace !important;
-
-    font-size: 6pt !important;
-
-    font-weight: 800 !important;
-
-    color: #334155 !important;
-}
-
-
-/* ============================================================
-   CHECKLIST PRINT SAFETY
-   ============================================================ */
-
-@media print {
-
-    .print-only {
-        display: block !important;
+    /* ============================================================
+       CHECKLIST PRINT ROOT
+       ============================================================ */
+
+    .checklist-print-root {
+        display: none;
     }
 
-    body.print-checklist .checklist-print-root {
-        display: block !important;
-    }
 
-    body.print-checklist .checklist-a4-page {
+    /* ============================================================
+       A4 CHECKLIST PAGE
+       ============================================================ */
+
+    .checklist-a4-page {
+
+        width: 194mm !important;
+
+        height: 277mm !important;
+        min-height: 277mm !important;
+        max-height: 277mm !important;
+
+        margin: 0 auto !important;
+
+        padding: 5mm !important;
+
+        box-sizing: border-box !important;
+
+        background: #ffffff !important;
+
+        display: flex !important;
+        flex-direction: column !important;
+
+        overflow: hidden !important;
 
         page-break-after: always !important;
         break-after: page !important;
@@ -1037,29 +174,1094 @@
         break-inside: avoid !important;
     }
 
-    body.print-checklist .checklist-a4-page:last-child {
 
-        page-break-after: auto !important;
-        break-after: auto !important;
+    /* ============================================================
+       HEADER
+       ============================================================ */
+
+    .checklist-header {
+
+        width: 100% !important;
+
+        display: flex !important;
+        align-items: stretch !important;
+
+        border-bottom: 1px solid #cbd5e1 !important;
+
+        padding-bottom: 2.5mm !important;
+
+        margin-bottom: 2.5mm !important;
+
+        flex-shrink: 0 !important;
     }
 
-    body.print-checklist .checklist-table {
+
+    .checklist-header-left {
+
+        width: 55% !important;
+
+        display: flex !important;
+        align-items: center !important;
+
+        gap: 2.5mm !important;
+
+        padding-right: 2.5mm !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    .checklist-header-right {
+
+        width: 45% !important;
+
+        padding-left: 2.5mm !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    .checklist-logo {
+
+        width: 11mm !important;
+
+        height: 11mm !important;
+
+        min-width: 11mm !important;
+
+        background: #1e3a8a !important;
+
+        border: 1px solid #172554 !important;
+
+        border-radius: 2mm !important;
+
+        display: flex !important;
+
+        align-items: center !important;
+        justify-content: center !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    .checklist-header-info {
+
+        display: flex !important;
+
+        flex-direction: column !important;
+
+        justify-content: center !important;
+
+        min-width: 0 !important;
+    }
+
+
+    .checklist-header-title {
+
+        font-size: 6.5pt !important;
+
+        font-weight: 800 !important;
+
+        letter-spacing: 1px !important;
+
+        color: #1e3a8a !important;
+
+        line-height: 1 !important;
+
+        margin-bottom: 1mm !important;
+
+        white-space: nowrap !important;
+    }
+
+
+    .checklist-batch-number {
+
+        font-size: 15pt !important;
+
+        font-weight: 900 !important;
+
+        line-height: 1 !important;
+
+        color: #1e3a8a !important;
+
+        white-space: nowrap !important;
+    }
+
+
+    .checklist-ptf-number {
+
+        margin-top: 1mm !important;
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 5.5pt !important;
+
+        font-weight: 700 !important;
+
+        line-height: 1 !important;
+
+        color: #475569 !important;
+
+        white-space: nowrap !important;
+    }
+
+
+    .checklist-page-of {
+
+        margin-top: 0.8mm !important;
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 5.5pt !important;
+
+        font-weight: 800 !important;
+
+        color: #64748b !important;
+
+        line-height: 1 !important;
+
+        white-space: nowrap !important;
+    }
+
+
+    /* ============================================================
+       STATION
+       ============================================================ */
+
+    .checklist-station-box {
+
+        width: 100% !important;
+
+        height: 100% !important;
+
+        min-height: 23mm !important;
+
+        border: 1px solid #1e3a8a !important;
+
+        border-radius: 1mm !important;
+
+        overflow: hidden !important;
+
+        display: flex !important;
+
+        flex-direction: column !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    .checklist-station-title {
+
+        background: #1e3a8a !important;
+
+        color: #ffffff !important;
+
+        text-align: center !important;
+
+        font-size: 6pt !important;
+
+        font-weight: 800 !important;
+
+        letter-spacing: 1px !important;
+
+        line-height: 1 !important;
+
+        padding: 1.3mm 1mm !important;
+    }
+
+
+    .checklist-station-code {
+
+        flex: 1 !important;
+
+        display: flex !important;
+
+        align-items: center !important;
+        justify-content: center !important;
+
+        font-family: "Arial Black", Arial, sans-serif !important;
+
+        font-size: 30pt !important;
+
+        line-height: 1 !important;
+
+        font-weight: 900 !important;
+
+        color: #1e3a8a !important;
+
+        padding: 1mm !important;
+    }
+
+
+    /* ============================================================
+       SUMMARY
+       ============================================================ */
+
+    .checklist-summary {
+
+        width: 100% !important;
+
+        display: flex !important;
+
+        border-bottom: 1px solid #cbd5e1 !important;
+
+        padding-bottom: 2mm !important;
+
+        margin-bottom: 2mm !important;
+
+        flex-shrink: 0 !important;
+    }
+
+
+    .checklist-summary-to {
+
+        width: 60% !important;
+
+        padding-right: 3mm !important;
+
+        border-right: 1px solid #e2e8f0 !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    .checklist-summary-metric {
+
+        width: 20% !important;
+
+        padding: 0 2mm !important;
+
+        display: flex !important;
+
+        flex-direction: column !important;
+
+        align-items: center !important;
+
+        justify-content: center !important;
+
+        border-right: 1px solid #e2e8f0 !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    .checklist-summary-metric-last {
+        border-right: none !important;
+    }
+
+
+    .checklist-summary-label {
+
+        font-size: 6pt !important;
+
+        font-weight: 800 !important;
+
+        color: #16a34a !important;
+
+        line-height: 1 !important;
+
+        margin-bottom: 1mm !important;
+    }
+
+
+    .checklist-summary-to-number {
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 14pt !important;
+
+        font-weight: 900 !important;
+
+        color: #16a34a !important;
+
+        line-height: 1 !important;
+    }
+
+
+    .checklist-to-barcode {
+
+        margin-top: 1mm !important;
+
+        line-height: 0 !important;
+
+        height: 6mm !important;
+
+        overflow: hidden !important;
+    }
+
+
+    .checklist-to-barcode svg {
+
+        max-height: 6mm !important;
+
+        width: auto !important;
+    }
+
+
+    .checklist-summary-metric-label {
+
+        font-size: 5.5pt !important;
+
+        font-weight: 800 !important;
+
+        letter-spacing: 0.4px !important;
+
+        color: #475569 !important;
+
+        line-height: 1 !important;
+
+        text-align: center !important;
+    }
+
+
+    .checklist-summary-metric-value {
+
+        margin-top: 1mm !important;
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 17pt !important;
+
+        font-weight: 900 !important;
+
+        line-height: 1 !important;
+
+        color: #000000 !important;
+    }
+
+
+    /* ============================================================
+       SECTION TITLE
+       ============================================================ */
+
+    .checklist-section-title {
+
+        width: 100% !important;
+
+        flex-shrink: 0 !important;
+
+        background: #1e3a8a !important;
+
+        color: #ffffff !important;
+
+        text-align: center !important;
+
+        font-size: 6pt !important;
+
+        font-weight: 800 !important;
+
+        letter-spacing: 0.7px !important;
+
+        line-height: 1 !important;
+
+        padding: 1.6mm 1mm !important;
+
+        margin-bottom: 1.5mm !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    /* ============================================================
+       CHECKLIST TABLE WRAPPER
+       ============================================================ */
+
+    .checklist-table-wrap {
+
+        width: 100% !important;
+
+        flex: 1 1 auto !important;
+
+        min-height: 0 !important;
+
+        box-sizing: border-box !important;
+
+        overflow: hidden !important;
+
+        margin: 0 !important;
+
+        padding: 0 !important;
+    }
+
+
+    /* ============================================================
+       CHECKLIST TABLE
+       ============================================================ */
+
+    .checklist-table {
+
+        width: 100% !important;
+
+        table-layout: fixed !important;
+
+        border-collapse: collapse !important;
+
+        border: 1px solid #1e293b !important;
+
+        margin: 0 !important;
+
+        padding: 0 !important;
 
         page-break-inside: avoid !important;
+
         break-inside: avoid !important;
     }
 
-    body.print-checklist .checklist-data-row {
+
+    /* ============================================================
+       COLUMN WIDTH
+       
+       ROW       10%
+       TO LINE    7%
+       ARTICLE   20%
+       EAN       14%
+       SRC BIN   20%
+       DEST BIN  20%
+       QTY        9%
+       
+       TOTAL = 100%
+       ============================================================ */
+
+    .checklist-col-row {
+        width: 10% !important;
+    }
+
+
+    .checklist-col-toline {
+        width: 7% !important;
+    }
+
+
+    .checklist-col-article {
+        width: 20% !important;
+    }
+
+
+    .checklist-col-ean {
+        width: 14% !important;
+    }
+
+
+    .checklist-col-source-bin {
+        width: 20% !important;
+    }
+
+
+    .checklist-col-dest-bin {
+        width: 20% !important;
+    }
+
+
+    .checklist-col-qty {
+        width: 9% !important;
+    }
+
+
+    /* ============================================================
+       HEADER CELLS
+       ============================================================ */
+
+    .checklist-table thead th {
+
+        border: 1px solid #1e293b !important;
+
+        background: #ffffff !important;
+
+        color: #0f172a !important;
+
+        font-size: 6.5pt !important;
+
+        font-weight: 800 !important;
+
+        line-height: 1 !important;
+
+        text-align: center !important;
+
+        padding: 1.4mm 1mm !important;
+
+        box-sizing: border-box !important;
+
+        white-space: nowrap !important;
+
+        vertical-align: middle !important;
+
+        overflow: hidden !important;
+    }
+
+
+    /* ============================================================
+       DATA ROW
+       Dibuat sedikit lebih tinggi karena sekarang ada
+       barcode di Article / EAN / Source Bin / Dest Bin
+       ============================================================ */
+
+    .checklist-data-row {
+
+        height: 9.5mm !important;
+
+        min-height: 9.5mm !important;
+
+        max-height: 9.5mm !important;
 
         page-break-inside: avoid !important;
+
         break-inside: avoid !important;
     }
 
-    body.print-checklist .checklist-table thead {
 
-        display: table-header-group !important;
+    /* ============================================================
+       ALL DATA CELLS
+       ============================================================ */
+
+    .checklist-table tbody td {
+
+        border: 1px solid #475569 !important;
+
+        box-sizing: border-box !important;
+
+        vertical-align: middle !important;
+
+        height: 9.5mm !important;
+
+        min-height: 9.5mm !important;
+
+        max-height: 9.5mm !important;
+
+        padding: 0.35mm 0.8mm !important;
+
+        line-height: 1 !important;
+
+        overflow: hidden !important;
+
+        white-space: nowrap !important;
     }
-}
+
+
+    /* ============================================================
+       ROW
+       ============================================================ */
+
+    .checklist-row-cell {
+
+        text-align: center !important;
+
+        vertical-align: middle !important;
+
+        padding: 0.5mm !important;
+
+        overflow: hidden !important;
+    }
+
+
+    .checklist-row-label {
+
+        color: #1e3a8a !important;
+
+        font-size: 5.5pt !important;
+
+        font-weight: 800 !important;
+
+        line-height: 1 !important;
+
+        white-space: nowrap !important;
+
+        margin-bottom: 0.8mm !important;
+    }
+
+
+    .checklist-box {
+
+        width: 5mm !important;
+
+        height: 5mm !important;
+
+        margin: 0 auto !important;
+
+        border: 0.7mm solid #334155 !important;
+
+        border-radius: 1mm !important;
+
+        background: #ffffff !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    /* ============================================================
+       TO LINE
+       ============================================================ */
+
+    .checklist-toline-cell {
+
+        text-align: center !important;
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 6.5pt !important;
+
+        font-weight: 800 !important;
+
+        color: #0f172a !important;
+
+        white-space: nowrap !important;
+    }
+
+
+    /* ============================================================
+       ARTICLE
+       ============================================================ */
+
+    .checklist-article-cell {
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 6.3pt !important;
+
+        font-weight: 700 !important;
+
+        color: #334155 !important;
+
+        text-align: center !important;
+
+        vertical-align: middle !important;
+
+        white-space: nowrap !important;
+
+        overflow: hidden !important;
+
+        padding: 0.3mm 0.6mm !important;
+    }
+
+
+    .checklist-article-value {
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 6.3pt !important;
+
+        font-weight: 700 !important;
+
+        color: #334155 !important;
+
+        line-height: 1 !important;
+
+        white-space: nowrap !important;
+
+        overflow: hidden !important;
+
+        text-overflow: ellipsis !important;
+
+        margin-bottom: 0.35mm !important;
+    }
+
+
+    .checklist-article-barcode {
+
+        height: 2.4mm !important;
+
+        max-height: 2.4mm !important;
+
+        margin-top: 0.2mm !important;
+
+        overflow: hidden !important;
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: center !important;
+    }
+
+
+    .checklist-article-barcode svg {
+
+        display: block !important;
+
+        width: auto !important;
+
+        max-width: 100% !important;
+
+        height: 2.4mm !important;
+
+        max-height: 2.4mm !important;
+    }
+
+
+    /* ============================================================
+       EAN
+       ============================================================ */
+
+    .checklist-ean-cell {
+
+        text-align: center !important;
+
+        vertical-align: middle !important;
+
+        overflow: hidden !important;
+
+        padding: 0.3mm 0.5mm !important;
+    }
+
+
+    .checklist-ean-value {
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 5.2pt !important;
+
+        font-weight: 700 !important;
+
+        line-height: 1 !important;
+
+        color: #0f172a !important;
+
+        white-space: nowrap !important;
+
+        overflow: hidden !important;
+
+        text-overflow: ellipsis !important;
+
+        margin-bottom: 0.35mm !important;
+    }
+
+
+    .checklist-ean-barcode {
+
+        height: 2.4mm !important;
+
+        max-height: 2.4mm !important;
+
+        margin-top: 0.2mm !important;
+
+        overflow: hidden !important;
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: center !important;
+    }
+
+
+    .checklist-ean-barcode svg {
+
+        display: block !important;
+
+        width: auto !important;
+
+        max-width: 100% !important;
+
+        height: 2.4mm !important;
+
+        max-height: 2.4mm !important;
+    }
+
+
+    /* ============================================================
+       SOURCE BIN
+       ============================================================ */
+
+    .checklist-source-bin-cell {
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 6pt !important;
+
+        font-weight: 700 !important;
+
+        color: #0f172a !important;
+
+        text-align: center !important;
+
+        vertical-align: middle !important;
+
+        white-space: nowrap !important;
+
+        overflow: hidden !important;
+
+        padding: 0.3mm 0.6mm !important;
+    }
+
+
+    .checklist-source-bin-value {
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 6pt !important;
+
+        font-weight: 700 !important;
+
+        line-height: 1 !important;
+
+        color: #0f172a !important;
+
+        white-space: nowrap !important;
+
+        overflow: hidden !important;
+
+        text-overflow: ellipsis !important;
+
+        margin-bottom: 0.35mm !important;
+    }
+
+
+    .checklist-source-bin-barcode {
+
+        height: 2.4mm !important;
+
+        max-height: 2.4mm !important;
+
+        margin-top: 0.2mm !important;
+
+        overflow: hidden !important;
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: center !important;
+    }
+
+
+    .checklist-source-bin-barcode svg {
+
+        display: block !important;
+
+        width: auto !important;
+
+        max-width: 100% !important;
+
+        height: 2.4mm !important;
+
+        max-height: 2.4mm !important;
+    }
+
+
+    /* ============================================================
+       DEST BIN
+       ============================================================ */
+
+    .checklist-dest-bin-cell {
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 6pt !important;
+
+        font-weight: 700 !important;
+
+        color: #0f172a !important;
+
+        text-align: center !important;
+
+        vertical-align: middle !important;
+
+        white-space: nowrap !important;
+
+        overflow: hidden !important;
+
+        padding: 0.3mm 0.6mm !important;
+    }
+
+
+    .checklist-dest-bin-value {
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 6pt !important;
+
+        font-weight: 700 !important;
+
+        line-height: 1 !important;
+
+        color: #0f172a !important;
+
+        white-space: nowrap !important;
+
+        overflow: hidden !important;
+
+        text-overflow: ellipsis !important;
+
+        margin-bottom: 0.35mm !important;
+    }
+
+
+    .checklist-dest-bin-barcode {
+
+        height: 2.4mm !important;
+
+        max-height: 2.4mm !important;
+
+        margin-top: 0.2mm !important;
+
+        overflow: hidden !important;
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: center !important;
+    }
+
+
+    .checklist-dest-bin-barcode svg {
+
+        display: block !important;
+
+        width: auto !important;
+
+        max-width: 100% !important;
+
+        height: 2.4mm !important;
+
+        max-height: 2.4mm !important;
+    }
+
+
+    /* ============================================================
+       QTY
+       ============================================================ */
+
+    .checklist-qty-cell {
+
+        text-align: center !important;
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 7pt !important;
+
+        font-weight: 900 !important;
+
+        color: #0f172a !important;
+
+        white-space: nowrap !important;
+    }
+
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+
+    .checklist-footer {
+
+        width: 100% !important;
+
+        height: 7mm !important;
+
+        min-height: 7mm !important;
+
+        max-height: 7mm !important;
+
+        box-sizing: border-box !important;
+
+        margin-top: auto !important;
+
+        padding-top: 1.2mm !important;
+
+        padding-bottom: 0 !important;
+
+        border-top: 1px solid #cbd5e1 !important;
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: flex-end !important;
+
+        gap: 8mm !important;
+
+        flex-shrink: 0 !important;
+
+        font-size: 5.5pt !important;
+
+        line-height: 1 !important;
+
+        color: #64748b !important;
+    }
+
+
+    .checklist-footer-date,
+    .checklist-footer-time {
+
+        display: flex !important;
+
+        align-items: baseline !important;
+
+        gap: 1.5mm !important;
+
+        white-space: nowrap !important;
+    }
+
+
+    .checklist-footer-label {
+
+        font-size: 5pt !important;
+
+        font-weight: 800 !important;
+
+        letter-spacing: 0.4px !important;
+
+        color: #64748b !important;
+    }
+
+
+    .checklist-footer-value {
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 6pt !important;
+
+        font-weight: 800 !important;
+
+        color: #334155 !important;
+    }
+
+
+    /* ============================================================
+       CHECKLIST PRINT SAFETY
+       ============================================================ */
+
+    @media print {
+
+        .print-only {
+            display: block !important;
+        }
+
+        body.print-checklist .checklist-print-root {
+            display: block !important;
+        }
+
+        body.print-checklist .checklist-a4-page {
+
+            page-break-after: always !important;
+            break-after: page !important;
+
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        body.print-checklist .checklist-a4-page:last-child {
+
+            page-break-after: auto !important;
+            break-after: auto !important;
+        }
+
+        body.print-checklist .checklist-table {
+
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        body.print-checklist .checklist-data-row {
+
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        body.print-checklist .checklist-table thead {
+
+            display: table-header-group !important;
+        }
+    }
 
 
     /* ========================================================
@@ -1081,6 +1283,7 @@
         margin-bottom: 3mm;
     }
 
+
     .pt-title .pt-h1 {
 
         font-size: 14pt;
@@ -1089,6 +1292,7 @@
 
         letter-spacing: 0.5pt;
     }
+
 
     .pt-batch-badge {
 
@@ -1113,6 +1317,7 @@
         print-color-adjust: exact;
     }
 
+
     .pt-batch-label {
 
         font-size: 10pt;
@@ -1125,6 +1330,7 @@
 
         color: #444;
     }
+
 
     .pt-batch-num {
 
@@ -1139,12 +1345,14 @@
         font-family: "Courier New", monospace;
     }
 
+
     .pt-batch-meta {
 
         font-size: 9.5pt;
 
         color: #333;
     }
+
 
     .pt-row-badge {
 
@@ -1171,6 +1379,7 @@
         print-color-adjust: exact;
     }
 
+
     .pt-row-label {
 
         font-size: 7pt;
@@ -1181,6 +1390,7 @@
 
         color: #555;
     }
+
 
     .pt-row-value {
 
@@ -1193,9 +1403,11 @@
         margin-top: 1mm;
     }
 
+
     .pt-code-box {
         text-align: right;
     }
+
 
     .pt-code-num {
 
@@ -1208,6 +1420,7 @@
         letter-spacing: 0.6pt;
     }
 
+
     .pt-code-meta {
 
         font-size: 8pt;
@@ -1217,6 +1430,7 @@
         margin-top: 1mm;
     }
 
+
     .pt-summary {
 
         display: flex;
@@ -1225,6 +1439,7 @@
 
         margin-bottom: 3mm;
     }
+
 
     .pt-summary-item {
 
@@ -1249,6 +1464,7 @@
         align-items: baseline;
     }
 
+
     .pt-sm-label {
 
         font-size: 8pt;
@@ -1262,6 +1478,7 @@
         letter-spacing: 0.4pt;
     }
 
+
     .pt-sm-value {
 
         font-size: 12pt;
@@ -1274,8 +1491,6 @@
 
     /* ========================================================
        PICK TICKET TABLE
-       FINAL:
-       ARTICLE | EAN | ARTICLE DESCRIPTION
        ======================================================== */
 
     .pt-table {
@@ -1288,6 +1503,7 @@
 
         table-layout: fixed;
     }
+
 
     .pt-table th,
     .pt-table td {
@@ -1305,6 +1521,7 @@
         overflow-wrap: break-word;
     }
 
+
     .pt-table th {
 
         background-color: #e8e8e8 !important;
@@ -1316,6 +1533,7 @@
         print-color-adjust: exact;
     }
 
+
     .pt-table td.pt-nowrap {
 
         white-space: nowrap;
@@ -1324,6 +1542,7 @@
 
         text-overflow: ellipsis;
     }
+
 
     .pt-table td.pt-article {
 
@@ -1335,6 +1554,7 @@
 
         text-overflow: clip;
     }
+
 
     .pt-table td.pt-desc {
 
@@ -1358,7 +1578,6 @@
 
     /* ========================================================
        PICK TICKET - EAN COLUMN
-       ARTICLE | EAN | DESCRIPTION
        ======================================================== */
 
     .pt-table th:nth-child(4),
@@ -1381,10 +1600,6 @@
         font-size: 7.5pt !important;
     }
 
-
-    /* ========================================================
-       PICK TICKET - EAN CENTER
-       ======================================================== */
 
     .pt-table td.pt-ean {
 
@@ -1409,6 +1624,7 @@
         padding-top: 2mm;
     }
 
+
     .pt-footer-row {
 
         display: flex;
@@ -1418,12 +1634,14 @@
         margin-bottom: 2mm;
     }
 
+
     .pt-page-num {
 
         font-weight: 700;
 
         font-family: "Courier New", monospace;
     }
+
 
     .pt-signature {
 
@@ -1448,10 +1666,12 @@
         max-width: 100%;
     }
 
+
     table {
 
         max-width: 100%;
     }
+
 
     .print-only {
 

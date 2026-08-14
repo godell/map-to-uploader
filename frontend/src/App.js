@@ -2500,8 +2500,24 @@ export default function App() {
                                       ================================================== */}
 
                                   <td className="checklist-article-cell checklist-col-article">
-                                    {articleDisplay}
-                                  </td>
+
+    <div className="checklist-article-value">
+        {articleDisplay}
+    </div>
+
+    {articleDisplay && articleDisplay !== "-" && (
+        <div className="checklist-article-barcode">
+            <Barcode
+                value={String(articleDisplay)}
+                width={0.45}
+                height={8}
+                displayValue={false}
+                margin={0}
+            />
+        </div>
+    )}
+
+</td>
 
 
                                   {/* ==================================================
@@ -2539,8 +2555,26 @@ export default function App() {
                                       ================================================== */}
 
                                   <td className="checklist-source-bin-cell checklist-col-source-bin">
-                                    {sourceBinDisplay}
-                                  </td>
+
+    <div className="checklist-source-bin-value">
+        {sourceBinDisplay}
+    </div>
+
+    {sourceBinDisplay && sourceBinDisplay !== "-" && (
+        <div className="checklist-source-bin-barcode">
+
+            <Barcode
+                value={String(sourceBinDisplay)}
+                width={0.45}
+                height={8}
+                displayValue={false}
+                margin={0}
+            />
+
+        </div>
+    )}
+
+</td>
 
 
                                   {/* ==================================================
@@ -2548,8 +2582,26 @@ export default function App() {
                                       ================================================== */}
 
                                   <td className="checklist-dest-bin-cell checklist-col-dest-bin">
-                                    {destBinDisplay}
-                                  </td>
+
+    <div className="checklist-dest-bin-value">
+        {destBinDisplay}
+    </div>
+
+    {destBinDisplay && destBinDisplay !== "-" && (
+        <div className="checklist-dest-bin-barcode">
+
+            <Barcode
+                value={String(destBinDisplay)}
+                width={0.45}
+                height={8}
+                displayValue={false}
+                margin={0}
+            />
+
+        </div>
+    )}
+
+</td>
 
 
                                   {/* ==================================================
