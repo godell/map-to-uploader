@@ -1310,6 +1310,43 @@
     }
 
     /* ========================================================
+   CHECKLIST - TO LINE COLUMN
+   ROW | TO LINE | ARTICLE | QTY
+   ======================================================== */
+
+.checklist-a4-page .checklist-col-row {
+    width: 18mm !important;
+    min-width: 18mm !important;
+    max-width: 18mm !important;
+}
+
+.checklist-a4-page .checklist-col-toline {
+    width: 13mm !important;
+    min-width: 13mm !important;
+    max-width: 13mm !important;
+
+    text-align: center !important;
+    white-space: nowrap !important;
+}
+
+.checklist-a4-page .checklist-col-article {
+    width: auto !important;
+
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.checklist-a4-page .checklist-col-qty {
+    width: 13mm !important;
+    min-width: 13mm !important;
+    max-width: 13mm !important;
+
+    text-align: center !important;
+    white-space: nowrap !important;
+}
+
+    /* ========================================================
        FINAL PRINT SAFETY
        ======================================================== */
 

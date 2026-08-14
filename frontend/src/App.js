@@ -2007,12 +2007,28 @@ export default function App() {
              // ====================================================================
              
              const itemsForThisTO = processedData.filter(
-  detail => detail["Transfer Order Number"] === item.to
+    detail => detail["Transfer Order Number"] === item.to
 );
-             
-             let totalQty = 0;
-             const groupedByRow = {};
 
+let totalQty = 0;
+const groupedByRow = {};
+
+/* ========================================================
+   TOTAL TO LINE NUMBER
+   Hitung jumlah TO Line unik dalam 1 TO
+   ======================================================== */
+const totalToLine = new Set(
+    itemsForThisTO
+        .map(detail =>
+            detail["Transfer order item"] ??
+            detail["transfer order item"] ??
+            detail.transfer_order_item ??
+            detail.to_line ??
+            ""
+        )
+        .map(v => String(v).trim())
+        .filter(Boolean)
+).size;
              itemsForThisTO.forEach(detail => {
                // Antisipasi perbedaan huruf besar/kecil dari database Supabase
                const rowName = detail.Row || detail.row || '-';
@@ -2067,30 +2083,63 @@ export default function App() {
                    </div>
                  </div>
 
-                 {/* TO NUMBER & TOTAL QTY */}
-                 <div className="flex border-b-[2px] border-slate-300 pb-2 mb-3 mt-1">
-                   <div className="w-3/5 flex flex-col justify-center border-r-2 border-slate-200 pr-6">
-                     <div className="text-[#16a34a] font-bold text-xs mb-1 tracking-wide">TO / ORDER</div>
-                     <div className="text-[#16a34a] font-black text-[25px] leading-none mb-1">{item.to}</div>
-                     
-                     <div className="mt-1">
-                       <Barcode 
-                         value={String(item.to)} 
-                         width={1.5} 
-                         height={35} 
-                         displayValue={false} 
-                         margin={0} 
-                       />
-                     </div>
-                   </div>
-                   
-                   <div className="w-2/5 flex flex-col items-center justify-center pl-6">
-                     <div className="text-slate-800 font-bold text-sm mb-1 tracking-wider">QTY TO</div>
-                     <div className="text-black font-black text-[40px] leading-none">
-                       {totalQty.toLocaleString("id-ID")}
-                     </div>
-                   </div>
-                 </div>
+                 {/* ========================================================
+    TO NUMBER + TOTAL TO LINE + TOTAL QTY
+    ======================================================== */}
+<div className="flex border-b-[2px] border-slate-300 pb-2 mb-2 mt-1">
+
+    {/* TO / ORDER */}
+    <div className="w-3/5 flex flex-col justify-center border-r-2 border-slate-200 pr-4">
+
+        <div className="text-[#16a34a] font-bold text-xs mb-1 tracking-wide">
+            TO / ORDER
+        </div>
+
+        <div className="text-[#16a34a] font-black text-[25px] leading-none mb-1">
+            {item.to}
+        </div>
+
+        <div className="mt-1">
+            <Barcode 
+                value={String(item.to)} 
+                width={1.5} 
+                height={30} 
+                displayValue={false} 
+                margin={0} 
+            />
+        </div>
+
+    </div>
+
+
+    {/* TOTAL TO LINE */}
+    <div className="w-1/5 flex flex-col items-center justify-center px-2 border-r-2 border-slate-200">
+
+        <div className="text-slate-800 font-bold text-[9px] mb-1 tracking-wider text-center">
+            TOTAL TO LINE
+        </div>
+
+        <div className="text-black font-black text-[28px] leading-none">
+            {totalToLine.toLocaleString("id-ID")}
+        </div>
+
+    </div>
+
+
+    {/* TOTAL QTY */}
+    <div className="w-1/5 flex flex-col items-center justify-center pl-2">
+
+        <div className="text-slate-800 font-bold text-[9px] mb-1 tracking-wider text-center">
+            QTY TO
+        </div>
+
+        <div className="text-black font-black text-[28px] leading-none">
+            {totalQty.toLocaleString("id-ID")}
+        </div>
+
+    </div>
+
+</div>
 
                  {/* CHECKLIST ROW TABLE */}
                  <div className="flex-grow flex flex-col">
@@ -2101,12 +2150,32 @@ export default function App() {
                    <div className="flex-grow w-full">
                      <table className="w-full border-collapse border-[2px] border-slate-800">
                        <thead>
-                         <tr>
-                           <th className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm w-24">ROW</th>
-                           <th className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm">ARTICLE</th>
-                           <th className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm w-24">QTY</th>
-                         </tr>
-                       </thead>
+    <tr>
+        <th
+            className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm checklist-col-row"
+        >
+            ROW
+        </th>
+
+        <th
+            className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm checklist-col-toline"
+        >
+            TO LINE
+        </th>
+
+        <th
+            className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm checklist-col-article"
+        >
+            ARTICLE
+        </th>
+
+        <th
+            className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm checklist-col-qty"
+        >
+            QTY
+        </th>
+    </tr>
+</thead>
                        <tbody>
                          {sortedRows.length > 0 ? sortedRows.map(r => {
                            const rowItems = groupedByRow[r];
@@ -2116,28 +2185,58 @@ export default function App() {
                              const qtyDisplay = Number(detail["Source target qty"] || detail["source target qty"] || detail.source_target_qty || detail.qty) || 0;
 
                              return (
-                               <tr key={`${r}-${idx}`}>
-                                 {idx === 0 && (
-                                   <td rowSpan={rowItems.length} className="border-[2px] border-slate-800 text-center align-middle p-2 w-24">
-                                     <div className="text-[#1e3a8a] font-bold text-[11px] mb-1">ROW {r}</div>
-                                     <div className="w-7 h-7 border-[2px] border-slate-800 rounded mx-auto bg-white"></div>
-                                   </td>
-                                 )}
-                                 <td className="border border-slate-600 px-3 py-1 text-sm font-semibold text-slate-700">
-                                   {articleDisplay} 
-                                 </td>
-                                 <td className="border border-slate-600 px-3 py-1 text-sm font-bold text-center text-slate-800 w-24">
-                                   {qtyDisplay}
-                                 </td>
-                               </tr>
-                             );
+    <tr key={`${r}-${idx}`}>
+
+        {/* ROW */}
+        {idx === 0 && (
+            <td
+                rowSpan={rowItems.length}
+                className="border-[2px] border-slate-800 text-center align-middle p-1 checklist-col-row"
+            >
+                <div className="text-[#1e3a8a] font-bold text-[11px] mb-1">
+                    ROW {r}
+                </div>
+
+                <div className="w-5 h-5 border-[2px] border-slate-800 rounded mx-auto bg-white"></div>
+            </td>
+        )}
+
+
+        {/* TO LINE */}
+        <td className="border border-slate-600 px-1 py-1 text-center font-bold text-slate-800 checklist-col-toline">
+            {
+                detail["Transfer order item"] ??
+                detail["transfer order item"] ??
+                detail.transfer_order_item ??
+                detail.to_line ??
+                "-"
+            }
+        </td>
+
+
+        {/* ARTICLE */}
+        <td className="border border-slate-600 px-2 py-1 text-sm font-semibold text-slate-700 checklist-col-article">
+            {articleDisplay}
+        </td>
+
+
+        {/* QTY */}
+        <td className="border border-slate-600 px-1 py-1 text-sm font-bold text-center text-slate-800 checklist-col-qty">
+            {qtyDisplay}
+        </td>
+
+    </tr>
+);
                            });
                          }) : (
                            <tr>
-                             <td colSpan={3} className="text-center py-6 text-slate-400 italic font-semibold text-sm">
-                               Tidak ada data picking untuk TO ini
-                             </td>
-                           </tr>
+    <td
+        colSpan={4}
+        className="text-center py-6 text-slate-400 italic font-semibold text-sm"
+    >
+        Tidak ada data picking untuk TO ini
+    </td>
+</tr>
                          )}
                        </tbody>
                      </table>
