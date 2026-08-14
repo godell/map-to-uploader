@@ -2006,7 +2006,9 @@ export default function App() {
              // 1. LOGIC GROUPING & SUMMING TOTAL QTY (DENGAN SAFE FALLBACK)
              // ====================================================================
              
-             const itemsForThisTO = item.details || []; 
+             const itemsForThisTO = processedData.filter(
+  detail => detail["Transfer Order Number"] === item.to
+);
              
              let totalQty = 0;
              const groupedByRow = {};
