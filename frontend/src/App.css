@@ -144,170 +144,174 @@
     }
 
 
-    /* ========================================================
-       CHECKLIST
-       ======================================================== */
+    /* ============================================================
+   CHECKLIST PRINT ROOT
+   ============================================================ */
 
-    .checklist-a4-page {
+.checklist-print-root {
+    display: none;
+}
+
+
+/* ============================================================
+   A4 CHECKLIST PAGE
+   ============================================================ */
+
+.checklist-a4-page {
+
+    width: 194mm !important;
+
     height: 277mm !important;
+
     min-height: 277mm !important;
+
     max-height: 277mm !important;
 
-    overflow: visible !important;
+    margin: 0 auto !important;
+
+    padding: 5mm !important;
 
     box-sizing: border-box !important;
 
+    background: #ffffff !important;
+
+    display: flex !important;
+
+    flex-direction: column !important;
+
+    overflow: visible !important;
+
     page-break-after: always !important;
+
     break-after: page !important;
 
     page-break-inside: avoid !important;
+
     break-inside: avoid !important;
 }
 
-    .checklist-a4-page:first-child {
-        page-break-before: auto !important;
-        break-before: auto !important;
-    }
 
-    .checklist-a4-page:not(:first-child) {
-        page-break-before: always !important;
-        break-before: page !important;
-    }
+/* ============================================================
+   HEADER
+   ============================================================ */
 
+.checklist-header {
 
-    /* ========================================================
-       CHECKLIST - BATCH PICKING NUMBER
-       Mirip dengan TO / ORDER
-       ======================================================== */
+    width: 100% !important;
 
-    .checklist-batch-section {
-        display: flex !important;
+    display: flex !important;
 
-        align-items: center !important;
+    align-items: stretch !important;
 
-        gap: 4mm !important;
+    border-bottom: 1px solid #cbd5e1 !important;
 
-        width: 100% !important;
+    padding-bottom: 2.5mm !important;
 
-        box-sizing: border-box !important;
+    margin-bottom: 2.5mm !important;
 
-        padding: 2mm 4mm !important;
-
-        margin: 0 !important;
-
-        flex-shrink: 0 !important;
-    }
+    flex-shrink: 0 !important;
+}
 
 
-    /* ========================================================
-       CHECKLIST - STATION / BATCH SEPARATOR
-       ======================================================== */
+.checklist-header-left {
 
-    .checklist-station-separator {
-        width: calc(100% - 8mm) !important;
+    width: 55% !important;
 
-        margin: 0 auto 2mm auto !important;
+    display: flex !important;
 
-        border-top: 1px dashed #94a3b8 !important;
+    align-items: center !important;
 
-        flex-shrink: 0 !important;
-    }
+    gap: 2.5mm !important;
 
+    padding-right: 2.5mm !important;
 
-    /* ========================================================
-       BATCH ICON
-       ======================================================== */
-
-    .checklist-batch-icon {
-        width: 18mm !important;
-
-        height: 18mm !important;
-
-        min-width: 18mm !important;
-
-        min-height: 18mm !important;
-
-        background: #1e3a8a !important;
-
-        border-radius: 4px !important;
-
-        display: flex !important;
-
-        align-items: center !important;
-
-        justify-content: center !important;
-
-        flex-shrink: 0 !important;
-
-        border: 1px solid #172554 !important;
-
-        -webkit-print-color-adjust: exact !important;
-
-        print-color-adjust: exact !important;
-    }
+    box-sizing: border-box !important;
+}
 
 
-    /* ========================================================
-       BATCH CONTENT
-       ======================================================== */
+.checklist-header-right {
 
-    .checklist-batch-content {
-        display: flex !important;
+    width: 45% !important;
 
-        flex-direction: column !important;
+    padding-left: 2.5mm !important;
 
-        justify-content: center !important;
-
-        min-width: 0 !important;
-
-        line-height: 1 !important;
-    }
+    box-sizing: border-box !important;
+}
 
 
-    /* ========================================================
-       BATCH LABEL
-       ======================================================== */
+.checklist-logo {
 
-    .checklist-batch-label {
-        color: #1e3a8a !important;
+    width: 11mm !important;
 
-        font-size: 12pt !important;
+    height: 11mm !important;
 
-        font-weight: 700 !important;
+    min-width: 11mm !important;
 
-        line-height: 1.1 !important;
+    background: #1e3a8a !important;
 
-        margin-bottom: 1mm !important;
+    border: 1px solid #172554 !important;
 
-        letter-spacing: 0.8px !important;
-    }
+    border-radius: 2mm !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+
+    box-sizing: border-box !important;
+}
 
 
-    /* ========================================================
-       BATCH NUMBER
-       ======================================================== */
+.checklist-header-info {
 
-    .checklist-batch-number {
-        color: #1e3a8a !important;
+    display: flex !important;
 
-        font-size: 24pt !important;
+    flex-direction: column !important;
 
-        font-weight: 900 !important;
+    justify-content: center !important;
 
-        line-height: 0.95 !important;
+    min-width: 0 !important;
+}
 
-        letter-spacing: 0.5px !important;
-    }
 
-/* ========================================================
-   CHECKLIST - PTF NUMBER
-   ======================================================== */
+.checklist-header-title {
+
+    font-size: 6.5pt !important;
+
+    font-weight: 800 !important;
+
+    letter-spacing: 1px !important;
+
+    color: #1e3a8a !important;
+
+    line-height: 1 !important;
+
+    margin-bottom: 1mm !important;
+
+    white-space: nowrap !important;
+}
+
+
+.checklist-batch-number {
+
+    font-size: 15pt !important;
+
+    font-weight: 900 !important;
+
+    line-height: 1 !important;
+
+    color: #1e3a8a !important;
+
+    white-space: nowrap !important;
+}
+
 
 .checklist-ptf-number {
 
-    margin-top: 0.8mm !important;
+    margin-top: 1mm !important;
 
-    color: #64748b !important;
+    font-family: "Courier New", monospace !important;
 
     font-size: 5.5pt !important;
 
@@ -315,919 +319,738 @@
 
     line-height: 1 !important;
 
-    letter-spacing: 0.25px !important;
+    color: #475569 !important;
+
+    white-space: nowrap !important;
+}
+
+
+.checklist-page-of {
+
+    margin-top: 0.8mm !important;
+
+    font-family: "Courier New", monospace !important;
+
+    font-size: 5.5pt !important;
+
+    font-weight: 800 !important;
+
+    color: #64748b !important;
+
+    line-height: 1 !important;
+
+    white-space: nowrap !important;
+}
+
+
+/* ============================================================
+   STATION
+   ============================================================ */
+
+.checklist-station-box {
+
+    width: 100% !important;
+
+    height: 100% !important;
+
+    min-height: 23mm !important;
+
+    border: 1px solid #1e3a8a !important;
+
+    border-radius: 1mm !important;
+
+    overflow: hidden !important;
+
+    display: flex !important;
+
+    flex-direction: column !important;
+
+    box-sizing: border-box !important;
+}
+
+
+.checklist-station-title {
+
+    background: #1e3a8a !important;
+
+    color: #ffffff !important;
+
+    text-align: center !important;
+
+    font-size: 6pt !important;
+
+    font-weight: 800 !important;
+
+    letter-spacing: 1px !important;
+
+    line-height: 1 !important;
+
+    padding: 1.3mm 1mm !important;
+}
+
+
+.checklist-station-code {
+
+    flex: 1 !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+
+    font-family: "Arial Black", Arial, sans-serif !important;
+
+    font-size: 30pt !important;
+
+    line-height: 1 !important;
+
+    font-weight: 900 !important;
+
+    color: #1e3a8a !important;
+
+    padding: 1mm !important;
+}
+
+
+/* ============================================================
+   SUMMARY
+   ============================================================ */
+
+.checklist-summary {
+
+    width: 100% !important;
+
+    display: flex !important;
+
+    border-bottom: 1px solid #cbd5e1 !important;
+
+    padding-bottom: 2mm !important;
+
+    margin-bottom: 2mm !important;
+
+    flex-shrink: 0 !important;
+}
+
+
+.checklist-summary-to {
+
+    width: 60% !important;
+
+    padding-right: 3mm !important;
+
+    border-right: 1px solid #e2e8f0 !important;
+
+    box-sizing: border-box !important;
+}
+
+
+.checklist-summary-metric {
+
+    width: 20% !important;
+
+    padding: 0 2mm !important;
+
+    display: flex !important;
+
+    flex-direction: column !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+
+    border-right: 1px solid #e2e8f0 !important;
+
+    box-sizing: border-box !important;
+}
+
+
+.checklist-summary-metric-last {
+
+    border-right: none !important;
+}
+
+
+.checklist-summary-label {
+
+    font-size: 6pt !important;
+
+    font-weight: 800 !important;
+
+    color: #16a34a !important;
+
+    line-height: 1 !important;
+
+    margin-bottom: 1mm !important;
+}
+
+
+.checklist-summary-to-number {
+
+    font-family: "Courier New", monospace !important;
+
+    font-size: 14pt !important;
+
+    font-weight: 900 !important;
+
+    color: #16a34a !important;
+
+    line-height: 1 !important;
+}
+
+
+.checklist-to-barcode {
+
+    margin-top: 1mm !important;
+
+    line-height: 0 !important;
+
+    height: 6mm !important;
+
+    overflow: hidden !important;
+}
+
+
+.checklist-to-barcode svg {
+
+    max-height: 6mm !important;
+
+    width: auto !important;
+}
+
+
+.checklist-summary-metric-label {
+
+    font-size: 5.5pt !important;
+
+    font-weight: 800 !important;
+
+    letter-spacing: 0.4px !important;
+
+    color: #475569 !important;
+
+    line-height: 1 !important;
+
+    text-align: center !important;
+}
+
+
+.checklist-summary-metric-value {
+
+    margin-top: 1mm !important;
+
+    font-family: "Courier New", monospace !important;
+
+    font-size: 17pt !important;
+
+    font-weight: 900 !important;
+
+    line-height: 1 !important;
+
+    color: #000000 !important;
+}
+
+
+/* ============================================================
+   SECTION TITLE
+   ============================================================ */
+
+.checklist-section-title {
+
+    width: 100% !important;
+
+    flex-shrink: 0 !important;
+
+    background: #1e3a8a !important;
+
+    color: #ffffff !important;
+
+    text-align: center !important;
+
+    font-size: 6pt !important;
+
+    font-weight: 800 !important;
+
+    letter-spacing: 0.7px !important;
+
+    line-height: 1 !important;
+
+    padding: 1.6mm 1mm !important;
+
+    margin-bottom: 1.5mm !important;
+
+    box-sizing: border-box !important;
+}
+
+
+/* ============================================================
+   TABLE WRAPPER
+   ============================================================ */
+
+.checklist-table-wrap {
+
+    width: 100% !important;
+
+    flex-shrink: 0 !important;
+
+    box-sizing: border-box !important;
+
+    overflow: visible !important;
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+}
+
+
+/* ============================================================
+   TABLE
+   ============================================================ */
+
+.checklist-table {
+
+    width: 100% !important;
+
+    border-collapse: collapse !important;
+
+    table-layout: fixed !important;
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+
+    border: 1px solid #1e293b !important;
+
+    page-break-inside: avoid !important;
+
+    break-inside: avoid !important;
+}
+
+
+/* ============================================================
+   COLUMNS
+   ============================================================ */
+
+.checklist-col-row {
+
+    width: 18% !important;
+}
+
+
+.checklist-col-toline {
+
+    width: 9% !important;
+}
+
+
+.checklist-col-article {
+
+    width: 39% !important;
+}
+
+
+.checklist-col-ean {
+
+    width: 25% !important;
+}
+
+
+.checklist-col-qty {
+
+    width: 9% !important;
+}
+
+
+/* ============================================================
+   HEADER CELLS
+   ============================================================ */
+
+.checklist-table thead th {
+
+    border: 1px solid #1e293b !important;
+
+    background: #ffffff !important;
+
+    color: #0f172a !important;
+
+    font-size: 6.5pt !important;
+
+    font-weight: 800 !important;
+
+    line-height: 1 !important;
+
+    text-align: center !important;
+
+    padding: 1.4mm 1mm !important;
+
+    box-sizing: border-box !important;
+
+    white-space: nowrap !important;
+
+    vertical-align: middle !important;
+}
+
+
+/* ============================================================
+   TABLE ROW
+   ============================================================ */
+
+.checklist-data-row {
+
+    page-break-inside: avoid !important;
+
+    break-inside: avoid !important;
+}
+
+
+/* ============================================================
+   ALL DATA CELLS
+   ============================================================ */
+
+.checklist-table tbody td {
+
+    border: 1px solid #475569 !important;
+
+    box-sizing: border-box !important;
+
+    vertical-align: middle !important;
+
+    height: 8.5mm !important;
+
+    max-height: 8.5mm !important;
+
+    padding: 0.7mm 1mm !important;
+
+    line-height: 1 !important;
+
+    overflow: hidden !important;
+}
+
+
+/* ============================================================
+   ROW
+   ============================================================ */
+
+.checklist-row-cell {
+
+    text-align: center !important;
+
+    vertical-align: middle !important;
+
+    padding: 0.5mm !important;
+
+    overflow: hidden !important;
+}
+
+
+.checklist-row-label {
+
+    color: #1e3a8a !important;
+
+    font-size: 5.5pt !important;
+
+    font-weight: 800 !important;
+
+    line-height: 1 !important;
+
+    white-space: nowrap !important;
+
+    margin-bottom: 0.8mm !important;
+}
+
+
+.checklist-box {
+
+    width: 5mm !important;
+
+    height: 5mm !important;
+
+    margin: 0 auto !important;
+
+    border: 0.7mm solid #334155 !important;
+
+    border-radius: 1mm !important;
+
+    background: #ffffff !important;
+
+    box-sizing: border-box !important;
+}
+
+
+/* ============================================================
+   TO LINE
+   ============================================================ */
+
+.checklist-toline-cell {
+
+    text-align: center !important;
+
+    font-family: "Courier New", monospace !important;
+
+    font-size: 6.5pt !important;
+
+    font-weight: 800 !important;
+
+    color: #0f172a !important;
+
+    white-space: nowrap !important;
+}
+
+
+/* ============================================================
+   ARTICLE
+   ============================================================ */
+
+.checklist-article-cell {
+
+    font-family: "Courier New", monospace !important;
+
+    font-size: 6.8pt !important;
+
+    font-weight: 700 !important;
+
+    color: #334155 !important;
 
     white-space: nowrap !important;
 
     overflow: hidden !important;
 
-    text-overflow: ellipsis !important;
-
-    font-family: "Courier New", monospace !important;
+    text-overflow: clip !important;
 }
 
-/* ========================================================
-   CHECKLIST - PAGE X OF Y
-   Tepat di bawah PTF
-   ======================================================== */
 
-.checklist-page-of {
+/* ============================================================
+   EAN
+   ============================================================ */
 
-    color: #64748b !important;
+.checklist-ean-cell {
 
-    font-size: 5.5pt !important;
+    text-align: center !important;
+
+    vertical-align: middle !important;
+
+    overflow: hidden !important;
+
+    padding: 0.4mm 0.5mm !important;
+}
+
+
+.checklist-ean-value {
+
+    font-family: "Courier New", monospace !important;
+
+    font-size: 5.2pt !important;
 
     font-weight: 700 !important;
 
     line-height: 1 !important;
 
-    letter-spacing: 0.2px !important;
+    color: #0f172a !important;
 
     white-space: nowrap !important;
+}
+
+
+.checklist-ean-barcode {
+
+    height: 2.8mm !important;
+
+    max-height: 2.8mm !important;
+
+    margin-top: 0.4mm !important;
+
+    overflow: hidden !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+}
+
+
+.checklist-ean-barcode svg {
+
+    display: block !important;
+
+    width: auto !important;
+
+    max-width: 100% !important;
+
+    height: 2.8mm !important;
+
+    max-height: 2.8mm !important;
+}
+
+
+/* ============================================================
+   QTY
+   ============================================================ */
+
+.checklist-qty-cell {
+
+    text-align: center !important;
 
     font-family: "Courier New", monospace !important;
+
+    font-size: 7pt !important;
+
+    font-weight: 900 !important;
+
+    color: #0f172a !important;
+
+    white-space: nowrap !important;
 }
 
-/* ========================================================
-   CHECKLIST - NO TABLE SPLIT
-   ======================================================== */
 
-.checklist-a4-page table {
+/* ============================================================
+   FOOTER
+   ============================================================ */
 
-    page-break-inside: avoid !important;
+.checklist-footer {
 
-    break-inside: avoid !important;
-}
-
-.checklist-a4-page thead {
-
-    display: table-header-group !important;
-}
-
-.checklist-a4-page tbody {
-
-    display: table-row-group !important;
-}
-
-.checklist-a4-page tr {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-}
-
-.checklist-a4-page td,
-.checklist-a4-page th {
-
-    page-break-inside: avoid !important;
-
-    break-inside: avoid !important;
-}
-
-    /* ========================================================
-       CHECKLIST CHILD SAFETY
-       ======================================================== */
-
-    .checklist-a4-page > * {
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-    }
-
-    .checklist-a4-page * {
-        box-sizing: border-box !important;
-    }
-
-
-    /* ========================================================
-       HEADER
-       ======================================================== */
-
-    .checklist-a4-page
-    > .bg-\[\#1e3a8a\] {
-
-        flex-shrink: 0 !important;
-
-        padding-top: 1mm !important;
-        padding-bottom: 1mm !important;
-
-        min-height: auto !important;
-
-        font-size: 7pt !important;
-        line-height: 1 !important;
-
-        border-bottom-width: 1px !important;
-        margin-bottom: 1mm !important;
-    }
-
-
-    /* ========================================================
-       CHECKLIST - LARGER STATION CODE
-       ======================================================== */
-
-    .checklist-a4-page
-    .text-\[140px\] {
-
-        font-size: 58px !important;
-
-        line-height: 0.85 !important;
-
-        margin: 0 !important;
-    }
-
-
-    /* ========================================================
-       CHECKLIST - STATION AREA SPACING
-       ======================================================== */
-
-    .checklist-a4-page
-    .text-center.py-8 {
-
-        padding-top: 2mm !important;
-
-        padding-bottom: 3mm !important;
-    }
-
-
-    /* ========================================================
-       DIVIDER
-       ======================================================== */
-
-    .checklist-a4-page
-    .border-t-\[3px\].border-dashed {
-
-        margin-top: 2mm !important;
-        margin-bottom: 2mm !important;
-
-        margin-left: 3mm !important;
-        margin-right: 3mm !important;
-
-        border-top-width: 1px !important;
-    }
-
-
-    /* ========================================================
-       TO / ORDER
-       ======================================================== */
-
-    .checklist-a4-page
-    .flex.items-center.px-12.py-8 {
-
-        flex-shrink: 0 !important;
-
-        padding-left: 3mm !important;
-        padding-right: 3mm !important;
-
-        padding-top: 1.5mm !important;
-        padding-bottom: 1.5mm !important;
-
-        gap: 2.5mm !important;
-    }
-
-    .checklist-a4-page
-    .bg-\[\#16a34a\] {
-
-        padding: 3mm !important;
-
-        border-radius: 4px !important;
-
-        flex-shrink: 0 !important;
-    }
-
-    .checklist-a4-page
-    .bg-\[\#16a34a\] svg {
-
-        width: 9mm !important;
-        height: 9mm !important;
-    }
-
-    .checklist-a4-page
-    .text-3xl {
-
-        font-size: 12pt !important;
-        line-height: 1.1 !important;
-
-        margin-bottom: 1mm !important;
-    }
-
-    .checklist-a4-page
-    .text-\[80px\] {
-
-        font-size: 26px !important;
-
-        line-height: 0.95 !important;
-
-        margin-bottom: 1mm !important;
-    }
-
-    .checklist-a4-page
-    .text-\[40px\] {
-
-        font-size: 27px !important;
-
-        line-height: 0.85 !important;
-    }
-
-    .checklist-a4-page
-    .text-slate-800.font-bold.text-xl {
-
-        font-size: 7.5pt !important;
-
-        line-height: 1.1 !important;
-    }
-
-
-    /* ========================================================
-       CHECKLIST MAIN
-       ======================================================== */
-
-    .checklist-a4-page
-    .flex-grow {
-
-        min-height: 0 !important;
-
-        overflow: hidden !important;
-    }
-
-    .checklist-a4-page
-    .border-t-4.border-\[\#1e3a8a\] {
-
-        border-top-width: 2px !important;
-
-        flex-shrink: 0 !important;
-    }
-
-    .checklist-a4-page
-    .text-xl.tracking-wider {
-
-        font-size: 8pt !important;
-
-        line-height: 1.1 !important;
-
-        padding-top: 1.5mm !important;
-        padding-bottom: 1.5mm !important;
-    }
-
-    .checklist-a4-page
-    .p-8.flex.flex-col.gap-6 {
-
-        padding: 2.5mm !important;
-
-        gap: 2mm !important;
-
-        min-height: 0 !important;
-
-        overflow: hidden !important;
-
-        flex: 1 1 auto !important;
-    }
-
-
-    /* ========================================================
-       WING CARD
-       ======================================================== */
-
-    .checklist-a4-page
-    .bg-white.p-6.rounded-xl {
-
-        padding: 2.5mm !important;
-
-        border-width: 1px !important;
-
-        border-radius: 3px !important;
-
-        box-shadow: none !important;
-
-        min-height: 0 !important;
-
-        overflow: hidden !important;
-
-        flex: 1 1 0 !important;
-    }
-
-    .checklist-a4-page
-    .bg-white.p-6.rounded-xl
-    .text-slate-800.font-bold.text-xl {
-
-        font-size: 8pt !important;
-
-        line-height: 1.1 !important;
-
-        margin-bottom: 1.5mm !important;
-
-        padding-bottom: 1.5mm !important;
-    }
-
-    .checklist-a4-page
-    .bg-white.p-6.rounded-xl
-    .text-slate-500 {
-
-        font-size: 6.5pt !important;
-    }
-
-
-    /* ========================================================
-       CHECKLIST - COMPACT WING CARDS
-       Maximum: 18 rows = 6 columns x 3 rows
-       ======================================================== */
-
-    .checklist-a4-page
-    .bg-white.p-6.rounded-xl {
-
-        flex: 0 0 auto !important;
-
-        height: 70 !important;
-
-        min-height: 70 !important;
-
-        max-height: 70 !important;
-
-        overflow: hidden !important;
-    }
-
-
-    /* ========================================================
-       ROW GRID
-       ======================================================== */
-
-    .checklist-a4-page
-    .flex.flex-wrap.gap-8 {
-
-        display: grid !important;
-
-        grid-template-columns:
-            repeat(6, minmax(0, 1fr)) !important;
-
-        grid-template-rows:
-            repeat(3, minmax(0, 1fr)) !important;
-
-        grid-auto-flow: row !important;
-
-        column-gap: 1.5mm !important;
-        row-gap: 1.5mm !important;
-
-        width: 100% !important;
-        height: auto !important;
-
-        min-height: 0 !important;
-
-        flex: 1 1 auto !important;
-
-        align-items: stretch !important;
-        justify-items: stretch !important;
-    }
-
-    .checklist-a4-page
-    .flex.flex-wrap.gap-8 > div {
-
-        min-width: 0 !important;
-        min-height: 0 !important;
-
-        width: 100% !important;
-        height: 100% !important;
-    }
-
-
-    /* ========================================================
-       ROW ITEM
-       ======================================================== */
-
-    .checklist-a4-page
-    .flex.flex-col.items-center.gap-3 {
-
-        display: flex !important;
-
-        flex-direction: column !important;
-
-        align-items: center !important;
-        justify-content: center !important;
-
-        gap: 0.8mm !important;
-
-        min-width: 0 !important;
-        min-height: 0 !important;
-
-        width: 100% !important;
-        height: 100% !important;
-
-        flex: none !important;
-    }
-
-    .checklist-a4-page
-    .flex.flex-col.items-center.gap-3
-    .text-2xl {
-
-        font-size: 6.5pt !important;
-
-        line-height: 1 !important;
-
-        white-space: nowrap !important;
-
-        margin: 0 !important;
-    }
-
-    .checklist-a4-page
-    .flex.flex-col.items-center.gap-3
-    .text-\[\#1e3a8a\] {
-
-        font-size: 6.5pt !important;
-
-        line-height: 1 !important;
-    }
-
-
-    /* ========================================================
-       CHECKBOX
-       ======================================================== */
-
-    .checklist-a4-page
-    .w-14.h-14 {
-
-        width: 5mm !important;
-        height: 5mm !important;
-
-        min-width: 5mm !important;
-        min-height: 5mm !important;
-
-        max-width: 5mm !important;
-        max-height: 5mm !important;
-
-        border-width: 1px !important;
-
-        border-radius: 1px !important;
-
-        background: #ffffff !important;
-
-        flex-shrink: 0 !important;
-    }
-
-
-    /* ========================================================
-       CHECKLIST - ULTRA COMPACT TABLE
-       TARGET: +/- 50 ARTICLE / PAGE
-
-       FINAL COLUMNS:
-       ROW | TO LINE | ARTICLE | EAN | QTY
-       ======================================================== */
-
-    .checklist-a4-page table {
     width: 100% !important;
 
-    table-layout: fixed !important;
+    height: 7mm !important;
 
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
+    min-height: 7mm !important;
+
+    max-height: 7mm !important;
+
+    box-sizing: border-box !important;
+
+    margin-top: auto !important;
+
+    padding-top: 1.2mm !important;
+
+    padding-bottom: 0 !important;
+
+    border-top: 1px solid #cbd5e1 !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    justify-content: flex-end !important;
+
+    gap: 8mm !important;
+
+    flex-shrink: 0 !important;
+
+    font-size: 5.5pt !important;
+
+    line-height: 1 !important;
+
+    color: #64748b !important;
 }
 
-    .checklist-a4-page table th {
 
-        padding: 0.6mm 0.8mm !important;
+.checklist-footer-date,
+.checklist-footer-time {
 
-        font-size: 6pt !important;
+    display: flex !important;
 
-        line-height: 1 !important;
+    align-items: baseline !important;
 
-        border-width: 1px !important;
-    }
+    gap: 1.5mm !important;
 
-    .checklist-a4-page table td {
+    white-space: nowrap !important;
+}
 
-        padding: 0.45mm 0.8mm !important;
 
-        font-size: 5.8pt !important;
+.checklist-footer-label {
 
-        line-height: 1 !important;
+    font-size: 5pt !important;
 
-        border-width: 0.7px !important;
+    font-weight: 800 !important;
 
-        vertical-align: middle !important;
-    }
+    letter-spacing: 0.4px !important;
 
+    color: #64748b !important;
+}
 
-    /* ========================================================
-       ROW COLUMN
-       ======================================================== */
 
-    .checklist-a4-page
-    .checklist-col-row {
+.checklist-footer-value {
 
-        width: 18mm !important;
+    font-family: "Courier New", monospace !important;
 
-        min-width: 18mm !important;
+    font-size: 6pt !important;
 
-        max-width: 18mm !important;
+    font-weight: 800 !important;
 
-        text-align: center !important;
-    }
+    color: #334155 !important;
+}
 
 
-    /* ========================================================
-       TO LINE COLUMN
-       ======================================================== */
+/* ============================================================
+   PRINT
+   ============================================================ */
 
-    .checklist-a4-page
-    .checklist-col-toline {
+@media print {
 
-        width: 13mm !important;
-
-        min-width: 13mm !important;
-
-        max-width: 13mm !important;
-
-        text-align: center !important;
-
-        white-space: nowrap !important;
-
-        overflow: hidden !important;
-    }
-
-
-    /* ========================================================
-       ARTICLE COLUMN
-       ======================================================== */
-
-    .checklist-a4-page
-    .checklist-col-article {
-
-        width: auto !important;
-
-        white-space: nowrap !important;
-
-        overflow: hidden !important;
-
-        text-overflow: ellipsis !important;
-
-        word-break: normal !important;
-    }
-
-
-    /* ========================================================
-       EAN COLUMN
-       ======================================================== */
-
-    .checklist-a4-page
-    .checklist-col-ean {
-
-        width: 30mm !important;
-
-        min-width: 30mm !important;
-
-        max-width: 30mm !important;
-
-        text-align: center !important;
-
-        white-space: nowrap !important;
-
-        overflow: hidden !important;
-
-        text-overflow: ellipsis !important;
-
-        font-family: "Courier New", monospace !important;
-
-        font-size: 5.5pt !important;
-    }
-
-
-    /* ========================================================
-       CHECKLIST - EAN VALUE
-       ======================================================== */
-
-    .checklist-a4-page
-    .checklist-ean-value {
-
-        font-family: "Courier New", monospace !important;
-
-        font-size: 5.5pt !important;
-
-        font-weight: 600 !important;
-
-        line-height: 1 !important;
-
-        white-space: nowrap !important;
-
-        overflow: hidden !important;
-
-        text-overflow: ellipsis !important;
-
-        text-align: center !important;
-    }
-
-
-    /* ========================================================
-       CHECKLIST - EAN BARCODE
-       SUPER COMPACT
-       ======================================================== */
-
-    .checklist-a4-page
-    .checklist-ean-barcode {
-
-        display: flex !important;
-
-        align-items: center !important;
-
-        justify-content: center !important;
-
-        width: 100% !important;
-
-        height: 4mm !important;
-
-        margin-top: 0.4mm !important;
-
-        overflow: hidden !important;
-
-        flex-shrink: 0 !important;
-    }
-
-    .checklist-a4-page
-    .checklist-ean-barcode svg {
-
-        width: 20mm !important;
-
-        height: 3.5mm !important;
-
-        max-width: 20mm !important;
-
-        max-height: 3.5mm !important;
+    .print-only {
 
         display: block !important;
     }
 
+    body.print-checklist
+    .checklist-print-root {
 
-    /* ========================================================
-       QTY COLUMN
-       ======================================================== */
-
-    .checklist-a4-page
-    .checklist-col-qty {
-
-        width: 13mm !important;
-
-        min-width: 13mm !important;
-
-        max-width: 13mm !important;
-
-        text-align: center !important;
-
-        white-space: nowrap !important;
+        display: block !important;
     }
 
+    body.print-checklist
+    .checklist-a4-page {
 
-    /* ========================================================
-       ROW LABEL
-       ======================================================== */
+        page-break-after: always !important;
 
-    .checklist-a4-page
-    table td
-    .text-\[11px\] {
-
-        font-size: 5.5pt !important;
-
-        line-height: 1 !important;
-
-        margin-bottom: 0.4mm !important;
-    }
-
-
-    /* ========================================================
-       EMPTY STATE
-       ======================================================== */
-
-    .checklist-a4-page
-    .text-slate-400 {
-
-        font-size: 6.5pt !important;
-
-        line-height: 1.1 !important;
-    }
-
-
-    /* ========================================================
-       FOOTER
-       ======================================================== */
-
-    .checklist-a4-page
-    .border-t-\[3px\].border-slate-400 {
-
-        border-top-width: 1px !important;
-
-        flex-shrink: 0 !important;
-    }
-
-    .checklist-a4-page
-    .border-t-\[3px\].border-slate-400.flex {
-
-        padding: 1mm !important;
-
-        gap: 3mm !important;
-
-        min-height: 0 !important;
-
-        flex-shrink: 0 !important;
-
-        margin-top: 1mm !important;
-
-        font-size: 5.5pt !important;
-
-        line-height: 1 !important;
-    }
-
-
-    /* ========================================================
-       BARCODE
-       ======================================================== */
-
-    .checklist-a4-page
-    .w-24.h-24 {
-
-        width: 24mm !important;
-        height: 15mm !important;
-
-        min-width: 24mm !important;
-        min-height: 15mm !important;
-
-        max-width: 24mm !important;
-        max-height: 15mm !important;
-
-        flex-shrink: 0 !important;
-    }
-
-    .checklist-a4-page
-    .w-24.h-24 svg {
-
-        width: 22mm !important;
-        max-width: 22mm !important;
-
-        height: 12mm !important;
-        max-height: 12mm !important;
-    }
-
-
-    /* ========================================================
-       CHECKLIST - QR TRACEABILITY
-       ======================================================== */
-
-    .checklist-qr-box {
-
-        width: 24mm !important;
-
-        height: 24mm !important;
-
-        min-width: 24mm !important;
-
-        min-height: 24mm !important;
-
-        max-width: 24mm !important;
-
-        max-height: 24mm !important;
-
-        background: #ffffff !important;
-
-        display: flex !important;
-
-        align-items: center !important;
-
-        justify-content: center !important;
-
-        flex-shrink: 0 !important;
-
-        overflow: hidden !important;
-    }
-
-    .checklist-qr-box svg {
-
-        width: 22mm !important;
-
-        height: 22mm !important;
-
-        max-width: 22mm !important;
-
-        max-height: 22mm !important;
-    }
-
-
-    /* ========================================================
-       CHECKLIST - PAGE NUMBER
-       ======================================================== */
-
-    .checklist-page-number {
-
-        width: 100% !important;
-
-        text-align: center !important;
-
-        font-size: 6.5pt !important;
-
-        font-weight: 700 !important;
-
-        color: #64748b !important;
-
-        margin-top: 1.5mm !important;
-
-        line-height: 1 !important;
-
-        letter-spacing: 0.3px !important;
-
-        flex-shrink: 0 !important;
-    }
-
-
-    /* ========================================================
-       TRACEABILITY
-       ======================================================== */
-
-    .checklist-a4-page
-    .font-black.text-lg {
-
-        font-size: 7pt !important;
-
-        line-height: 1.1 !important;
-    }
-
-    .checklist-a4-page
-    .text-sm {
-
-        font-size: 6.5pt !important;
-
-        line-height: 1.1 !important;
-    }
-
-
-    /* ========================================================
-       DATE / TIME
-       ======================================================== */
-
-    .checklist-a4-page
-    .border-l-\[3px\] {
-
-        border-left-width: 1px !important;
-
-        padding-left: 3mm !important;
-    }
-
-    .checklist-a4-page
-    .border-l-\[3px\].pl-10 {
-
-        padding-left: 3mm !important;
-    }
-
-    .checklist-a4-page
-    .gap-10 {
-        gap: 4mm !important;
-    }
-
-    .checklist-a4-page
-    .gap-4 {
-        gap: 2mm !important;
-    }
-
-    .checklist-a4-page
-    .w-10.h-10 {
-
-        width: 6mm !important;
-        height: 6mm !important;
-    }
-
-    .checklist-a4-page
-    .text-xl.text-slate-800 {
-
-        font-size: 8pt !important;
-
-        line-height: 1.1 !important;
-    }
-
-
-    /* ========================================================
-       TRACKING
-       ======================================================== */
-
-    .checklist-a4-page
-    .tracking-wider {
-
-        letter-spacing: 0.3px !important;
-    }
-
-
-    /* ========================================================
-       CHECKLIST SAFETY
-       ======================================================== */
-
-    .checklist-a4-page,
-    .checklist-a4-page > *,
-    .checklist-a4-page .bg-white {
+        break-after: page !important;
 
         page-break-inside: avoid !important;
 
         break-inside: avoid !important;
     }
 
-    .checklist-a4-page
-    table,
-    .checklist-a4-page
-    svg,
-    .checklist-a4-page
-    canvas,
-    .checklist-a4-page
-    img {
+    body.print-checklist
+    .checklist-a4-page:last-child {
 
-        max-width: 100% !important;
+        page-break-after: auto !important;
+
+        break-after: auto !important;
     }
+
+    body.print-checklist
+    .checklist-table {
+
+        page-break-inside: avoid !important;
+
+        break-inside: avoid !important;
+    }
+
+    body.print-checklist
+    .checklist-data-row {
+
+        page-break-inside: avoid !important;
+
+        break-inside: avoid !important;
+    }
+
+    body.print-checklist
+    .checklist-table thead {
+
+        display: table-header-group !important;
+    }
+
+    html,
+    body {
+
+        margin: 0 !important;
+
+        padding: 0 !important;
+
+        background: #ffffff !important;
+    }
+}
 
 
     /* ========================================================

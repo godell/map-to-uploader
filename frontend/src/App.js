@@ -692,27 +692,38 @@ export default function App() {
   };
 
   const preparePrintOrientation = (orientation) => {
-    const oldStyle = document.getElementById('dynamic-print-page');
 
-    if (oldStyle) {
-      oldStyle.remove();
-    }
+  const oldStyle =
+    document.getElementById("dynamic-print-page");
 
-    const style = document.createElement('style');
+  if (oldStyle) {
+    oldStyle.remove();
+  }
 
-    style.id = 'dynamic-print-page';
+  const style = document.createElement("style");
 
-    style.textContent = `
-      @media print {
-        @page {
-          size: A4 ${orientation};
-          margin: 10mm;
-        }
+  style.id = "dynamic-print-page";
+
+  style.textContent = `
+    @media print {
+
+      @page {
+        size: A4 ${orientation};
+        margin: 8mm;
       }
-    `;
 
-    document.head.appendChild(style);
-  };
+      html,
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+      }
+
+    }
+  `;
+
+  document.head.appendChild(style);
+};
 
   const handleRequestPrint = async () => {
     if (!selectedBatch) return;
@@ -765,38 +776,53 @@ export default function App() {
   };
 
   const handlePrintChecklist = () => {
-    if (!selectedBatch) return;
 
-    setPrintType('checklist');
+  if (!selectedBatch) return;
 
-    document.body.classList.remove('print-ptf');
-    document.body.classList.add('print-checklist');
+  setPrintType("checklist");
 
-    setTimeout(async () => {
-      try {
-        preparePrintOrientation('portrait');
+  document.body.classList.remove("print-ptf");
+  document.body.classList.add("print-checklist");
 
-        await new Promise(resolve => {
+  setTimeout(async () => {
+
+    try {
+
+      preparePrintOrientation("portrait");
+
+      await new Promise(resolve => {
+
+        requestAnimationFrame(() => {
+
           requestAnimationFrame(() => {
-            requestAnimationFrame(resolve);
+            resolve();
           });
+
         });
 
-        window.print();
+      });
 
-      } finally {
-        document.body.classList.remove('print-checklist');
+      window.print();
 
-        const printStyle = document.getElementById(
-          'dynamic-print-page'
+    } finally {
+
+      document.body.classList.remove(
+        "print-checklist"
+      );
+
+      const printStyle =
+        document.getElementById(
+          "dynamic-print-page"
         );
 
-        if (printStyle) {
-          printStyle.remove();
-        }
+      if (printStyle) {
+        printStyle.remove();
       }
-    }, 300);
-  };
+
+    }
+
+  }, 300);
+};
 
   const proceedWithPrint = async () => {
     if (!selectedBatch) return;
@@ -2005,754 +2031,534 @@ export default function App() {
       )}
 
       {selectedBatch && printType === 'checklist' && (
-        <div className="print-only" aria-hidden="true">
-          {selectedBatch.codedTOs.map((item, pageIndex) => {
-             // ====================================================================
-             // 1. LOGIC GROUPING & SUMMING TOTAL QTY (DENGAN SAFE FALLBACK)
-             // ====================================================================
-             
-             const itemsForThisTO = processedData.filter(
-    detail => detail["Transfer Order Number"] === item.to
-);
+  <div className="print-only checklist-print-root" aria-hidden="true">
 
-let totalQty = 0;
-const groupedByRow = {};
+    {selectedBatch.codedTOs.map((item) => {
 
-/* ========================================================
-   TOTAL TO LINE NUMBER
-   Hitung jumlah TO Line unik dalam 1 TO
-   ======================================================== */
-const totalToLine = new Set(
-    itemsForThisTO
-        .map(detail =>
+      // ============================================================
+      // DATA TO
+      // ============================================================
+
+      const itemsForThisTO = processedData.filter(
+        detail => detail["Transfer Order Number"] === item.to
+      );
+
+      let totalQty = 0;
+      const groupedByRow = {};
+
+      // ============================================================
+      // TOTAL TO LINE
+      // ============================================================
+
+      const totalToLine = new Set(
+        itemsForThisTO
+          .map(detail =>
             detail["Transfer order item"] ??
             detail["transfer order item"] ??
             detail.transfer_order_item ??
             detail.to_line ??
             ""
-        )
-        .map(v => String(v).trim())
-        .filter(Boolean)
-).size;
-             itemsForThisTO.forEach(detail => {
-               // Antisipasi perbedaan huruf besar/kecil dari database Supabase
-               const rowName = detail.Row || detail.row || '-';
-               const itemQty = Number(
-                 detail["Source target qty"] || 
-                 detail["source target qty"] || 
-                 detail.source_target_qty || 
-                 detail.qty || 
-                 0
-               ); 
-               
-               if (!groupedByRow[rowName]) {
-                 groupedByRow[rowName] = [];
-               }
-               groupedByRow[rowName].push(detail);
-               
-               totalQty += itemQty; 
-             });
+          )
+          .map(v => String(v).trim())
+          .filter(Boolean)
+      ).size;
 
-             const sortedRows = Object.keys(groupedByRow).sort((a, b) => Number(a) - Number(b));
-             const checklistItems = sortedRows.flatMap(
-    row => groupedByRow[row]
-);
+      // ============================================================
+      // GROUP BY ROW + TOTAL QTY
+      // ============================================================
 
-const CHECKLIST_ITEMS_PER_PAGE = 20;
+      itemsForThisTO.forEach(detail => {
 
-const checklistPages = [];
+        const rowName =
+          detail.Row ||
+          detail.row ||
+          "-";
 
-for (
-    let i = 0;
-    i < checklistItems.length;
-    i += CHECKLIST_ITEMS_PER_PAGE
-) {
-    checklistPages.push(
-        checklistItems.slice(
+        const itemQty = Number(
+          detail["Source target qty"] ||
+          detail["source target qty"] ||
+          detail.source_target_qty ||
+          detail.qty ||
+          0
+        );
+
+        if (!groupedByRow[rowName]) {
+          groupedByRow[rowName] = [];
+        }
+
+        groupedByRow[rowName].push(detail);
+
+        totalQty += itemQty;
+      });
+
+      // ============================================================
+      // SORT ROW
+      // ============================================================
+
+      const sortedRows = Object.keys(groupedByRow).sort(
+        (a, b) => {
+          const na = Number(a);
+          const nb = Number(b);
+
+          if (Number.isNaN(na) && Number.isNaN(nb)) {
+            return String(a).localeCompare(String(b));
+          }
+
+          if (Number.isNaN(na)) return 1;
+          if (Number.isNaN(nb)) return -1;
+
+          return na - nb;
+        }
+      );
+
+      // ============================================================
+      // FLATTEN ITEM
+      // ============================================================
+
+      const checklistItems = sortedRows.flatMap(
+        row => groupedByRow[row]
+      );
+
+      // ============================================================
+      // PAGING
+      //
+      // 20 ITEM / PAGE
+      //
+      // 50 ARTICLE:
+      // Page 1 = 20
+      // Page 2 = 20
+      // Page 3 = 10
+      // ============================================================
+
+      const CHECKLIST_ITEMS_PER_PAGE = 20;
+
+      const checklistPages = [];
+
+      for (
+        let i = 0;
+        i < checklistItems.length;
+        i += CHECKLIST_ITEMS_PER_PAGE
+      ) {
+        checklistPages.push(
+          checklistItems.slice(
             i,
             i + CHECKLIST_ITEMS_PER_PAGE
-        )
-    );
-}
+          )
+        );
+      }
 
-const totalChecklistPages = Math.max(
-    1,
-    checklistPages.length
-);
-             const today = new Date();
-             const dateStr = today.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
-             const timeStr = today.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      const totalChecklistPages = Math.max(
+        1,
+        checklistPages.length
+      );
 
-             return (
-    <>
-        {checklistPages.map((pageItems, checklistPageIndex) => {
+      // ============================================================
+      // DATE / TIME
+      // ============================================================
 
-            const pageGroupedByRow = {};
+      const today = new Date();
 
-            pageItems.forEach(detail => {
+      const dateStr = today.toLocaleDateString(
+        "id-ID",
+        {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric"
+        }
+      );
+
+      const timeStr = today.toLocaleTimeString(
+        "id-ID",
+        {
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      );
+
+      // ============================================================
+      // RENDER ALL PAGES FOR THIS TO
+      // ============================================================
+
+      return (
+        <React.Fragment key={`${item.to}-checklist`}>
+
+          {checklistPages.map(
+            (pageItems, checklistPageIndex) => {
+
+              // ====================================================
+              // GROUP ITEMS ON CURRENT PAGE
+              // ====================================================
+
+              const pageGroupedByRow = {};
+
+              pageItems.forEach(detail => {
+
                 const rowName =
-                    detail.Row ||
-                    detail.row ||
-                    "-";
+                  detail.Row ||
+                  detail.row ||
+                  "-";
 
                 if (!pageGroupedByRow[rowName]) {
-                    pageGroupedByRow[rowName] = [];
+                  pageGroupedByRow[rowName] = [];
                 }
 
                 pageGroupedByRow[rowName].push(detail);
-            });
+              });
 
-            const pageSortedRows = Object.keys(
-                pageGroupedByRow
-            ).sort((a, b) => Number(a) - Number(b));
+              const pageSortedRows =
+                Object.keys(pageGroupedByRow).sort(
+                  (a, b) => {
+                    const na = Number(a);
+                    const nb = Number(b);
 
-            return (
+                    if (Number.isNaN(na) && Number.isNaN(nb)) {
+                      return String(a).localeCompare(String(b));
+                    }
+
+                    if (Number.isNaN(na)) return 1;
+                    if (Number.isNaN(nb)) return -1;
+
+                    return na - nb;
+                  }
+                );
+
+              // ====================================================
+              // PAGE
+              // ====================================================
+
+              return (
                 <div
-                    key={`${item.to}-page-${checklistPageIndex + 1}`}
-                    className="checklist-a4-page flex flex-col"
-                    style={{
-                        pageBreakAfter:
-                            checklistPageIndex <
-                            totalChecklistPages - 1
-                                ? "always"
-                                : "always",
-
-                        breakAfter:
-                            checklistPageIndex <
-                            totalChecklistPages - 1
-                                ? "page"
-                                : "page",
-
-                        minHeight: "100vh",
-
-                        backgroundColor: "#ffffff",
-
-                        padding: "40px"
-                    }}
+                  key={`${item.to}-page-${checklistPageIndex + 1}`}
+                  className="checklist-a4-page"
                 >
 
-                    {/* ====================================================
-                        HEADER
-                        ==================================================== */}
+                  {/* =================================================
+                      HEADER
+                      ================================================= */}
 
-                    <div className="
-                        flex
-                        border-b-[2px]
-                        border-slate-300
-                        pb-2
-                        mb-3
-                    ">
+                  <div className="checklist-header">
 
-                        {/* LEFT */}
-                        <div className="
-                            w-1/2
-                            flex
-                            items-center
-                            gap-4
-                            pr-4
-                        ">
+                    {/* LEFT */}
+                    <div className="checklist-header-left">
 
-                            <div className="
-                                bg-[#1e3a8a]
-                                p-3
-                                rounded-xl
-                                shadow-sm
-                                border-2
-                                border-blue-900
-                            ">
-                                <Package className="w-8 h-8 text-white" />
-                            </div>
+                      <div className="checklist-logo">
+                        <Package className="w-6 h-6 text-white" />
+                      </div>
 
-                            <div className="flex flex-col">
+                      <div className="checklist-header-info">
 
-                                <div className="
-                                    text-[#1e3a8a]
-                                    font-bold
-                                    text-sm
-                                    tracking-widest
-                                    mb-1
-                                ">
-                                    BATCH PICKING NUMBER
-                                </div>
-
-                                <div className="
-                                    text-[#1e3a8a]
-                                    font-black
-                                    text-[25px]
-                                    leading-none
-                                ">
-                                    BATCH {selectedBatch.batchNumber}
-                                </div>
-
-                                <div className="checklist-ptf-number">
-                                    {formatBatchCode(
-                                        selectedBatch.batchNumber,
-                                        selectedBatch.randomSuffix
-                                    )}
-                                </div>
-
-                                {/* PAGE NUMBER */}
-                                <div className="
-                                    checklist-page-of
-                                    mt-1
-                                ">
-                                    Page {checklistPageIndex + 1} of {totalChecklistPages}
-                                </div>
-
-                            </div>
-
+                        <div className="checklist-header-title">
+                          BATCH PICKING NUMBER
                         </div>
 
+                        <div className="checklist-batch-number">
+                          BATCH {selectedBatch.batchNumber}
+                        </div>
 
-                        {/* RIGHT */}
-                        <div className="
-                            w-1/2
-                            pl-4
-                        ">
+                        <div className="checklist-ptf-number">
+                          {formatBatchCode(
+                            selectedBatch.batchNumber,
+                            selectedBatch.randomSuffix
+                          )}
+                        </div>
 
-                            <div className="
-                                flex
-                                flex-col
-                                border
-                                border-[#1e3a8a]
-                                h-full
-                                rounded-sm
-                                overflow-hidden
-                            ">
+                        {/* PAGE OF */}
+                        <div className="checklist-page-of">
+                          Page {checklistPageIndex + 1} of {totalChecklistPages}
+                        </div>
 
-                                <div className="
-                                    bg-[#1e3a8a]
-                                    text-white
-                                    text-center
-                                    py-1
-                                    font-bold
-                                    text-xs
-                                    tracking-widest
-                                ">
-                                    KODE TO (STATION)
-                                </div>
+                      </div>
 
-                                <div className="
-                                    text-center
-                                    flex-grow
-                                    flex
-                                    items-center
-                                    justify-center
-                                    bg-white
-                                    py-2
-                                ">
+                    </div>
 
-                                    <div className="
-                                        text-[#1e3a8a]
-                                        font-black
-                                        text-[60px]
-                                        leading-none
-                                        tracking-tight
-                                    ">
-                                        {item.code}
+                    {/* RIGHT */}
+                    <div className="checklist-header-right">
+
+                      <div className="checklist-station-box">
+
+                        <div className="checklist-station-title">
+                          KODE TO (STATION)
+                        </div>
+
+                        <div className="checklist-station-code">
+                          {item.code}
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+
+                  {/* =================================================
+                      TO SUMMARY
+                      ================================================= */}
+
+                  <div className="checklist-summary">
+
+                    {/* TO */}
+                    <div className="checklist-summary-to">
+
+                      <div className="checklist-summary-label">
+                        TO / ORDER
+                      </div>
+
+                      <div className="checklist-summary-to-number">
+                        {item.to}
+                      </div>
+
+                      <div className="checklist-to-barcode">
+                        <Barcode
+                          value={String(item.to)}
+                          width={1.2}
+                          height={22}
+                          displayValue={false}
+                          margin={0}
+                        />
+                      </div>
+
+                    </div>
+
+
+                    {/* TOTAL TO LINE */}
+                    <div className="checklist-summary-metric">
+
+                      <div className="checklist-summary-metric-label">
+                        TOTAL TO LINE
+                      </div>
+
+                      <div className="checklist-summary-metric-value">
+                        {totalToLine.toLocaleString("id-ID")}
+                      </div>
+
+                    </div>
+
+
+                    {/* TOTAL QTY */}
+                    <div className="checklist-summary-metric checklist-summary-metric-last">
+
+                      <div className="checklist-summary-metric-label">
+                        QTY TO
+                      </div>
+
+                      <div className="checklist-summary-metric-value">
+                        {totalQty.toLocaleString("id-ID")}
+                      </div>
+
+                    </div>
+
+                  </div>
+
+
+                  {/* =================================================
+                      CHECKLIST TITLE
+                      ================================================= */}
+
+                  <div className="checklist-section-title">
+                    CHECKLIST ROW – CENTANG JIKA SUDAH SELESAI
+                  </div>
+
+
+                  {/* =================================================
+                      TABLE
+                      ================================================= */}
+
+                  <div className="checklist-table-wrap">
+
+                    <table className="checklist-table">
+
+                      <thead>
+
+                        <tr>
+
+                          <th className="checklist-col-row">
+                            ROW
+                          </th>
+
+                          <th className="checklist-col-toline">
+                            TO LINE
+                          </th>
+
+                          <th className="checklist-col-article">
+                            ARTICLE
+                          </th>
+
+                          <th className="checklist-col-ean">
+                            EAN
+                          </th>
+
+                          <th className="checklist-col-qty">
+                            QTY
+                          </th>
+
+                        </tr>
+
+                      </thead>
+
+
+                      <tbody>
+
+                        {pageSortedRows.map(rowName => {
+
+                          const rowItems =
+                            pageGroupedByRow[rowName];
+
+                          return rowItems.map(
+                            (detail, idx) => {
+
+                              const articleDisplay =
+                                detail.Article ||
+                                detail.article ||
+                                detail.Material ||
+                                detail.material ||
+                                "-";
+
+                              const eanDisplay =
+                                detail.EAN ||
+                                detail.ean ||
+                                detail["EAN Code"] ||
+                                detail.ean_code ||
+                                "-";
+
+                              const qtyDisplay =
+                                Number(
+                                  detail["Source target qty"] ||
+                                  detail["source target qty"] ||
+                                  detail.source_target_qty ||
+                                  detail.qty ||
+                                  0
+                                ) || 0;
+
+                              const toLineDisplay =
+                                detail["Transfer order item"] ??
+                                detail["transfer order item"] ??
+                                detail.transfer_order_item ??
+                                detail.to_line ??
+                                "-";
+
+                              return (
+                                <tr
+                                  key={`${item.to}-${checklistPageIndex}-${rowName}-${idx}`}
+                                  className="checklist-data-row"
+                                >
+
+                                  {/* ROW */}
+                                  {idx === 0 && (
+                                    <td
+                                      rowSpan={rowItems.length}
+                                      className="checklist-row-cell checklist-col-row"
+                                    >
+
+                                      <div className="checklist-row-label">
+                                        ROW {rowName}
+                                      </div>
+
+                                      <div className="checklist-box" />
+
+                                    </td>
+                                  )}
+
+
+                                  {/* TO LINE */}
+                                  <td className="checklist-toline-cell checklist-col-toline">
+                                    {toLineDisplay}
+                                  </td>
+
+
+                                  {/* ARTICLE */}
+                                  <td className="checklist-article-cell checklist-col-article">
+                                    {articleDisplay}
+                                  </td>
+
+
+                                  {/* EAN */}
+                                  <td className="checklist-ean-cell checklist-col-ean">
+
+                                    <div className="checklist-ean-value">
+                                      {eanDisplay}
                                     </div>
 
-                                </div>
+                                    {eanDisplay &&
+                                      eanDisplay !== "-" && (
+                                        <div className="checklist-ean-barcode">
 
-                            </div>
+                                          <Barcode
+                                            value={String(eanDisplay)}
+                                            width={0.55}
+                                            height={8}
+                                            displayValue={false}
+                                            margin={0}
+                                          />
 
-                        </div>
+                                        </div>
+                                      )}
 
-                    </div>
-
-
-                    {/* ====================================================
-                        TO / ORDER + TOTAL TO LINE + QTY
-                        ==================================================== */}
-
-                    <div className="
-                        flex
-                        border-b-[2px]
-                        border-slate-300
-                        pb-2
-                        mb-2
-                        mt-1
-                    ">
-
-                        <div className="
-                            w-3/5
-                            flex
-                            flex-col
-                            justify-center
-                            border-r-2
-                            border-slate-200
-                            pr-4
-                        ">
-
-                            <div className="
-                                text-[#16a34a]
-                                font-bold
-                                text-xs
-                                mb-1
-                                tracking-wide
-                            ">
-                                TO / ORDER
-                            </div>
-
-                            <div className="
-                                text-[#16a34a]
-                                font-black
-                                text-[25px]
-                                leading-none
-                                mb-1
-                            ">
-                                {item.to}
-                            </div>
-
-                            <div className="mt-1">
-
-                                <Barcode
-                                    value={String(item.to)}
-                                    width={1.5}
-                                    height={30}
-                                    displayValue={false}
-                                    margin={0}
-                                />
-
-                            </div>
-
-                        </div>
+                                  </td>
 
 
-                        <div className="
-                            w-1/5
-                            flex
-                            flex-col
-                            items-center
-                            justify-center
-                            px-2
-                            border-r-2
-                            border-slate-200
-                        ">
-
-                            <div className="
-                                text-slate-800
-                                font-bold
-                                text-[9px]
-                                mb-1
-                                tracking-wider
-                                text-center
-                            ">
-                                TOTAL TO LINE
-                            </div>
-
-                            <div className="
-                                text-black
-                                font-black
-                                text-[28px]
-                                leading-none
-                            ">
-                                {totalToLine.toLocaleString("id-ID")}
-                            </div>
-
-                        </div>
-
-
-                        <div className="
-                            w-1/5
-                            flex
-                            flex-col
-                            items-center
-                            justify-center
-                            pl-2
-                        ">
-
-                            <div className="
-                                text-slate-800
-                                font-bold
-                                text-[9px]
-                                mb-1
-                                tracking-wider
-                                text-center
-                            ">
-                                QTY TO
-                            </div>
-
-                            <div className="
-                                text-black
-                                font-black
-                                text-[28px]
-                                leading-none
-                            ">
-                                {totalQty.toLocaleString("id-ID")}
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    {/* ====================================================
-                        CHECKLIST TITLE
-                        ==================================================== */}
-
-                    <div className="
-                        bg-[#1e3a8a]
-                        text-white
-                        text-center
-                        py-1.5
-                        font-bold
-                        text-xs
-                        tracking-wider
-                        mb-2
-                        flex-shrink-0
-                    ">
-                        CHECKLIST ROW – CENTANG JIKA SUDAH SELESAI
-                    </div>
-
-
-                    {/* ====================================================
-                        TABLE
-                        Setiap page punya table sendiri
-                        ==================================================== */}
-
-                    <div className="
-    w-full
-    flex-shrink-0
-">
-
-                        <table className="
-                            w-full
-                            border-collapse
-                            border-[2px]
-                            border-slate-800
-                        ">
-
-                            <thead>
-                                <tr>
-
-                                    <th className="
-                                        border-[2px]
-                                        border-slate-800
-                                        py-1
-                                        text-center
-                                        font-semibold
-                                        text-sm
-                                        checklist-col-row
-                                    ">
-                                        ROW
-                                    </th>
-
-                                    <th className="
-                                        border-[2px]
-                                        border-slate-800
-                                        py-1
-                                        text-center
-                                        font-semibold
-                                        text-sm
-                                        checklist-col-toline
-                                    ">
-                                        TO LINE
-                                    </th>
-
-                                    <th className="
-                                        border-[2px]
-                                        border-slate-800
-                                        py-1
-                                        text-center
-                                        font-semibold
-                                        text-sm
-                                        checklist-col-article
-                                    ">
-                                        ARTICLE
-                                    </th>
-
-                                    <th className="
-                                        border-[2px]
-                                        border-slate-800
-                                        py-1
-                                        text-center
-                                        font-semibold
-                                        text-sm
-                                        checklist-col-ean
-                                    ">
-                                        EAN
-                                    </th>
-
-                                    <th className="
-                                        border-[2px]
-                                        border-slate-800
-                                        py-1
-                                        text-center
-                                        font-semibold
-                                        text-sm
-                                        checklist-col-qty
-                                    ">
-                                        QTY
-                                    </th>
+                                  {/* QTY */}
+                                  <td className="checklist-qty-cell checklist-col-qty">
+                                    {qtyDisplay}
+                                  </td>
 
                                 </tr>
-                            </thead>
+                              );
+                            }
+                          );
+
+                        })}
+
+                      </tbody>
+
+                    </table>
+
+                  </div>
 
 
-                            <tbody>
+                  {/* =================================================
+                      FOOTER
+                      ================================================= */}
 
-                                {pageSortedRows.map(rowName => {
+                  <div className="checklist-footer">
 
-                                    const rowItems =
-                                        pageGroupedByRow[rowName];
+                    <div className="checklist-footer-date">
 
-                                    return rowItems.map(
-                                        (detail, idx) => {
+                      <span className="checklist-footer-label">
+                        TANGGAL
+                      </span>
 
-                                            const articleDisplay =
-                                                detail.Article ||
-                                                detail.article ||
-                                                detail.Material ||
-                                                detail.material ||
-                                                "-";
-
-                                            const eanDisplay =
-                                                detail.EAN ||
-                                                detail.ean ||
-                                                detail["EAN Code"] ||
-                                                detail.ean_code ||
-                                                "-";
-
-                                            const qtyDisplay =
-                                                Number(
-                                                    detail["Source target qty"] ||
-                                                    detail["source target qty"] ||
-                                                    detail.source_target_qty ||
-                                                    detail.qty
-                                                ) || 0;
-
-                                            return (
-                                                <tr
-                                                    key={`${item.to}-${checklistPageIndex}-${rowName}-${idx}`}
-                                                    style={{
-                                                        breakInside: "avoid",
-                                                        pageBreakInside: "avoid"
-                                                    }}
-                                                >
-
-                                                    {/* ROW */}
-                                                    {idx === 0 && (
-                                                        <td
-                                                            rowSpan={rowItems.length}
-                                                            className="
-                                                                border-[2px]
-                                                                border-slate-800
-                                                                text-center
-                                                                align-middle
-                                                                p-1
-                                                                checklist-col-row
-                                                            "
-                                                        >
-
-                                                            <div className="
-                                                                text-[#1e3a8a]
-                                                                font-bold
-                                                                text-[11px]
-                                                                mb-1
-                                                            ">
-                                                                ROW {rowName}
-                                                            </div>
-
-                                                            <div className="
-                                                                w-5
-                                                                h-5
-                                                                border-[2px]
-                                                                border-slate-800
-                                                                rounded
-                                                                mx-auto
-                                                                bg-white
-                                                            " />
-
-                                                        </td>
-                                                    )}
-
-
-                                                    {/* TO LINE */}
-                                                    <td className="
-                                                        border
-                                                        border-slate-600
-                                                        px-1
-                                                        py-1
-                                                        text-center
-                                                        font-bold
-                                                        text-slate-800
-                                                        checklist-col-toline
-                                                    ">
-                                                        {
-                                                            detail["Transfer order item"] ??
-                                                            detail["transfer order item"] ??
-                                                            detail.transfer_order_item ??
-                                                            detail.to_line ??
-                                                            "-"
-                                                        }
-                                                    </td>
-
-
-                                                    {/* ARTICLE */}
-                                                    <td className="
-                                                        border
-                                                        border-slate-600
-                                                        px-2
-                                                        py-1
-                                                        text-sm
-                                                        font-semibold
-                                                        text-slate-700
-                                                        checklist-col-article
-                                                    ">
-                                                        {articleDisplay}
-                                                    </td>
-
-
-                                                    {/* EAN */}
-                                                    <td className="
-                                                        border
-                                                        border-slate-600
-                                                        px-1
-                                                        py-1
-                                                        text-center
-                                                        checklist-col-ean
-                                                    ">
-
-                                                        <div className="checklist-ean-value">
-                                                            {eanDisplay}
-                                                        </div>
-
-                                                        {eanDisplay &&
-                                                        eanDisplay !== "-" && (
-                                                            <div className="checklist-ean-barcode">
-
-                                                                <Barcode
-                                                                    value={String(eanDisplay)}
-                                                                    width={0.65}
-                                                                    height={10}
-                                                                    displayValue={false}
-                                                                    margin={0}
-                                                                />
-
-                                                            </div>
-                                                        )}
-
-                                                    </td>
-
-
-                                                    {/* QTY */}
-                                                    <td className="
-                                                        border
-                                                        border-slate-600
-                                                        px-1
-                                                        py-1
-                                                        text-sm
-                                                        font-bold
-                                                        text-center
-                                                        text-slate-800
-                                                        checklist-col-qty
-                                                    ">
-                                                        {qtyDisplay}
-                                                    </td>
-
-                                                </tr>
-                                            );
-
-                                        }
-                                    );
-
-                                })}
-
-                            </tbody>
-
-                        </table>
+                      <span className="checklist-footer-value">
+                        {dateStr}
+                      </span>
 
                     </div>
 
 
-                    {/* ====================================================
-                        FOOTER
-                        ==================================================== */}
+                    <div className="checklist-footer-time">
 
-                    <div className="
-                        mt-2
-                        border-t-[2px]
-                        border-slate-300
-                        pt-2
-                        flex
-                        items-center
-                        justify-end
-                        gap-6
-                        flex-shrink-0
-                    ">
+                      <span className="checklist-footer-label">
+                        WAKTU
+                      </span>
 
-                        <div className="flex items-center gap-2">
-
-                            <Calendar className="w-4 h-4 text-[#1e3a8a]" />
-
-                            <div className="flex flex-col">
-
-                                <div className="
-                                    text-[9px]
-                                    text-slate-500
-                                    font-bold
-                                    tracking-wider
-                                    leading-none
-                                ">
-                                    TANGGAL
-                                </div>
-
-                                <div className="
-                                    font-black
-                                    text-xs
-                                    text-slate-800
-                                    leading-none
-                                    mt-1
-                                ">
-                                    {dateStr}
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        <div className="flex items-center gap-2">
-
-                            <Clock className="w-4 h-4 text-[#1e3a8a]" />
-
-                            <div className="flex flex-col">
-
-                                <div className="
-                                    text-[9px]
-                                    text-slate-500
-                                    font-bold
-                                    tracking-wider
-                                    leading-none
-                                ">
-                                    WAKTU
-                                </div>
-
-                                <div className="
-                                    font-black
-                                    text-xs
-                                    text-slate-800
-                                    leading-none
-                                    mt-1
-                                ">
-                                    {timeStr}
-                                </div>
-
-                            </div>
-
-                        </div>
+                      <span className="checklist-footer-value">
+                        {timeStr}
+                      </span>
 
                     </div>
+
+                  </div>
 
                 </div>
-            );
-        })}
-    </>
-);
+              );
+            }
+          )}
 
-        })}
-    </div>
+        </React.Fragment>
+      );
+    })}
+
+  </div>
 )}
 
       {uploadStatus.active && (
