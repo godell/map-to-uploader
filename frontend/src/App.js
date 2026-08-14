@@ -1944,25 +1944,30 @@ export default function App() {
 
                   <table className="pt-table">
   <thead>
-    <tr>
-      <th style={{ width: "36px" }}>No. Urut</th>
-      <th style={{ width: "78px" }}>Source Bin</th>
-      <th style={{ width: "150px" }}>Article</th>
-      <th>Article Description</th>
-      <th style={{ width: "42px" }}>Qty</th>
-      <th style={{ width: "37px" }}>UoM</th>
-      <th style={{ width: "48px" }}>Kode</th>
-      <th style={{ width: "47px" }}>TO Line</th>
-      <th style={{ width: "78px" }}>TO Number</th>
-      <th style={{ width: "78px" }}>Dest. Bin</th>
-    </tr>
-  </thead>
+  <tr>
+    <th style={{ width: "36px" }}>No. Urut</th>
+    <th style={{ width: "78px" }}>Source Bin</th>
+    <th style={{ width: "145px" }}>Article</th>
+    <th style={{ width: "88px" }}>EAN</th>
+    <th>Article Description</th>
+    <th style={{ width: "42px" }}>Qty</th>
+    <th style={{ width: "37px" }}>UoM</th>
+    <th style={{ width: "48px" }}>Kode</th>
+    <th style={{ width: "47px" }}>TO Line</th>
+    <th style={{ width: "78px" }}>TO Number</th>
+    <th style={{ width: "78px" }}>Dest. Bin</th>
+  </tr>
+</thead>
   <tbody>
     {page.items.map((it, idx) => (
       <tr key={idx}>
         <td>{String(idx + 1).padStart(4, "0")}</td>
         <td className="pt-nowrap">{it["Source Storage Bin"] || ""}</td>
         <td className="pt-article">{it["Article"] || ""}</td>
+          {/* EAN */}
+  <td className="pt-ean">
+    {it["EAN"] || ""}
+  </td>
         <td className="pt-desc">{it["Article Description"] || ""}</td>
         <td>{it["Source target qty"] || ""}</td>
         <td>EA</td>
@@ -2151,29 +2156,67 @@ const totalToLine = new Set(
                      <table className="w-full border-collapse border-[2px] border-slate-800">
                        <thead>
     <tr>
-        <th
-            className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm checklist-col-row"
-        >
+
+        <th className="
+            border-[2px]
+            border-slate-800
+            py-1
+            text-center
+            font-semibold
+            text-sm
+            checklist-col-row
+        ">
             ROW
         </th>
 
-        <th
-            className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm checklist-col-toline"
-        >
+        <th className="
+            border-[2px]
+            border-slate-800
+            py-1
+            text-center
+            font-semibold
+            text-sm
+            checklist-col-toline
+        ">
             TO LINE
         </th>
 
-        <th
-            className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm checklist-col-article"
-        >
+        <th className="
+            border-[2px]
+            border-slate-800
+            py-1
+            text-center
+            font-semibold
+            text-sm
+            checklist-col-article
+        ">
             ARTICLE
         </th>
 
-        <th
-            className="border-[2px] border-slate-800 py-1 text-center font-semibold text-sm checklist-col-qty"
-        >
+        <th className="
+            border-[2px]
+            border-slate-800
+            py-1
+            text-center
+            font-semibold
+            text-sm
+            checklist-col-ean
+        ">
+            EAN
+        </th>
+
+        <th className="
+            border-[2px]
+            border-slate-800
+            py-1
+            text-center
+            font-semibold
+            text-sm
+            checklist-col-qty
+        ">
             QTY
         </th>
+
     </tr>
 </thead>
                        <tbody>
@@ -2181,9 +2224,27 @@ const totalToLine = new Set(
                            const rowItems = groupedByRow[r];
                            return rowItems.map((detail, idx) => {
                              // Variabel aman untuk render data
-                             const articleDisplay = detail.Article || detail.article || detail.Material || detail.material || '-';
-                             const qtyDisplay = Number(detail["Source target qty"] || detail["source target qty"] || detail.source_target_qty || detail.qty) || 0;
+                             const articleDisplay =
+    detail.Article ||
+    detail.article ||
+    detail.Material ||
+    detail.material ||
+    '-';
 
+const eanDisplay =
+    detail.EAN ||
+    detail.ean ||
+    detail["EAN Code"] ||
+    detail.ean_code ||
+    '-';
+
+const qtyDisplay =
+    Number(
+        detail["Source target qty"] ||
+        detail["source target qty"] ||
+        detail.source_target_qty ||
+        detail.qty
+    ) || 0;
                              return (
     <tr key={`${r}-${idx}`}>
 
@@ -2191,19 +2252,47 @@ const totalToLine = new Set(
         {idx === 0 && (
             <td
                 rowSpan={rowItems.length}
-                className="border-[2px] border-slate-800 text-center align-middle p-1 checklist-col-row"
+                className="
+                    border-[2px]
+                    border-slate-800
+                    text-center
+                    align-middle
+                    p-1
+                    checklist-col-row
+                "
             >
-                <div className="text-[#1e3a8a] font-bold text-[11px] mb-1">
+                <div className="
+                    text-[#1e3a8a]
+                    font-bold
+                    text-[11px]
+                    mb-1
+                ">
                     ROW {r}
                 </div>
 
-                <div className="w-5 h-5 border-[2px] border-slate-800 rounded mx-auto bg-white"></div>
+                <div className="
+                    w-5
+                    h-5
+                    border-[2px]
+                    border-slate-800
+                    rounded
+                    mx-auto
+                    bg-white
+                "></div>
             </td>
         )}
 
-
         {/* TO LINE */}
-        <td className="border border-slate-600 px-1 py-1 text-center font-bold text-slate-800 checklist-col-toline">
+        <td className="
+            border
+            border-slate-600
+            px-1
+            py-1
+            text-center
+            font-bold
+            text-slate-800
+            checklist-col-toline
+        ">
             {
                 detail["Transfer order item"] ??
                 detail["transfer order item"] ??
@@ -2213,15 +2302,46 @@ const totalToLine = new Set(
             }
         </td>
 
-
         {/* ARTICLE */}
-        <td className="border border-slate-600 px-2 py-1 text-sm font-semibold text-slate-700 checklist-col-article">
+        <td className="
+            border
+            border-slate-600
+            px-2
+            py-1
+            text-sm
+            font-semibold
+            text-slate-700
+            checklist-col-article
+        ">
             {articleDisplay}
         </td>
 
+        {/* EAN */}
+        <td className="
+            border
+            border-slate-600
+            px-1
+            py-1
+            text-center
+            font-semibold
+            text-slate-700
+            checklist-col-ean
+        ">
+            {eanDisplay}
+        </td>
 
         {/* QTY */}
-        <td className="border border-slate-600 px-1 py-1 text-sm font-bold text-center text-slate-800 checklist-col-qty">
+        <td className="
+            border
+            border-slate-600
+            px-1
+            py-1
+            text-sm
+            font-bold
+            text-center
+            text-slate-800
+            checklist-col-qty
+        ">
             {qtyDisplay}
         </td>
 
@@ -2231,11 +2351,18 @@ const totalToLine = new Set(
                          }) : (
                            <tr>
     <td
-        colSpan={4}
-        className="text-center py-6 text-slate-400 italic font-semibold text-sm"
-    >
-        Tidak ada data picking untuk TO ini
-    </td>
+    colSpan={5}
+    className="
+        text-center
+        py-6
+        text-slate-400
+        italic
+        font-semibold
+        text-sm
+    "
+>
+    Tidak ada data picking untuk TO ini
+</td>
 </tr>
                          )}
                        </tbody>

@@ -64,6 +64,7 @@
         box-sizing: border-box !important;
     }
 
+
     /* ========================================================
        PICK TICKET - FIXED PAGE LAYOUT
        A4 LANDSCAPE PRINTABLE HEIGHT
@@ -142,6 +143,7 @@
         flex-shrink: 0 !important;
     }
 
+
     /* ========================================================
        CHECKLIST
        ======================================================== */
@@ -193,6 +195,7 @@
         break-before: page !important;
     }
 
+
     /* ========================================================
        CHECKLIST - BATCH PICKING NUMBER
        Mirip dengan TO / ORDER
@@ -216,6 +219,7 @@
         flex-shrink: 0 !important;
     }
 
+
     /* ========================================================
        CHECKLIST - STATION / BATCH SEPARATOR
        ======================================================== */
@@ -229,6 +233,7 @@
 
         flex-shrink: 0 !important;
     }
+
 
     /* ========================================================
        BATCH ICON
@@ -329,6 +334,7 @@
         box-sizing: border-box !important;
     }
 
+
     /* ========================================================
        HEADER
        ======================================================== */
@@ -350,6 +356,7 @@
         margin-bottom: 1mm !important;
     }
 
+
     /* ========================================================
        CHECKLIST - LARGER STATION CODE
        ======================================================== */
@@ -364,6 +371,7 @@
         margin: 0 !important;
     }
 
+
     /* ========================================================
        CHECKLIST - STATION AREA SPACING
        ======================================================== */
@@ -375,6 +383,7 @@
 
         padding-bottom: 3mm !important;
     }
+
 
     /* ========================================================
        DIVIDER
@@ -391,6 +400,7 @@
 
         border-top-width: 1px !important;
     }
+
 
     /* ========================================================
        TO / ORDER
@@ -462,6 +472,7 @@
         line-height: 1.1 !important;
     }
 
+
     /* ========================================================
        CHECKLIST MAIN
        ======================================================== */
@@ -507,6 +518,7 @@
         flex: 1 1 auto !important;
     }
 
+
     /* ========================================================
        WING CARD
        ======================================================== */
@@ -549,6 +561,7 @@
         font-size: 6.5pt !important;
     }
 
+
     /* ========================================================
        CHECKLIST - COMPACT WING CARDS
        Maximum: 18 rows = 6 columns x 3 rows
@@ -567,6 +580,7 @@
 
         overflow: hidden !important;
     }
+
 
     /* ========================================================
        ROW GRID
@@ -608,6 +622,7 @@
         width: 100% !important;
         height: 100% !important;
     }
+
 
     /* ========================================================
        ROW ITEM
@@ -656,6 +671,7 @@
         line-height: 1 !important;
     }
 
+
     /* ========================================================
        CHECKBOX
        ======================================================== */
@@ -681,9 +697,13 @@
         flex-shrink: 0 !important;
     }
 
+
     /* ========================================================
        CHECKLIST - ULTRA COMPACT TABLE
        TARGET: +/- 50 ARTICLE / PAGE
+
+       FINAL COLUMNS:
+       ROW | TO LINE | ARTICLE | EAN | QTY
        ======================================================== */
 
     .checklist-a4-page table {
@@ -723,7 +743,53 @@
         vertical-align: middle !important;
     }
 
-    .checklist-a4-page table td:nth-child(2) {
+
+    /* ========================================================
+       ROW COLUMN
+       ======================================================== */
+
+    .checklist-a4-page
+    .checklist-col-row {
+
+        width: 18mm !important;
+
+        min-width: 18mm !important;
+
+        max-width: 18mm !important;
+
+        text-align: center !important;
+    }
+
+
+    /* ========================================================
+       TO LINE COLUMN
+       ======================================================== */
+
+    .checklist-a4-page
+    .checklist-col-toline {
+
+        width: 13mm !important;
+
+        min-width: 13mm !important;
+
+        max-width: 13mm !important;
+
+        text-align: center !important;
+
+        white-space: nowrap !important;
+
+        overflow: hidden !important;
+    }
+
+
+    /* ========================================================
+       ARTICLE COLUMN
+       ======================================================== */
+
+    .checklist-a4-page
+    .checklist-col-article {
+
+        width: auto !important;
 
         white-space: nowrap !important;
 
@@ -734,7 +800,60 @@
         word-break: normal !important;
     }
 
-    .checklist-a4-page table td .text-\[11px\] {
+
+    /* ========================================================
+       EAN COLUMN
+       ======================================================== */
+
+    .checklist-a4-page
+    .checklist-col-ean {
+
+        width: 30mm !important;
+
+        min-width: 30mm !important;
+
+        max-width: 30mm !important;
+
+        text-align: center !important;
+
+        white-space: nowrap !important;
+
+        overflow: hidden !important;
+
+        text-overflow: ellipsis !important;
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 5.5pt !important;
+    }
+
+
+    /* ========================================================
+       QTY COLUMN
+       ======================================================== */
+
+    .checklist-a4-page
+    .checklist-col-qty {
+
+        width: 13mm !important;
+
+        min-width: 13mm !important;
+
+        max-width: 13mm !important;
+
+        text-align: center !important;
+
+        white-space: nowrap !important;
+    }
+
+
+    /* ========================================================
+       ROW LABEL
+       ======================================================== */
+
+    .checklist-a4-page
+    table td
+    .text-\[11px\] {
 
         font-size: 5.5pt !important;
 
@@ -742,6 +861,7 @@
 
         margin-bottom: 0.4mm !important;
     }
+
 
     /* ========================================================
        EMPTY STATE
@@ -754,6 +874,7 @@
 
         line-height: 1.1 !important;
     }
+
 
     /* ========================================================
        FOOTER
@@ -785,6 +906,7 @@
         line-height: 1 !important;
     }
 
+
     /* ========================================================
        BARCODE
        ======================================================== */
@@ -814,11 +936,13 @@
         max-height: 12mm !important;
     }
 
+
     /* ========================================================
        CHECKLIST - QR TRACEABILITY
        ======================================================== */
 
     .checklist-qr-box {
+
         width: 24mm !important;
 
         height: 24mm !important;
@@ -844,8 +968,8 @@
         overflow: hidden !important;
     }
 
-
     .checklist-qr-box svg {
+
         width: 22mm !important;
 
         height: 22mm !important;
@@ -855,11 +979,13 @@
         max-height: 22mm !important;
     }
 
+
     /* ========================================================
        CHECKLIST - PAGE NUMBER
        ======================================================== */
 
     .checklist-page-number {
+
         width: 100% !important;
 
         text-align: center !important;
@@ -878,6 +1004,7 @@
 
         flex-shrink: 0 !important;
     }
+
 
     /* ========================================================
        TRACEABILITY
@@ -898,6 +1025,7 @@
 
         line-height: 1.1 !important;
     }
+
 
     /* ========================================================
        DATE / TIME
@@ -942,6 +1070,7 @@
         line-height: 1.1 !important;
     }
 
+
     /* ========================================================
        TRACKING
        ======================================================== */
@@ -951,6 +1080,7 @@
 
         letter-spacing: 0.3px !important;
     }
+
 
     /* ========================================================
        CHECKLIST SAFETY
@@ -976,6 +1106,7 @@
 
         max-width: 100% !important;
     }
+
 
     /* ========================================================
        PICK TICKET COMPONENTS
@@ -1186,8 +1317,11 @@
         font-family: "Courier New", monospace;
     }
 
+
     /* ========================================================
        PICK TICKET TABLE
+       FINAL:
+       ARTICLE | EAN | ARTICLE DESCRIPTION
        ======================================================== */
 
     .pt-table {
@@ -1267,6 +1401,45 @@
         max-height: 2.6em;
     }
 
+
+    /* ========================================================
+       PICK TICKET - EAN COLUMN
+       ARTICLE | EAN | DESCRIPTION
+       ======================================================== */
+
+    .pt-table th:nth-child(4),
+    .pt-table td.pt-ean {
+
+        width: 88px !important;
+
+        min-width: 88px !important;
+
+        max-width: 88px !important;
+
+        white-space: nowrap !important;
+
+        overflow: hidden !important;
+
+        text-overflow: ellipsis !important;
+
+        font-family: "Courier New", monospace !important;
+
+        font-size: 7.5pt !important;
+    }
+
+
+    /* ========================================================
+       PICK TICKET - EAN CENTER
+       ======================================================== */
+
+    .pt-table td.pt-ean {
+
+        text-align: center !important;
+
+        vertical-align: middle !important;
+    }
+
+
     /* ========================================================
        PICK TICKET FOOTER
        ======================================================== */
@@ -1309,42 +1482,6 @@
         font-size: 9pt;
     }
 
-    /* ========================================================
-   CHECKLIST - TO LINE COLUMN
-   ROW | TO LINE | ARTICLE | QTY
-   ======================================================== */
-
-.checklist-a4-page .checklist-col-row {
-    width: 18mm !important;
-    min-width: 18mm !important;
-    max-width: 18mm !important;
-}
-
-.checklist-a4-page .checklist-col-toline {
-    width: 13mm !important;
-    min-width: 13mm !important;
-    max-width: 13mm !important;
-
-    text-align: center !important;
-    white-space: nowrap !important;
-}
-
-.checklist-a4-page .checklist-col-article {
-    width: auto !important;
-
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-}
-
-.checklist-a4-page .checklist-col-qty {
-    width: 13mm !important;
-    min-width: 13mm !important;
-    max-width: 13mm !important;
-
-    text-align: center !important;
-    white-space: nowrap !important;
-}
 
     /* ========================================================
        FINAL PRINT SAFETY
