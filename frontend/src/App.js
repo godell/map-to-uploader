@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Badge } from "./components/ui/badge";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
-import { toast } from "sonner";
+import { Toaster, toast } from "sonner"; //
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
@@ -26,6 +26,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+
+
 
 const INITIAL_RAW_DATA = [
   {
@@ -319,6 +322,110 @@ const processDataset = (rawData) => {
 };
 
 export default function App() {
+  const [session, setSession] = useState(null);
+
+useEffect(() => {
+
+  supabase.auth.getSession()
+    .then(({ data }) => {
+      setSession(data.session);
+    });
+
+// Tambahkan fungsi ini di dalam komponen App
+const handleAddUser = async (newEmail, newPassword, newRole) => {
+  try {
+    const response = await axios.post(`${API}/create-user`, { //[cite: 1]
+      email: newEmail,
+      password: newPassword,
+      role: newRole
+    });
+    
+    if (response.data.success) {
+      toast.success("User baru berhasil ditambahkan!");
+    }
+  } catch (error) {
+    toast.error("Gagal menambahkan user. Cek koneksi backend.");
+  }
+};
+
+  const {
+    data: { subscription }
+  } = supabase.auth.onAuthStateChange(
+    (_event, session) => {
+      setSession(session);
+    }
+  );
+
+  return () => {
+    subscription.unsubscribe();
+  };
+
+}, []);
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {console.log("ROLE =", userRole);}, [userRole]);
+
+  useEffect(() => {
+  const fetchUserProfile = async () => {
+    // Pastikan session sudah ada sebelum narik data
+    if (!session?.user?.id) return; 
+
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles') // Pastikan nama tabel benar
+        .select('role') // Pastikan nama kolom benar
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error("Error dari Supabase nih bro:", error.message);
+        // Kalau error RLS, pesannya biasanya "JSON object requested, multiple (or no) rows returned"
+        return;
+      }
+
+      if (data) {
+         console.log("Data berhasil ditarik:", data);
+         setUserRole(data.role); // Set state-nya di sini
+      }
+    } catch (err) {
+      console.error("Error fetching:", err);
+    }
+  };
+
+  fetchUserProfile();
+}, [session]); // Trigger setiap kali session berubah
+
+console.log("SESSION ID:", session?.user?.id);
+console.log("ROLE:", userRole);
+
+const handleLogin = async () => {
+
+  console.log("LOGIN DIKLIK");
+
+  const { data, error } =
+    await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+  console.log("DATA:", data);
+  console.log("ERROR:", error);
+
+  if (error) {
+    toast.error(error.message);
+  } else {
+    toast.success("Login berhasil");
+  }
+
+};
+
+const handleLogout = async () => {
+  await supabase.auth.signOut();
+};
+  
   const [data, setData] = useState(INITIAL_RAW_DATA);
   const [isGenerated, setIsGenerated] = useState(true);
   const [selectedWing, setSelectedWing] = useState(null); 
@@ -1033,17 +1140,89 @@ export default function App() {
     toast.info("Data upload berhasil dihapus. Silakan upload file baru.");
   };
 
+if (!session) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-rose-50/20 flex items-center justify-center">
+      {/* Tambahkan baris ini */}
+      <Toaster position="top-right" richColors /> 
+
+      <Card className="w-full max-w-md shadow-xl border-slate-200">
+
+        <CardHeader>
+
+          <CardTitle
+            className="
+            text-center
+            text-2xl
+            font-bold
+            bg-gradient-to-r
+            from-teal-700
+            to-indigo-700
+            bg-clip-text
+            text-transparent"
+          >
+            DSV | TO Splitter App
+          </CardTitle>
+
+          <CardDescription className="text-center">
+            Login untuk melanjutkan
+          </CardDescription>
+
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+
+          <Input
+            placeholder="Email"
+            value={email}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
+          />
+
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
+          />
+
+          <Button
+            className="
+            w-full
+            bg-teal-600
+            hover:bg-teal-700"
+            onClick={handleLogin}
+          >
+            Login
+          </Button>
+
+        </CardContent>
+
+      </Card>
+
+    </div>
+
+  );
+
+}
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-rose-50/20 text-slate-900 pb-20">
       <header className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          
+
           <div className="flex items-center space-x-3">
             <div className="bg-teal-600 text-white p-2.5 rounded-xl shadow-md flex items-center justify-center">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
               <h1 className="font-bold text-lg tracking-tight bg-gradient-to-r from-teal-700 to-indigo-700 bg-clip-text text-transparent">
-                SAP WM Transfer Order Processor
+                DSV | Transfer Order Processor
               </h1>
               <p className="text-xs text-slate-500 font-medium">
                 Automated Row Extraction & SAP Grid Integration
@@ -1052,6 +1231,31 @@ export default function App() {
           </div>
 
           <div className="flex items-center space-x-3">
+
+<Badge>
+  {userRole === "admin" 
+    ? "Administrator" 
+    : userRole === "user" 
+      ? "User" 
+      : "Memeriksa Akses..."}
+</Badge>
+
+{userRole === "admin" && (
+  <Button
+    size="sm"
+    className="bg-indigo-600 hover:bg-indigo-700 text-white"
+  >
+    Add User
+  </Button>
+)}
+<Button
+  variant="outline"
+  size="sm"
+  onClick={handleLogout}
+>
+ Logout
+</Button>
+
             <Button
               variant="outline"
               size="sm"
@@ -1912,24 +2116,29 @@ export default function App() {
                           <div className="pt-row-label">ROW</div>
                           <div className="pt-row-value">{rowLabel}</div>
                         </div>
-
+                        
                         <div className="pt-code-box">
-                          {reprintCount > 0 && (
-                            <div
-                              style={{
-                                fontSize: '22px',
-                                fontWeight: '900',
-                                border: '3px solid black',
-                                padding: '4px 10px',
-                                marginBottom: '8px',
-                                textAlign: 'center',
-                                letterSpacing: '1px',
-                                backgroundColor: '#ffffff'
-                              }}
-                            >
-                              RE-PRINT {reprintCount}
-                            </div>
-                          )}
+                          <div
+  style={{
+    height: '42px',
+    marginBottom: '8px',
+    border: '3px solid transparent'
+  }}
+>
+  {reprintCount > 0 && (
+    <div
+      style={{
+        fontSize:'22px',
+        fontWeight:'900',
+        border:'3px solid black',
+        padding:'4px 10px',
+        textAlign:'center'
+      }}
+    >
+      RE-PRINT {reprintCount}
+    </div>
+  )}
+</div>
 
                           <Barcode
                             value={batchCode}
@@ -2636,7 +2845,7 @@ export default function App() {
                     <div className="checklist-footer-date">
 
                       <span className="checklist-footer-label">
-                        TANGGAL
+                        TANGGAL CETAK
                       </span>
 
                       <span className="checklist-footer-value">

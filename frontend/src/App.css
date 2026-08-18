@@ -1274,7 +1274,7 @@
 
         justify-content: space-between;
 
-        align-items: center;
+        align-items: flex-start;
 
         border-bottom: 2px solid #000;
 
@@ -1594,21 +1594,10 @@
         overflow: hidden !important;
 
         text-overflow: ellipsis !important;
-
-        font-family: "Courier New", monospace !important;
-
-        font-size: 7.5pt !important;
     }
 
 
-    .pt-table td.pt-ean {
-
-        text-align: center !important;
-
-        vertical-align: middle !important;
-    }
-
-
+   
     /* ========================================================
        PICK TICKET FOOTER
        ======================================================== */
