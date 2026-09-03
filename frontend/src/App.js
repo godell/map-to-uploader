@@ -370,39 +370,50 @@ const handleAddUser = async (newEmail, newPassword, newRole) => {
 
   useEffect(() => {
   const fetchUserProfile = async () => {
-    // Pastikan session sudah ada sebelum narik data
-    if (!session?.user?.id) return; 
+
+    if (!session?.user?.id) return;
 
     try {
+
       const { data, error } = await supabase
-  .from("user_profiles")
-  .select("role")
-  .eq("id", session.user.id)
-  .single();
+        .from("user_profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
 
-if (!data || !data.role) {
-  toast.error(
-    "Akses ditolak. Role akun belum diberikan oleh Administrator."
-  );
-
-  await supabase.auth.signOut();
-
-  setSession(null);
-  setUserRole(null);
-
-  return;
-}
-
-console.log("Data berhasil ditarik:", data);
-setUserRole(data.role);
+      if (error) {
+        console.error(error);
+        return;
       }
+
+      if (!data || !data.role) {
+
+        toast.error(
+          "Akses ditolak. Role akun belum diberikan oleh Administrator."
+        );
+
+        await supabase.auth.signOut();
+
+        setSession(null);
+        setUserRole(null);
+
+        return;
+      }
+
+      console.log("Data berhasil ditarik:", data);
+
+      setUserRole(data.role);
+
     } catch (err) {
+
       console.error("Error fetching:", err);
+
     }
   };
 
   fetchUserProfile();
-}, [session]); // Trigger setiap kali session berubah
+
+}, [session]);
 
 console.log("SESSION ID:", session?.user?.id);
 console.log("ROLE:", userRole);
