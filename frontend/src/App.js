@@ -375,20 +375,26 @@ const handleAddUser = async (newEmail, newPassword, newRole) => {
 
     try {
       const { data, error } = await supabase
-        .from('user_profiles') // Pastikan nama tabel benar
-        .select('role') // Pastikan nama kolom benar
-        .eq('id', session.user.id)
-        .single();
+  .from("user_profiles")
+  .select("role")
+  .eq("id", session.user.id)
+  .single();
 
-      if (error) {
-        console.error("Error dari Supabase nih bro:", error.message);
-        // Kalau error RLS, pesannya biasanya "JSON object requested, multiple (or no) rows returned"
-        return;
-      }
+if (!data || !data.role) {
+  toast.error(
+    "Akses ditolak. Role akun belum diberikan oleh Administrator."
+  );
 
-      if (data) {
-         console.log("Data berhasil ditarik:", data);
-         setUserRole(data.role); // Set state-nya di sini
+  await supabase.auth.signOut();
+
+  setSession(null);
+  setUserRole(null);
+
+  return;
+}
+
+console.log("Data berhasil ditarik:", data);
+setUserRole(data.role);
       }
     } catch (err) {
       console.error("Error fetching:", err);
@@ -402,24 +408,34 @@ console.log("SESSION ID:", session?.user?.id);
 console.log("ROLE:", userRole);
 
 const handleLogin = async () => {
-
-  console.log("LOGIN DIKLIK");
-
   const { data, error } =
     await supabase.auth.signInWithPassword({
       email,
-      password
+      password,
     });
-
-  console.log("DATA:", data);
-  console.log("ERROR:", error);
 
   if (error) {
     toast.error(error.message);
-  } else {
-    toast.success("Login berhasil");
+    return;
   }
 
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .single();
+
+  if (!profile?.role) {
+    await supabase.auth.signOut();
+
+    toast.error(
+      "Akses ditolak. Role belum diberikan oleh Administrator."
+    );
+
+    return;
+  }
+
+  toast.success("Login berhasil");
 };
 
 const handleLogout = async () => {
