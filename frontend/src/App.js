@@ -322,7 +322,8 @@ const processDataset = (rawData) => {
 };
 
 export default function App() {
-  const [session, setSession] = useState(null);
+  // const [session, setSession] = useState(null);
+  const [session, setSession] = useState({ user: { id: "bypass-user-id" } }); // BYPASS LOGIN
 
 const handleAddUser = async (
   newEmail,
@@ -351,6 +352,7 @@ const handleAddUser = async (
   }
 };
 
+/* BYPASS LOGIN: Disable Supabase Auth Check
 useEffect(() => {
   supabase.auth.getSession()
     .then(({ data }) => {
@@ -370,11 +372,14 @@ useEffect(() => {
   };
 
 }, []);
+*/
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [userRole, setUserRole] = useState(null);
+  // const [userRole, setUserRole] = useState(null);
+  const [userRole, setUserRole] = useState("admin"); // BYPASS: Set otomatis jadi admin
 
+  /* BYPASS LOGIN: Disable Profile Fetching
   useEffect(() => {
   const fetchUserProfile = async () => {
 
@@ -394,33 +399,25 @@ useEffect(() => {
       }
 
       if (!data || !data.role) {
-
-        toast.error(
-          "Akses ditolak. Role akun belum diberikan oleh Administrator."
-        );
-
+        toast.error("Akses ditolak. Role akun belum diberikan oleh Administrator.");
         await supabase.auth.signOut();
-
         setSession(null);
         setUserRole(null);
-
         return;
       }
 
       console.log("Data berhasil ditarik:", data);
-
       setUserRole(data.role);
 
     } catch (err) {
-
       console.error("Error fetching:", err);
-
     }
   };
 
   fetchUserProfile();
 
 }, [session]);
+*/
 
 const handleLogin = async () => {
   const { data, error } =
@@ -453,8 +450,11 @@ const handleLogin = async () => {
   toast.success("Login berhasil");
 };
 
-const handleLogout = async () => {
-  await supabase.auth.signOut();
+// const handleLogout = async () => {
+//   await supabase.auth.signOut();
+// };
+const handleLogout = () => {
+  toast.info("Mode Bypass: Fungsi logout dinonaktifkan sementara.");
 };
   
   const [data, setData] = useState(INITIAL_RAW_DATA);
