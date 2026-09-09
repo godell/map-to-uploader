@@ -375,8 +375,6 @@ useEffect(() => {
   const [password, setPassword] = useState('');
   const [userRole, setUserRole] = useState(null);
 
-  useEffect(() => {console.log("ROLE =", userRole);}, [userRole]);
-
   useEffect(() => {
   const fetchUserProfile = async () => {
 
@@ -423,9 +421,6 @@ useEffect(() => {
   fetchUserProfile();
 
 }, [session]);
-
-console.log("SESSION ID:", session?.user?.id);
-console.log("ROLE:", userRole);
 
 const handleLogin = async () => {
   const { data, error } =
