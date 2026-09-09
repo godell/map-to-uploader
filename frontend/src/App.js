@@ -324,29 +324,38 @@ const processDataset = (rawData) => {
 export default function App() {
   const [session, setSession] = useState(null);
 
-useEffect(() => {
+const handleAddUser = async (
+  newEmail,
+  newPassword,
+  newRole
+) => {
+  try {
+    const response = await axios.post(
+      `${API}/create-user`,
+      {
+        email: newEmail,
+        password: newPassword,
+        role: newRole
+      }
+    );
 
+    if (response.data.success) {
+      toast.success(
+        "User baru berhasil ditambahkan!"
+      );
+    }
+  } catch (error) {
+    toast.error(
+      "Gagal menambahkan user. Cek koneksi backend."
+    );
+  }
+};
+
+useEffect(() => {
   supabase.auth.getSession()
     .then(({ data }) => {
       setSession(data.session);
     });
-
-// Tambahkan fungsi ini di dalam komponen App
-const handleAddUser = async (newEmail, newPassword, newRole) => {
-  try {
-    const response = await axios.post(`${API}/create-user`, { //[cite: 1]
-      email: newEmail,
-      password: newPassword,
-      role: newRole
-    });
-    
-    if (response.data.success) {
-      toast.success("User baru berhasil ditambahkan!");
-    }
-  } catch (error) {
-    toast.error("Gagal menambahkan user. Cek koneksi backend.");
-  }
-};
 
   const {
     data: { subscription }
